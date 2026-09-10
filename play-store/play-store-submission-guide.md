@@ -176,6 +176,29 @@ external links reachable by a child, no ads.
 
 **Government apps / Financial features / Health**: No to all.
 
+## Status
+
+**Version 0.1 (versionCode 1) was submitted for Play review.** It was built
+by CI from commit 7aaa421, signed with the Crayoner upload key, and read
+versionCode 1, versionName 0.1, package io.github.muntasimulhaque.crayoner,
+target 37, with no permission beyond the androidx core private receiver.
+The AAB has been DELETED from `play-store/aab/` now that it is submitted, so
+a stale build can never be uploaded twice. The next build to upload will be
+0.2.
+
+Submitted with: Game / Educational, paid once, target audience 5 and under,
+Ads No, Advertising ID No, Data safety nothing collected, the privacy policy
+at https://muntasimulhaque.github.io/crayoner/privacy.html, and the three
+screenshot folders from the 24 CI captures.
+
+## What to watch while it is in review
+
+- The review email from Play (usually a few days for a new paid app in the
+  Families program).
+- If Play asks anything, the answers are all in this file: category, the
+  questionnaire, the data safety declaration, and the target audience.
+- Nothing in the app needs to change for review; it is complete and tested.
+
 ## Version walk (the law)
 
 `versionName` steps 0.1 per release, in lockstep with `versionCode`:
