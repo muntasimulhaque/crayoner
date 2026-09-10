@@ -83,8 +83,13 @@ the 500 character field, counted before handing them over, never assumed.
 - **The signing keystore lives OUTSIDE the repo and never enters it.** Its
   home is the owner's vault:
 
-      D:\GDrive\BSCPLC\DM (Development)\Personal Docs\Pers\My Apps        Google Play Signing Key\Crayoner          crayoner-signing.keystore
+      D:/GDrive/BSCPLC/DM (Development)/Personal Docs/Pers/My Apps/
+        Google Play Signing Key/Crayoner/
+          crayoner-signing.keystore
           crayoner-signing-key-info.txt
+
+  (On Windows, the same folder is reached as
+  D:\GDrive\BSCPLC\DM (Development)\Personal Docs\Pers\My Apps\Google Play Signing Key\Crayoner.)
 
   The base64 twin lives in the `KEYSTORE_BASE64` GitHub secret, and the
   passwords in `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Those
