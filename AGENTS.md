@@ -80,10 +80,23 @@ the 500 character field, counted before handing them over, never assumed.
 - `targetSdk` moves only together with an AGP that supports it. Currently
   compile/target 37, minSdk 24, on AGP 9.3.0, Kotlin 2.2.10, Gradle 9.5.0,
   Compose BOM 2026.08.00, Java 17.
-- The signing keystore lives OUTSIDE the repo (owner vault) with its base64
-  twin in the `KEYSTORE_BASE64` GitHub secret and the passwords in three
-  more secrets. If the keystore is lost, the app can never be updated again.
-  Local builds without the keystore stay unsigned.
+- **The signing keystore lives OUTSIDE the repo and never enters it.** Its
+  home is the owner's vault:
+
+      D:\GDrive\BSCPLC\DM (Development)\Personal Docs\Pers\My Apps        Google Play Signing Key\Crayoner          crayoner-signing.keystore
+          crayoner-signing-key-info.txt
+
+  The base64 twin lives in the `KEYSTORE_BASE64` GitHub secret, and the
+  passwords in `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Those
+  four secrets are encrypted at rest and are the ONLY copy of the key
+  material anywhere near GitHub; the repo itself must never contain a
+  keystore, a password, an alias, or a base64 blob. `.gitignore` refuses
+  `*.keystore`, `*.jks` and `signing-key-info.txt`, and `play-store/aab/`
+  is ignored so a downloaded build never rides along either. A session that
+  finds key material staged for commit stops and reports it rather than
+  pushing. If the keystore is lost, the app can never be updated on Play
+  again, so the vault is backed up in a second place. Local builds without
+  the keystore stay unsigned.
 - Paid once on Play Console (the owner handles the merchant profile and the
   upload). No billing SDK in the app, ever.
 

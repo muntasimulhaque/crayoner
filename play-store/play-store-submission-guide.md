@@ -7,11 +7,19 @@ assumed.
 
 ## Irreplaceable
 
-`crayoner-signing.keystore` + its key info (kept outside this repo, base64
-copy in the `KEYSTORE_BASE64` GitHub secret, passwords in
-`KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`). If the keystore is lost
-the app can never be updated again. Keep copies in two places. Play App
-Signing enrolment hands Google the re-signing duty; the upload key only
+`crayoner-signing.keystore` + `crayoner-signing-key-info.txt`, both in the
+owner's vault at:
+
+```
+D:\GDrive\BSCPLC\DM (Development)\Personal Docs\Pers\My Apps  Google Play Signing Key\Crayoner```
+
+and nowhere else. The base64 twin is in the `KEYSTORE_BASE64` GitHub secret
+and the passwords in `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`.
+Those secrets are encrypted and are the only key material anywhere near
+GitHub; no keystore, password or alias may ever be committed, and
+`.gitignore` refuses all three shapes. If the keystore is lost the app can
+never be updated again, so the vault is backed up in a second place. Play
+App Signing enrolment hands Google the re-signing duty; the upload key only
 needs to stay available to CI.
 
 ## Store art
