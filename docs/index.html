@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crayoner</title>
+<style>
+  body { margin: 0; background: #F6EFE3; color: #38404F;
+         font: 17px/1.65 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 64px 24px 72px; }
+  h1 { font-size: 38px; line-height: 1.15; color: #C4453A; margin: 0 0 10px;
+       font-weight: 800; }
+  p { margin: 10px 0; }
+  ul { padding-left: 22px; }
+  li { margin: 6px 0; }
+  a { color: #C4453A; }
+  .card { background: #FFFDF8; border: 1px solid #E3D8C4; border-radius: 14px;
+          padding: 16px 20px; margin: 22px 0; }
+  footer { margin-top: 44px; font-size: 14px; color: #5C6B65; }
+  /* The mark: one crayon, drawn in CSS, the same shape the app draws. */
+  .mark { position: relative; width: 30px; height: 62px; margin-bottom: 20px;
+          background: #D94B3F; border: 3px solid #38404F;
+          border-radius: 4px 4px 3px 3px; box-sizing: border-box;
+          transform: rotate(-12deg); }
+  .mark::before { content: ""; position: absolute; left: -3px; top: -16px;
+                  width: 30px; height: 16px; background: #D94B3F;
+                  border: 3px solid #38404F; border-bottom: 0;
+                  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+                  box-sizing: border-box; }
+  .mark::after { content: ""; position: absolute; left: 4px; right: 4px;
+                 top: 18px; bottom: 10px; background: #FBD9D3; }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark"></div>
+  <h1>Crayoner</h1>
+  <p>A simple, beautiful coloring book for children aged 3 to 5. Sixteen
+  pictures, one box of crayons, and a finished picture above every page to
+  copy. Paid once, no ads, no trackers, no accounts, and no permissions at
+  all.</p>
+
+  <div class="card">
+    <p><strong>Privacy policy</strong><br>
+    <a href="privacy.html">muntasimulhaque.github.io/crayoner/privacy.html</a></p>
+    <p>Crayoner collects nothing and sends nothing. The full policy, in plain
+    language, is one page long.</p>
+  </div>
+
+  <p><strong>The app</strong></p>
+  <ul>
+    <li>Sixteen pictures: a sailboat, a tree, a balloon, an ice cream, a
+        mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an
+        umbrella, a rocket, a train, a lighthouse and a castle.</li>
+    <li>Sixteen crayons, the same sixteen on every page, in the same places
+        every time.</li>
+    <li>No score, no timer, no fail state, and no picture ever locked.</li>
+  </ul>
+
+  <p><strong>Source code</strong><br>
+  <a href="https://github.com/muntasimulhaque/crayoner">
+  github.com/muntasimulhaque/crayoner</a>, open source under the MIT license.</p>
+
+  <footer>
+    <p>Contact: muntasim.haque@gmail.com</p>
+  </footer>
+</main>
+</body>
+</html>
