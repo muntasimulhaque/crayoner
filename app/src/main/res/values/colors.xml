@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The resting ground, so the very first frame is already the app's
+         world rather than a flash the Compose surface then replaces. -->
+    <color name="paper">#F6EFE3</color>
+    <!-- The adaptive icon's background: warm paper, so the crayon reads on
+         it. Mirrored as IconDesign.PAPER in :tools. -->
+    <color name="ic_launcher_background">#FBF7EF</color>
+</resources>

@@ -1,0 +1,99 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+    # Only rebuild when something that affects the app actually changes, so
+    # doc-only commits (README, AGENTS.md) don't burn a build.
+    paths:
+      - "core/**"
+      - "app/**"
+      - "tools/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+# Read-only at workflow level; the publish job below is granted write only.
+permissions:
+  contents: read
+
+concurrency:
+  group: build-main
+  # Never cancel a run that may already be publishing the release.
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4.4.3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4.4.3
+
+      - name: Run unit tests, generator tests, asset pinning and lint
+        # Pure-JVM engine and generator tests (no device needed), full lint,
+        # and the pins that refuse any hand-edited icon or sound asset.
+        run: ./gradlew :core:test :app:testReleaseUnitTest :app:lintRelease :tools:test :tools:checkIcons :tools:checkSounds
+
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 secret not set; refusing to publish an unsigned AAB."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > app/signing.keystore
+
+      - name: Build signed release AAB and APK
+        env:
+          KEYSTORE_FILE: signing.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:bundleRelease :app:assembleRelease
+
+      - name: Verify signing certificate
+        run: keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab | grep -A2 "SHA256"
+
+      - name: Upload AAB (for Play Console)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: crayoner-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload APK (for direct install / testing)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: crayoner-apk
+          path: app/build/outputs/apk/release/app-release*.apk
+          retention-days: 30
+
+      - name: Publish AAB + APK to the "latest-build" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-build --yes --cleanup-tag || true
+          gh release create latest-build \
+            app/build/outputs/bundle/release/app-release.aab \
+            app/build/outputs/apk/release/app-release.apk \
+            --title "Latest CI build" \
+            --notes "Automated signed build of commit ${GITHUB_SHA}" \
+            --prerelease

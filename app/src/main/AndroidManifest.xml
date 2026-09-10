@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Fully offline app: no permissions at all. -->
+
+    <!-- allowBackup=false already keeps every API level out of cloud backup
+         and device transfer; dataExtractionRules only restates that for
+         Android 12+, so the deprecation warning is silenced, not ignored.
+         English only by design: the layout never mirrors, so nothing can
+         end up on the wrong side in an RTL locale. -->
+    <application
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.Crayoner"
+        tools:ignore="DataExtractionRules,RtlEnabled">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
