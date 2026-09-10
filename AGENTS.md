@@ -362,3 +362,12 @@ the screenshots, all in the same session.
   with the crayon's width capped so a very wide tablet draws crayon-sized
   crayons rather than ribbons.
 - D-022 Haptics: paint, match, finish. Never a miss.
+- D-023 **Store form: a Game, category Educational.** Every serious kids
+  coloring app on Play is a game and says so (Bimi Boo, Crayola), and a
+  parent looking for one is browsing Games, where the Similar apps row
+  lives. Educational rather than Casual because a paid, quiet, ad-free kids
+  app cannot out-shout the ad-driven giants in Casual, and because it is
+  true: the app has rewards, celebration and play. Target audience 5 and
+  under plus a Game is a normal combination and lands in the Families
+  program. Supersedes the hedged "Educational or Puzzle" note in the
+  submission guide.

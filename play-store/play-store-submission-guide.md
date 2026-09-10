@@ -91,8 +91,26 @@ Crayoner is open source under the MIT license, made by a parent for parents who 
 If you cannot afford the payment, write me an email.
 ```
 
-**App category**: Game, subcategory Educational (or Puzzle; Educational is
-the better fit for a coloring book aimed at ages 3 to 5)
+**App or Game**: **Game**. **Category**: **Educational**.
+
+Settled, not defaulted, and here is the whole reason in four lines:
+
+- Every serious kids coloring app on Play is a game, and says so in its own
+  words: Bimi Boo ships "Coloring Book - Games for Kids", and Crayola
+  describes Create and Play as "a fun and educational game for kids". A
+  parent browsing for a coloring app for a three year old is browsing in
+  Games, and the Similar apps row is built from the category. Being the
+  odd one out in Education apps (which are mostly study tools for older
+  children) would put Crayoner beside the wrong neighbors.
+- Educational, not Casual, because Educational is where a paid, ad-free,
+  quiet kids app belongs. Casual is where the ad-driven giants live, and a
+  paid app cannot out-shout them there.
+- Target audience 5 and under plus a Game is a normal, fully supported
+  combination: it puts Crayoner in the Families program and the Kids tab
+  with the rest of the coloring books.
+- It is also true. The app has rewards, celebration and play in it; calling
+  it a game is honest, and it is what the IARC questionnaire answer below
+  already assumes.
 **Contact email**: muntasim.haque@gmail.com
 **Website** (optional): `https://github.com/muntasimulhaque/crayoner`, the
 open source home the full description points a parent to.
