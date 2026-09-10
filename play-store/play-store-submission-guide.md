@@ -60,7 +60,7 @@ best, sale), so the no-ads and offline facts live in the full description.
 Simple, beautiful coloring pages for ages 3 to 5.
 ```
 
-**Full description** (4000 chars max, measured: 2214). Four facts lead,
+**Full description** (4000 chars max, measured: 2186). Four facts lead,
 because they are the reason a parent installs: what it is, that it is safe,
 that it is open source, and that it asks for nothing. How it plays comes
 after, short enough to scan on a phone. Paragraphs are unwrapped on purpose:
@@ -68,10 +68,10 @@ Play keeps the line breaks, so one line per paragraph pastes as a clean
 block.
 
 ```
-Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a tray of crayons. Color the outlines until they match the picture.
+Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a box of crayons. Color the outlines until they match the picture.
 
 How it plays
-Tap a picture on the wall and the page opens as clean black lines. The picture to copy sits right above it, the way a coloring book prints it facing the page, so a child looks up, looks down, and colors. Tap the picture to hold it up large. Pick a crayon, touch an area, and the color spreads from right under the finger, with the soft grain of real wax on paper. Tap the picture card to hold the finished picture up close.
+Tap a picture on the wall and the page opens as clean black lines. The picture to copy sits right above it, the way a coloring book prints it facing the page, so a child looks up, looks down, and colors. Pick a crayon, touch an area, and the color spreads from right under the finger, with the soft grain of real wax on paper. Tap the picture to hold it up large whenever a closer look is wanted.
 
 A real box of crayons
 Sixteen crayons, the same sixteen on every page, in the same places every time, because a real box does not change its contents because of the page you open. The colors are crayon colors, chosen by hand to look like wax and not like paint.
