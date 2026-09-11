@@ -24,10 +24,10 @@ import io.github.muntasimulhaque.crayoner.core.Vec2
  * body and the core, so the mark is made of the same material as the sample
  * the child is copying.
  *
- * An eraser mark is drawn with the printed page itself as its paint: the
- * rubber takes the wax off and leaves the line that was printed there, which
- * is what happens on paper, where the print is under the wax and never made
- * of it.
+ * An eraser mark is drawn with the printed page itself as its paint, paper
+ * and print together: the rubber takes the wax off and leaves the paper with
+ * the line that was printed on it, which is what happens on real paper,
+ * where the print is under the wax and never made of it.
  */
 fun DrawScope.drawStrokes(strokes: List<WaxStroke>, side: Float, print: Brush? = null) {
     if (strokes.isEmpty()) return

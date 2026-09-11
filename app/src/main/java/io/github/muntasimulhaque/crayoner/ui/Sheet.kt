@@ -7,7 +7,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -105,7 +104,7 @@ internal fun SheetOf(
                 page = state.page,
                 fills = emptyMap(),
                 strokes = state.progress.strokes,
-                generation = state.stamp,
+                generation = state.marks,
                 live = live,
                 sidePx = sidePx,
                 modifier = Modifier.fillMaxSize(),
@@ -119,23 +118,6 @@ internal fun SheetOf(
                 onColor = { index -> onColorArea(index) },
                 modifier = Modifier.fillMaxSize(),
             )
-            // A stamped picture wears its stamp where a stamp goes: on the
-            // paper, in the corner, over the work. It is the child's own seal,
-            // and it lands when they press it, which is the only moment the
-            // app ever marks a picture as done.
-            if (state.sealed) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(side * 0.04f)
-                        .size(side * 0.20f),
-                ) {
-                    WaxSeal(
-                        modifier = Modifier.fillMaxSize(),
-                        pressStamp = state.sealStamp,
-                    )
-                }
-            }
         }
         // The tape, laid over the paper's own corners and a little past them
         // onto the desk. The canvas is exactly the paper's size, so a corner

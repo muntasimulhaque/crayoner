@@ -3,12 +3,16 @@ package io.github.muntasimulhaque.crayoner.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,16 +24,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -47,8 +53,9 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
  * forever, because a tray of thirty two crayons on a phone costs the sheet
  * the room it needs to be colored on.
  *
- * The one in hand stands up out of the tray of lying crayons, so a child can
- * always see which color they are holding without leaving the page.
+ * A tap outside puts the box away, and so does a pull down: the lid is the
+ * one thing in the app that answers a swipe, because a box held over the
+ * page is exactly the thing a hand tries to push away.
  */
 @Composable
 fun CrayonBoxSheet(
@@ -59,14 +66,36 @@ fun CrayonBoxSheet(
 ) {
     val appear = remember { Animatable(0f) }
     val hint = stringResource(R.string.close_box)
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        appear.animateTo(1f, tween(190, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    // How far the lid has been pulled down, in pixels.
+    var pull by remember { mutableFloatStateOf(0f) }
+    val dismissAt = with(LocalDensity.current) { DISMISS_PULL.roundToPx().toFloat() }
+    LaunchedEffect(Unit) {
+        appear.animateTo(1f, tween(190, easing = FastOutSlowInEasing))
     }
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(CrayonerColors.Scrim)
             .clickable(role = Role.Button, onClick = onDismiss)
+            .draggable(
+                orientation = Orientation.Vertical,
+                state = rememberDraggableState { dy ->
+                    pull = (pull + dy).coerceAtLeast(0f)
+                },
+                onDragStopped = { velocity ->
+                    if (pull > dismissAt || velocity > FLING_AWAY) {
+                        onDismiss()
+                    } else {
+                        animate(
+                            initialValue = pull,
+                            targetValue = 0f,
+                            initialVelocity = 0f,
+                            animationSpec = tween(180),
+                        ) { value, _ -> pull = value }
+                        pull = 0f
+                    }
+                },
+            )
             .semantics { contentDescription = hint },
     ) {
         Column(
@@ -78,12 +107,20 @@ fun CrayonBoxSheet(
                     alpha = a
                     scaleX = 0.92f + 0.08f * a
                     scaleY = 0.92f + 0.08f * a
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+                    translationY = pull
+                    transformOrigin = TransformOrigin(0.5f, 1f)
                 }
                 .buttonShadow(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), elevation = 12.dp)
                 .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                 .background(CrayonerColors.Cardboard)
-                .clickable(enabled = false, onClick = {})
+                // The cardboard swallows its own taps, so putting a finger
+                // down on the box is not the same as putting the box away.
+                // A pull down still reaches the lid above.
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                )
                 .padding(horizontal = 12.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -121,12 +158,13 @@ fun CrayonBoxSheet(
 
 /**
  * One crayon's place in the box: the crayon, lying the way crayons lie in a
- * box. The one in the child's hand stands up, which is how a held crayon
- * looks and how a chosen color reads at a glance, and the rest lie down.
+ * box. The one in the child's hand lies with the rest, a little longer and
+ * drawn with a heavier line, and that is its whole selection mark.
  *
- * There is no ring, no plate and no tick behind the held crayon, because a
- * crayon standing out of a box full of lying ones is already unmistakable,
- * and a mark drawn around it would be chrome on a box of crayons.
+ * There is no ring, no plate, no tick and no shadow behind it, because a
+ * crayon a size up from its neighbors, with a heavier outline, is already
+ * unmistakable, and a mark drawn around it would be chrome on a box of
+ * crayons.
  */
 @Composable
 private fun ColorSeat(
@@ -144,11 +182,11 @@ private fun ColorSeat(
         ),
         label = "seat-lift",
     ).value
-    val lying = cell * (0.94f + 0.05f * lift)
+    // The one in hand grows a little out of the row it lies in, and never
+    // past the cell it belongs to.
+    val lying = cell * (0.88f + 0.10f * lift)
     val thickness = lying * CrayonShape.THICKNESS.toFloat()
-    // A standing crayon is a little taller than a lying one is deep, so the
-    // cell always has room for the one the child is holding.
-    val cellHeight = lying * 0.62f
+    val cellHeight = cell * 0.62f
     Box(
         modifier = Modifier
             .size(cell, cellHeight)
@@ -159,56 +197,20 @@ private fun ColorSeat(
             .clickable(role = Role.RadioButton, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        SeatedCrayon(
-            argb = argb,
-            selected = selected,
-            lift = lift,
-            lying = lying,
-            thickness = thickness,
-            cellHeight = cellHeight,
-        )
-    }
-}
-
-/**
- * The crayon in one seat: lying if it is waiting, standing if it is the one
- * in the child's hand, with the soft shadow a lifted crayon throws on the
- * cardboard under it.
- */
-@Composable
-private fun SeatedCrayon(
-    argb: Long,
-    selected: Boolean,
-    lift: Float,
-    lying: Dp,
-    thickness: Dp,
-    cellHeight: Dp,
-) {
-    // The shadow under a raised crayon, which grows as the crayon comes off
-    // the cardboard and settles back down with it.
-    if (lift > 0.02f) {
-        Canvas(modifier = Modifier.size(lying, thickness)) {
-            drawOval(
-                color = CrayonerColors.Shadow.copy(alpha = 0.34f * lift),
-                topLeft = Offset(0f, size.height * 0.30f),
-                size = Size(size.width * 0.86f, size.height * 0.68f),
-            )
-        }
-    }
-    if (selected) {
-        val height = cellHeight * 0.98f
-        CrayonGlyph(
-            color = Color(argb),
-            modifier = Modifier.size(
-                width = height * CrayonShape.THICKNESS.toFloat(),
-                height = height,
-            ),
-        )
-    } else {
         CrayonGlyph(
             color = Color(argb),
             lying = true,
+            lineBoost = if (selected) SELECTED_LINE else 1f,
             modifier = Modifier.size(width = lying, height = thickness),
         )
     }
 }
+
+/** How much heavier the line is on the crayon the child is holding. */
+private const val SELECTED_LINE = 1.7f
+
+/** How far the lid must be pulled down before it lets go of the page. */
+private val DISMISS_PULL = 64.dp
+
+/** Or how fast it must be thrown down, in pixels a second. */
+private const val FLING_AWAY = 1200f

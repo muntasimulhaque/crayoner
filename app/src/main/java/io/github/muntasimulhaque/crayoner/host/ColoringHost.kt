@@ -45,39 +45,28 @@ sealed interface Screen {
         /** The sample held up big, while the child looks closely. */
         val peeking: Boolean = false,
         /**
-         * True once the child has stamped the picture. It is their own word
-         * that the work is done: the app never decides that for them.
-         */
-        val sealed: Boolean = false,
-        /**
          * Counts finished marks. The write-only half of the state: it is
-         * what the one-shot answers (the haptic, the tick) read, so a mark
-         * that lands over paper already colored still answers like a mark.
+         * what the one-shot answers (the haptic) read, so a mark that lands
+         * over paper already colored still answers like a mark, and what
+         * tells the page its flattened layer of marks is stale.
          */
-        val stamp: Long = 0L,
-        /** Counts stamps of the seal, so the haptic fires exactly once. */
-        val sealStamp: Long = 0L,
+        val marks: Long = 0L,
     ) : Screen
 }
 
 /** What the shelf needs to draw itself. */
 data class ShelfState(
-    /** Pictures the child has stamped as finished. */
-    val sealed: Set<String> = emptySet(),
     /** The marks of the page still being worked on, by page id. */
     val drafts: Map<String, String> = emptyMap(),
     val soundOn: Boolean = true,
     /**
      * False until the saved shelf has been read (or its read has failed).
-     * The shelf waits for it, so no picture ever flashes as unsealed and
-     * then turns over. The screenshot harness hosts states directly and
-     * leaves it true.
+     * The shelf waits for it, so nothing it holds is drawn before it is
+     * known. The screenshot harness hosts states directly and leaves it
+     * true.
      */
     val loaded: Boolean = true,
-) {
-    fun isSealed(pageId: String): Boolean = pageId in sealed
-    fun hasDraft(pageId: String): Boolean = !drafts[pageId].isNullOrBlank()
-}
+)
 
 /**
  * The host performs what the domain decides. It owns which screen is up,
@@ -89,9 +78,9 @@ data class ShelfState(
  * call, a rotation or a process death costs at most the mark in flight. No
  * network, no accounts, nothing leaving the device.
  *
- * Nothing here counts, scores or compares anything the child does. The app
- * has exactly one opinion about a picture, and the child is the one who says
- * it: the seal.
+ * Nothing here counts, scores, compares or judges anything the child does:
+ * not the colors, not the areas, and not whether a picture is finished. The
+ * app has no opinion about any of it.
  */
 class ColoringHost(app: Application) : ViewModel() {
 
@@ -115,10 +104,15 @@ class ColoringHost(app: Application) : ViewModel() {
             // defaults and every picture plays, rather than a blank home
             // screen waiting for a file that will never arrive.
             val saved = runCatching { store.load() }.getOrNull()
+            // Whatever an older build remembered about finished pictures is
+            // let go of here: this build has no finished state to keep. A
+            // device that cannot rewrite its preferences keeps the old key,
+            // which is never read again, and still opens.
+            runCatching { store.forgetFinished() }
             _shelf.value = if (saved == null) {
                 ShelfState(loaded = true)
             } else {
-                ShelfState(saved.sealed, saved.drafts, saved.soundOn, loaded = true)
+                ShelfState(saved.drafts, saved.soundOn, loaded = true)
             }
         }
         viewModelScope.launch {
@@ -138,7 +132,6 @@ class ColoringHost(app: Application) : ViewModel() {
             page = page,
             progress = saved,
             crayon = null,
-            sealed = _shelf.value.isSealed(page.id),
         )
     }
 
@@ -152,7 +145,7 @@ class ColoringHost(app: Application) : ViewModel() {
         if (!Crayons.exists(argb)) return
         if (s.crayon == argb && !s.erasing) return
         _screen.value = s.copy(crayon = argb, erasing = false)
-        chime(Sfx.RUSTLE)
+        play(Sfx.RUSTLE)
     }
 
     /** The rubber in hand, or put away. */
@@ -161,7 +154,7 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s !is Screen.Coloring) return
         if (s.erasing == on) return
         _screen.value = s.copy(erasing = on)
-        chime(Sfx.RUSTLE)
+        play(Sfx.RUSTLE)
     }
 
     /** The box of colors, held up over the page or put back down. */
@@ -189,12 +182,10 @@ class ColoringHost(app: Application) : ViewModel() {
         val at = clamp(p)
         if (s.erasing) {
             _screen.value = s.copy(live = Strokes.eraseDot(at))
-            if (_shelf.value.soundOn) soundBoard.startRub(ERASER_RATE)
             return
         }
         val hand = s.crayon ?: colorWantedAt(s.page, at) ?: return
         _screen.value = s.copy(crayon = hand, live = Strokes.dot(hand, at))
-        if (_shelf.value.soundOn) soundBoard.startRub(CRAYON_RATE)
     }
 
     /** The finger moved: the mark grows under it. */
@@ -209,10 +200,6 @@ class ColoringHost(app: Application) : ViewModel() {
 
     /** The finger lifted: the mark is finished, saved, and answered. */
     fun endStroke() {
-        // The rub ends with the hand, whatever else happens next: a loop
-        // left running after the finger is gone is the one failure this
-        // sound can have.
-        soundBoard.stopRub()
         val s = _screen.value
         if (s !is Screen.Coloring) return
         val live = s.live ?: return
@@ -245,33 +232,11 @@ class ColoringHost(app: Application) : ViewModel() {
         _screen.value = s.copy(
             progress = progress,
             live = null,
-            stamp = s.stamp + 1,
+            marks = s.marks + 1,
         )
-        // The mark itself makes no sound at all. The sound of a crayon is
-        // the rub under the moving finger, started when the finger lands and
-        // stopped when it lifts: a click at the end of every mark is a
-        // machine answering, not a crayon on paper.
+        // The mark itself makes no sound. Nothing plays while a finger is on
+        // the paper: the wax does not answer, because the mark is the thing.
         rememberDraft(s.page, progress)
-    }
-
-    /**
-     * The child says the picture is done. That is the only way a picture is
-     * ever called finished: the app cannot know when a coloring is complete,
-     * and it will never guess, because guessing wrong means either telling a
-     * child they are done before they are or telling them they are not.
-     */
-    fun sealPage() {
-        val s = _screen.value
-        if (s !is Screen.Coloring) return
-        if (s.peeking || s.boxOpen) return
-        val next = !s.sealed
-        _screen.value = s.copy(sealed = next, sealStamp = s.sealStamp + 1)
-        if (next) chime(Sfx.CHIME)
-        viewModelScope.launch {
-            runCatching { store.setSealed(s.page.id, next) }.getOrNull()?.let { total ->
-                _shelf.value = _shelf.value.copy(sealed = total)
-            }
-        }
     }
 
     /** Which color the area under [p] asks for, if the point is on paper. */
@@ -307,7 +272,7 @@ class ColoringHost(app: Application) : ViewModel() {
     }
 
     /** The effects, unless the sound switch is off. */
-    private fun chime(sfx: Sfx) {
+    private fun play(sfx: Sfx) {
         if (_shelf.value.soundOn) soundBoard.play(sfx)
     }
 
@@ -317,9 +282,5 @@ class ColoringHost(app: Application) : ViewModel() {
 
     private companion object {
         const val DRAFT_SETTLE_MS = 250L
-
-        /** The rub, as the wax sounds and as the rubber sounds. */
-        const val CRAYON_RATE = 1.0f
-        const val ERASER_RATE = 0.82f
     }
 }

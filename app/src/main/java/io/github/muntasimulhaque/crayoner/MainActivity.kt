@@ -81,7 +81,6 @@ class MainActivity : ComponentActivity() {
                                 onPick = host::pickCrayon,
                                 onErase = host::setErasing,
                                 onOpenBox = host::setBoxOpen,
-                                onSeal = host::sealPage,
                                 onHome = host::home,
                                 onSound = host::setSound,
                                 onPeek = host::setPeek,

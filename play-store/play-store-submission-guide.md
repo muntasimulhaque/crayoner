@@ -60,7 +60,7 @@ best, sale), so the no-ads and offline facts live in the full description.
 Simple, beautiful coloring pages for ages 3 to 5.
 ```
 
-**Full description** (4000 chars max, measured: 2186). Four facts lead,
+**Full description** (4000 chars max, measured: 2645). Four facts lead,
 because they are the reason a parent installs: what it is, that it is safe,
 that it is open source, and that it asks for nothing. How it plays comes
 after, short enough to scan on a phone. Paragraphs are unwrapped on purpose:
@@ -71,16 +71,16 @@ block.
 Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a box of crayons. Color the outlines until they match the picture.
 
 How it plays
-Tap a picture on the wall and the page opens as clean black lines on a sheet of paper taped to the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does. The crayon makes the quiet rubbing sound real wax makes on real paper, for exactly as long as the finger keeps moving.
+Tap a picture on the wall and the page opens as clean black lines on a sheet of paper taped to the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does.
 
 A real box of crayons
-One crayon and one rubber, the two things a hand actually holds. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, and the color in hand stands up out of the box so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. The picture is never wiped and there is nothing to confirm.
+One crayon and one rubber, the two things a hand actually holds. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, with the color in hand a little longer and drawn with a heavier line so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. The picture is never wiped and there is nothing to confirm.
 
 Made for small hands
 Sixteen pictures, all of them available from the very first launch: a sailboat, a tree, a balloon, an ice cream, a mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an umbrella, a rocket, a train, a lighthouse and a castle. Big areas, huge targets, and nothing that needs reading. There is no score, no timer, no fail state, and no picture is ever locked. Marks are saved as they are made, so a phone call or a restart never loses a picture. Every screen fits any size of phone or tablet, held either way.
 
 Gentle by design
-Every color lands, every color stays, and the app never says a word about which one a child chose: a mark in the color the picture asks for and a mark in any other color are the same wax on the same paper. Nothing counts, nothing scores, and no line of progress measures the work. When the child decides a picture is done, they press the seal themselves and their picture is stamped and kept on the wall. Only the child ever says finished.
+Every color lands, every color stays, and the app never says a word about which one a child chose: a mark in the color the picture asks for and a mark in any other color are the same wax on the same paper. Nothing counts, nothing scores, and no line of progress measures the work. The app never decides that a picture is finished, because a coloring is finished when the child says so, and that is not the app's business.
 
 Safe and private
 No ads. No trackers. No accounts. No in-app purchases. It asks for no permissions at all, not even internet. No data collected, so nothing shared: everything stays on your device.
@@ -123,19 +123,18 @@ declaration it makes, no data collected, is exactly true of the app.)
 
 All three sets live under `play-store/screenshots/`, one subfolder per form
 factor (`phone/`, `tablet7/`, `tablet10/`), captured by CI whenever UI files
-change and refreshed into those same subfolders in the same session. Eight
-captures per form factor, 24 in all, the Play listing maximum. Upload each
-subfolder's PNGs to its Play Console slot, in filename order:
+change and refreshed into those same subfolders in the same session. Seven
+captures per form factor, 21 in all. Upload each subfolder's PNGs to its Play
+Console slot, in filename order:
 
 ```
 01_home          the picture wall, every picture finished
-02_home_progress pictures with the wax seal, one being colored, one bare
-03_blank         a brand new page, the sheet taped to the desk
-04_box           the box of thirty two colors, opened over the page
-05_coloring      the picture colored by hand, a crayon and a rubber in the tray
+02_blank         a brand new page, the sheet taped to the desk
+03_box           the box of thirty two colors, opened over the page
+04_coloring      the picture colored by hand, a crayon and a rubber in the tray
+05_rubbed        the rubber in hand, wax rubbed away and the printed line kept
 06_peek          the sample held up large, taped to the desk like the page
-07_most          the rubber in hand, wax rubbed away and the printed line kept
-08_done          a picture the child has stamped, wearing its seal
+07_whole         a picture colored all the way, in the child's own colors
 ```
 
 To look at every picture before a content change, run `:tools:makeSheets`,
@@ -166,9 +165,8 @@ reference. If the console asks again on a future upload, the answer stays
 No.
 
 **App content → Data safety**: the app collects and shares **no user data**.
-Nothing transmitted, nothing stored beyond local preferences (which pictures
-the child has sealed, the marks on the one page in progress, and the sound
-switch),
+Nothing transmitted, nothing stored beyond local preferences (the marks on the
+one page in progress, and the sound switch),
 no SDKs, no network calls, zero manifest permissions.
 
 **App content → Families Policy / child safety**: self-certify compliance.
@@ -178,6 +176,18 @@ external links reachable by a child, no ads.
 **Government apps / Financial features / Health**: No to all.
 
 ## Status
+
+**Version 0.4 (versionCode 4) is the build to upload.** The session that made
+it removed the finished-picture seal whole (the button in the bar, the stamp
+on the sheet, the mark on the shelf card, the bell and the stored set of
+sealed ids), cut the crayon's rub loop so nothing plays while a child colors,
+laid the chosen crayon down among the others in the box (a little longer,
+with a heavier line, and no shadow), let the box close on a pull down as well
+as a tap outside, and fixed the rubber, which until now painted nothing back:
+the page image the eraser lays down now carries the paper as well as the
+print, so a rub really takes the wax off. The store captures are seven scenes
+per form factor now, 21 in all, because the scene that showed a stamped
+picture no longer exists.
 
 **Version 0.3 (versionCode 3) was submitted for Play review.** It was built
 by CI from commit 75337d4, signed with the Crayoner upload key, and read
@@ -218,20 +228,19 @@ submitted, and 0.2 superseded it.
 
 - The review email from Play (usually a few days for a paid app in the
   Families program).
-- 0.3 lands on top of 0.2 on the same closed track. Anyone already testing
+- 0.4 lands on top of 0.3 on the same closed track. Anyone already testing
   gets the update; no new invitations are needed.
 - If Play asks anything, the answers are all in this file: category, the
   questionnaire, the data safety declaration, and the target audience.
 - Nothing in the app needs to change for review; it is complete and tested.
-- One thing to know when testing by hand, after 0.2 left some pages open:
-  a page's saved marks still come back exactly as they were, and a picture
-  the child had finished keeps its mark, which is drawn as a wax seal now
-  rather than a star. Pages carried over from 0.1 (before marks existed at
-  all) come back blank, which happened once already in 0.2 and affects
-  nobody who started on 0.2 or later.
+- One thing to know when testing by hand after updating from 0.3: the
+  pictures that had been stamped as finished keep their colored marks, but
+  the stamp itself and every other mark on the wall are gone, because the
+  app has no finished state any more. The stored record of finished
+  pictures is deleted the first time the shelf is read.
 - A tester who had a picture open when they update should not be surprised
-  by a save written against the sixteen-color box: the older colors are all
-  still in the thirty two color box, so those marks still read back whole.
+  by a save written against an older box: the older colors are all still in
+  the thirty two color box, so those marks still read back whole.
 
 ## Version walk (the law)
 
@@ -240,6 +249,12 @@ versionCode 1 is 0.1, versionCode 2 is 0.2, versionCode 10 is 1.0,
 versionCode 11 is 1.1, and so on. Never reuse a versionCode.
 
 ## Release notes
+
+### Version 0.4 (versionCode 4)
+
+```
+Quieter and simpler. The crayon in your hand now lies in the box with the others, a little bigger and drawn darker so it is easy to find, and the box closes with a pull down as well as a tap outside it. Coloring is silent now, and the little stamped mark that showed a finished picture is gone from the page and from the wall, so nothing ever says which pictures have been played with. The rubber works properly: it rubs the wax off and leaves the printed line underneath, just like on paper.
+```
 
 ### Version 0.3 (versionCode 3)
 

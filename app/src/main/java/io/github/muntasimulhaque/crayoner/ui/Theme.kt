@@ -39,8 +39,6 @@ object CrayonerColors {
     val Ink = Color(Crayons.INK)
     /** The brand: the crayon red of the sailboat, the book's first page. */
     val Coral = Color(Crayons.RED)
-    /** Celebration only, never chrome: the seal a finished picture earns. */
-    val Honey = Color(0xFFEFB53A)
     /** The crayon box: toasted cardboard. */
     val Cardboard = Color(0xFFEFE1C6)
     /**

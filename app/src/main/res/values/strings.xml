@@ -6,15 +6,10 @@
     <string name="sound_off">Sound is off</string>
     <string name="show_sample">Look at the picture closely</string>
     <string name="hide_sample">Put the picture back down</string>
-    <string name="seal">This picture is done</string>
-    <string name="unseal">Keep coloring</string>
     <string name="eraser_on">Put the rubber down</string>
     <string name="eraser_off">Pick up the rubber</string>
     <string name="pick_color">Pick a color</string>
     <string name="close_box">Put the crayons away</string>
-    <string name="finished_mark">Done</string>
-    <string name="started_mark">Being colored</string>
-    <string name="page_plain">Not started</string>
 
     <string name="crayon_red">Red</string>
     <string name="crayon_scarlet">Scarlet</string>

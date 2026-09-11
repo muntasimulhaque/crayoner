@@ -130,6 +130,11 @@ fun prewarmPageImages(pages: List<Page>, fills: (Page) -> Map<Int, Long>, sidePx
  * (a device out of memory for one more square of pixels) answers null, and
  * the caller draws the page directly instead: a slower frame is a much
  * better outcome than a crash.
+ *
+ * The paper goes down first, and it is opaque. The rubber is drawn by
+ * laying this image back over the wax, so it has to carry the sheet itself
+ * and not only the lines printed on it: an image with a transparent ground
+ * would put nothing back and the wax would stay.
  */
 private fun renderPageImage(page: Page, fills: Map<Int, Long>, sidePx: Int): ImageBitmap? = runCatching {
     val bitmap = Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888)
@@ -142,6 +147,7 @@ private fun renderPageImage(page: Page, fills: Map<Int, Long>, sidePx: Int): Ima
         canvas = Canvas(image),
         size = Size(side, side),
     ) {
+        drawRect(CrayonerColors.Card)
         drawPage(page, geometry, fills)
     }
     image
@@ -185,8 +191,9 @@ private fun renderMarkImage(print: ImageBitmap, strokes: List<Stroke>, sidePx: I
     }.getOrNull()
 
 /**
- * The page itself as a paint, so the eraser can lay the print back down
- * wherever the rubber travels. Built once per picture, never per frame.
+ * The page itself as a paint, paper and print together, so the eraser can
+ * lay it back down wherever the rubber travels. Built once per picture,
+ * never per frame.
  */
 fun printBrush(image: ImageBitmap): Brush = ShaderBrush(
     ImageShader(image, TileMode.Clamp, TileMode.Clamp),

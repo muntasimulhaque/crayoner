@@ -15,14 +15,11 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * The app's own icon set, drawn as geometry: a house for the shelf, a
- * speaker for the sound switch, a stamp for a finished picture, and a small
- * crayon for a picture being worked on. No icon fonts, no third party packs:
- * same hand, same weights, everywhere.
+ * speaker for the sound switch. No icon fonts, no third party packs: same
+ * hand, same weights, everywhere.
  */
 @Composable
 fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
@@ -76,56 +73,6 @@ fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp
             drawLine(color, Offset(cx - arm, cy - arm), Offset(cx + arm, cy + arm), line.width, line.cap)
             drawLine(color, Offset(cx + arm, cy - arm), Offset(cx - arm, cy + arm), line.width, line.cap)
         }
-    }
-}
-
-/**
- * The stamp: a rubber stamp seen from the side, which is what a finished
- * piece of work wears. It is not a star and not a tick, because neither of
- * those means this is mine and I finished it.
- */
-@Composable
-fun SealIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
-    GeoIcon(modifier, color, size) { w, h ->
-        val line = Stroke(w * 0.10f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        // The handle, the collar, and the pad: three strokes, and it reads
-        // as a stamp from across a room.
-        drawLine(
-            color,
-            Offset(w * 0.38f, h * 0.14f),
-            Offset(w * 0.38f, h * 0.42f),
-            line.width,
-            line.cap,
-        )
-        drawLine(
-            color,
-            Offset(w * 0.62f, h * 0.14f),
-            Offset(w * 0.62f, h * 0.42f),
-            line.width,
-            line.cap,
-        )
-        drawRoundRect(
-            color,
-            topLeft = Offset(w * 0.30f, h * 0.42f),
-            size = Size(w * 0.40f, h * 0.16f),
-            cornerRadius = CornerRadius(w * 0.05f),
-            style = line,
-        )
-        drawRoundRect(
-            color,
-            topLeft = Offset(w * 0.16f, h * 0.62f),
-            size = Size(w * 0.68f, h * 0.16f),
-            cornerRadius = CornerRadius(w * 0.05f),
-            style = line,
-        )
-        // The mark it leaves.
-        drawLine(
-            color,
-            Offset(w * 0.24f, h * 0.88f),
-            Offset(w * 0.76f, h * 0.88f),
-            line.width * 0.9f,
-            line.cap,
-        )
     }
 }
 

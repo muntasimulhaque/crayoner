@@ -32,7 +32,7 @@ tasks.register<JavaExec>("makeSheets") {
 
 tasks.register<JavaExec>("makeSounds") {
     group = "tools"
-    description = "Regenerate the four sound effects in app/src/main/res/raw."
+    description = "Regenerate the sound effect in app/src/main/res/raw."
     classpath = sourceSets["main"].runtimeClasspath
     mainClass = "io.github.muntasimulhaque.crayoner.tools.SoundGenKt"
     args = listOf(rootDir.absolutePath)

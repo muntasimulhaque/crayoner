@@ -14,8 +14,6 @@ private val Context.dataStore by preferencesDataStore(name = "crayoner")
 
 /** Everything the shelf needs to draw itself, read in one pass. */
 data class ShelfProgress(
-    /** Pages the child has stamped as finished. */
-    val sealed: Set<String>,
     /** The marks of a page still being worked on, by page id. */
     val drafts: Map<String, String>,
     /** Whether the effects play at all. */
@@ -23,9 +21,9 @@ data class ShelfProgress(
 )
 
 /**
- * Everything the app keeps between runs: which pages the child has stamped,
- * the marks of the page they were last working on, and the sound switch. No
- * accounts, no analytics, nothing that leaves the device.
+ * Everything the app keeps between runs: the marks of the page the child was
+ * last working on, and the sound switch. No accounts, no analytics, nothing
+ * that leaves the device.
  *
  * Only one draft is ever kept: the page the child was last working on. That
  * is enough to survive a phone call or a process death, and it means the
@@ -34,11 +32,6 @@ data class ShelfProgress(
 class CrayonStore(private val context: Context) {
 
     suspend fun load(): ShelfProgress = context.dataStore.data.map { prefs ->
-        val sealed = prefs[SEALED]
-            ?.split(',')
-            ?.filter { id -> Pages.all.any { it.id == id } }
-            ?.toSet()
-            ?: emptySet()
         val draftPage = prefs[DRAFT_PAGE]?.takeIf { id -> Pages.byId(id) != null }
         val draftColors = prefs[DRAFT_COLORS]
         val drafts = if (draftPage != null && !draftColors.isNullOrBlank()) {
@@ -46,24 +39,8 @@ class CrayonStore(private val context: Context) {
         } else {
             emptyMap()
         }
-        ShelfProgress(sealed, drafts, prefs[SOUND_ON] ?: true)
+        ShelfProgress(drafts, prefs[SOUND_ON] ?: true)
     }.first()
-
-    /** Stamps, or unstamps, one page; answers the new set. */
-    suspend fun setSealed(pageId: String, sealed: Boolean): Set<String> {
-        var total: Set<String> = emptySet()
-        context.dataStore.edit { prefs ->
-            val current = prefs[SEALED]
-                ?.split(',')
-                ?.filter { it.isNotBlank() }
-                ?.toMutableSet()
-                ?: mutableSetOf()
-            if (sealed) current += pageId else current -= pageId
-            total = current
-            prefs[SEALED] = current.joinToString(",")
-        }
-        return total
-    }
 
     /**
      * Saves the page being colored. An empty page clears the draft instead,
@@ -92,14 +69,26 @@ class CrayonStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[SOUND_ON] = on }
     }
 
+    /**
+     * Drops the record of finished pictures that versions up to 0.3 kept.
+     * The app has no finished state any more, so the old key is removed the
+     * first time the shelf is read; a key that is already gone is not a
+     * change and is not written back.
+     */
+    suspend fun forgetFinished() {
+        context.dataStore.edit { prefs -> prefs.remove(FINISHED_LEGACY) }
+    }
+
     /** Loads a page's saved marks back, dropping anything malformed. */
     fun draftFor(pageId: String, drafts: Map<String, String>): Progress =
         Progress.parse(drafts[pageId])
 
     private companion object {
-        // The key keeps its old spelling: a child upgrading from a build
-        // where the mark was a star keeps the pictures they had finished.
-        val SEALED = stringPreferencesKey("finished")
+        /**
+         * The key 0.3 and earlier wrote the finished set to. It is not read
+         * any more; it is only cleaned up.
+         */
+        val FINISHED_LEGACY = stringPreferencesKey("finished")
         val DRAFT_PAGE = stringPreferencesKey("draft_page")
         val DRAFT_COLORS = stringPreferencesKey("draft_colors")
         val SOUND_ON = booleanPreferencesKey("sound_on")

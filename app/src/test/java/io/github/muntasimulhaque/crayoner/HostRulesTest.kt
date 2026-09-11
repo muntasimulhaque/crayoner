@@ -7,14 +7,13 @@ import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
-import io.github.muntasimulhaque.crayoner.host.ShelfState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The rules the host rests on, tested on the JVM with no device: the shelf's
+ * The rules the host rests on, tested on the JVM with no device: the page's
  * answers, the way a hand is read into marks, and the way marks come back
  * from a save. The ViewModel itself is Android flavored (DataStore,
  * SoundPool) and is exercised on the emulator by the capture run; everything
@@ -23,20 +22,6 @@ import org.junit.Test
 class HostRulesTest {
 
     private val page: Page = Pages.byId("sail") ?: error("the sail page is gone")
-
-    @Test
-    fun theShelfKnowsWhatIsSealedAndWhatIsStarted() {
-        val shelf = ShelfState(
-            sealed = setOf("sail"),
-            drafts = mapOf("rainbow" to "FF76D7EA(0.5,0.5)"),
-        )
-        assertTrue(shelf.isSealed("sail"))
-        assertFalse(shelf.isSealed("tree"))
-        assertTrue(shelf.hasDraft("rainbow"))
-        assertFalse(shelf.hasDraft("tree"))
-        // A blank draft string is not a draft: a page rubbed clean clears it.
-        assertFalse(ShelfState(drafts = mapOf("rainbow" to "")).hasDraft("rainbow"))
-    }
 
     @Test
     fun aPointOnThePaperResolvesToTheAreaTheChildSees() {

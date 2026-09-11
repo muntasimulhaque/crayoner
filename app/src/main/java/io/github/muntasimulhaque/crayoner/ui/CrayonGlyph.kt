@@ -67,6 +67,11 @@ internal fun crayonNameRes(argb: Long): Int = when (argb) {
 /**
  * A crayon drawn in the book's own hand. Both the tray and the box draw
  * through here, so a crayon is the same object wherever it appears.
+ *
+ * [lineBoost] thickens the ink line. It exists for the one crayon in hand in
+ * the box, which lies a little longer than its neighbors and wears a heavier
+ * outline: that is its whole selection mark, and there is no ring, plate or
+ * shadow behind it.
  */
 @Composable
 fun CrayonGlyph(
@@ -74,6 +79,7 @@ fun CrayonGlyph(
     modifier: Modifier = Modifier,
     contact: Boolean = false,
     lying: Boolean = false,
+    lineBoost: Float = 1f,
 ) {
     val ink = CrayonerColors.Ink
     // The wrapper is the crayon's own wax, barely lightened: a pale sleeve
@@ -94,6 +100,7 @@ fun CrayonGlyph(
             top = 0f,
             length = length,
             lying = lying,
+            lineBoost = lineBoost,
         )
     }
 }
@@ -123,12 +130,13 @@ internal fun DrawScope.drawCrayonShape(
     top: Float,
     length: Float,
     lying: Boolean,
+    lineBoost: Float = 1f,
 ) {
     // The shape is measured in the crayon's own thicknesses, so one unit is
     // the thickness on both axes and the crayon cannot be stretched.
     val unit = length / CrayonShape.LENGTH.toFloat()
     val line = Stroke(
-        (unit * CrayonShape.LINE.toFloat()).coerceAtLeast(1f),
+        (unit * CrayonShape.LINE.toFloat() * lineBoost).coerceAtLeast(1f),
         cap = StrokeCap.Round,
         join = StrokeJoin.Round,
     )

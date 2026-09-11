@@ -110,10 +110,9 @@ class ScreenshotTest {
     }
 
     /**
-     * The eight store captures, the Play listing maximum per form factor.
-     * The set leads with the shelf, shows the page from bare lines to a
-     * finished picture, includes the box of colors and the sample held up,
-     * and closes on a picture the child has stamped.
+     * The seven store captures. The set leads with the wall, walks the page
+     * from bare lines to a finished picture, and shows the two things a hand
+     * holds: the box of colors, and the rubber at work.
      */
     @Test
     fun captureStoreScreenshots() {
@@ -122,33 +121,23 @@ class ScreenshotTest {
         shot(scenario, outDir, "01_home") {
             HomeScreen(shelf = ShelfState(), onOpen = {}, onSound = {})
         }
-        shot(scenario, outDir, "02_home_progress") {
-            HomeScreen(
-                shelf = ShelfState(
-                    sealed = setOf("sail", "rainbow", "house"),
-                    drafts = mapOf("balloon" to "FFEE204D(0.4,0.3;0.5,0.4)"),
-                ),
-                onOpen = {},
-                onSound = {},
-            )
-        }
-        shot(scenario, outDir, "03_blank") {
+        shot(scenario, outDir, "02_blank") {
             play(blankState("sail"))
         }
-        shot(scenario, outDir, "04_box") {
+        shot(scenario, outDir, "03_box") {
             play(blankState("kite").copy(crayon = Crayons.SKY_BLUE, boxOpen = true))
         }
-        shot(scenario, outDir, "05_coloring") {
+        shot(scenario, outDir, "04_coloring") {
             play(coloredState("kite", crayon = Crayons.RED))
+        }
+        shot(scenario, outDir, "05_rubbed") {
+            play(erasedState("house"))
         }
         shot(scenario, outDir, "06_peek") {
             play(coloredState("rainbow", crayon = Crayons.BLUE).copy(peeking = true))
         }
-        shot(scenario, outDir, "07_most") {
-            play(erasedState("house"))
-        }
-        shot(scenario, outDir, "08_done") {
-            play(coloredState("icecream", crayon = Crayons.CARNATION_PINK, sealed = true))
+        shot(scenario, outDir, "07_whole") {
+            play(wholeState("icecream", crayon = Crayons.CARNATION_PINK))
         }
         scenario.close()
     }
@@ -165,7 +154,6 @@ class ScreenshotTest {
             onPick = {},
             onErase = {},
             onOpenBox = {},
-            onSeal = {},
             onHome = {},
             onSound = {},
             onPeek = {},
@@ -186,7 +174,6 @@ class ScreenshotTest {
     private fun coloredState(
         id: String,
         crayon: Long,
-        sealed: Boolean = false,
         erasing: Boolean = false,
     ): Screen.Coloring {
         val page = page(id)
@@ -199,7 +186,17 @@ class ScreenshotTest {
             progress = Progress(strokes),
             crayon = crayon,
             erasing = erasing,
-            sealed = sealed,
+        )
+    }
+
+    /** A page the child has taken all the way: every area has been colored. */
+    private fun wholeState(id: String, crayon: Long): Screen.Coloring {
+        val page = page(id)
+        val strokes = page.regions.indices.flatMap { index -> sweeps(page.regions[index]) }
+        return Screen.Coloring(
+            page = page,
+            progress = Progress(strokes),
+            crayon = crayon,
         )
     }
 

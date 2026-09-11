@@ -14,10 +14,10 @@ the whole thing is in this repository.
 - **Privacy policy:** [online](https://muntasimulhaque.github.io/crayoner/privacy.html) · [in this repo](docs/privacy.html)
 
 <p align="center">
-  <img src="play-store/screenshots/phone/01_home.png" width="170" alt="The picture shelf">
-  <img src="play-store/screenshots/phone/03_blank.png" width="170" alt="A new page, taped to the desk">
-  <img src="play-store/screenshots/phone/05_coloring.png" width="170" alt="Half colored, one crayon in hand">
-  <img src="play-store/screenshots/phone/08_done.png" width="170" alt="The finished picture">
+  <img src="play-store/screenshots/phone/01_home.png" width="170" alt="The picture wall">
+  <img src="play-store/screenshots/phone/02_blank.png" width="170" alt="A new page, taped to the desk">
+  <img src="play-store/screenshots/phone/04_coloring.png" width="170" alt="Half colored, one crayon in hand">
+  <img src="play-store/screenshots/phone/07_whole.png" width="170" alt="A picture colored all the way">
 </p>
 
 ## What it is
@@ -28,12 +28,12 @@ finished picture in the top bar, a tap away.
 
 | | |
 |---|---|
-| **The picture wall** | Every picture hung like a child's drawing, taped to the wall with washi tape, each leaning at a small angle of its own. One they have stamped wears a wax seal. |
+| **The picture wall** | Every picture hung like a child's drawing, taped to the wall with washi tape, each leaning at a small angle of its own. Nothing on the wall is locked, stamped or marked: the pictures are all there from the first launch. |
 | **A page** | A real sheet of paper, taped to the desk at its own corners. The finished picture sits in the bar as one more round button: one tap holds it up large, one tap puts it back. |
-| **The crayons** | One crayon and one rubber, the two things a hand actually holds. Press the crayon and all thirty two colors of a real box open over the page, with the color in hand standing up out of it. Every area of every picture asks for a color that box holds. |
-| **Coloring** | Your finger draws the crayon. Nothing is filled in for you: a mark follows your hand, lays down wax the way wax behaves, and covers the printed lines it is dragged over. Coloring makes the quiet rubbing sound a crayon really makes. |
+| **The crayons** | One crayon and one rubber, the two things a hand actually holds. Press the crayon and all thirty two colors of a real box open over the page, with the color in hand a little longer and drawn with a heavier line. Every area of every picture asks for a color that box holds. |
+| **Coloring** | Your finger draws the crayon. Nothing is filled in for you: a mark follows your hand, lays down wax the way wax behaves, and covers the printed lines it is dragged over. |
 | **The rubber** | Press it and your crayon becomes an eraser: it takes the wax off and leaves the printed line, exactly as a rubber does on paper. Nothing is ever wiped. |
-| **Finishing** | No progress bar, no score, and nothing that measures the work. When the child decides a picture is done, they press the seal themselves and their picture is stamped and hung on the wall. Only the child ever says finished. |
+| **No score** | No progress bar, no timer, no stamp, no fail state, and nothing that measures the work. The app never decides that a picture is finished, because a coloring is finished when the child says so, and that is not the app's business. |
 
 Every mark is saved a moment after it is finished, so a phone call, a
 rotation or a killed app costs nothing. There is no score, no timer, no fail
@@ -46,8 +46,9 @@ state, and no picture is ever locked.
   of phone or tablet, held either way.
 - **From an Islamic perspective.** No people, no animals, no faces, no
   mascots and no characters anywhere, in the pictures, the icon or the store
-  art. Shape and color carry the warmth instead. No music: every sound is a
-  short, deliberately inharmonic effect or one struck bell.
+  art. Shape and color carry the warmth instead. No music and no pitch: the
+  app makes one short, inharmonic rustle when a crayon or the rubber is
+  picked up or put down, and is silent while the child colors.
 - **Private by construction.** No ads, no trackers, no analytics, no
   accounts, no third-party SDKs and no internet access at all. The app
   declares zero permissions, so there is nothing for it to collect or send.
@@ -63,7 +64,7 @@ state, and no picture is ever locked.
 ./gradlew :core:test :app:testReleaseUnitTest   # the rules
 ./gradlew :app:assembleRelease                  # R8 release
 ./gradlew :tools:makeSheets                     # every page, for review
-./gradlew :tools:makeSounds                     # regenerate the three effects
+./gradlew :tools:makeSounds                     # regenerate the sound effect
 ./gradlew :tools:makeIcons :tools:makeArt       # launcher icons and store art
 ```
 
@@ -77,7 +78,7 @@ four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
 never be updated again.
 
 A second workflow renders the Play Store screenshots on phone, 7" and 10"
-emulators: eight scenes per form factor, the Play Console maximum.
+emulators: seven scenes per form factor.
 
 ## Tech
 

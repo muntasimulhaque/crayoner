@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,7 +50,6 @@ fun PlayScreen(
     onPick: (Long) -> Unit,
     onErase: (Boolean) -> Unit,
     onOpenBox: (Boolean) -> Unit,
-    onSeal: () -> Unit,
     onHome: () -> Unit,
     onSound: (Boolean) -> Unit,
     onPeek: (Boolean) -> Unit,
@@ -61,11 +59,8 @@ fun PlayScreen(
     // One answer per finished mark, and only one: the small touch of wax that
     // says the hand did something. It is never a judgment of what the mark
     // did, because the app has no opinion about where the color went.
-    LaunchedEffect(state.stamp) {
-        if (state.stamp != 0L) haptics.paint()
-    }
-    LaunchedEffect(state.sealStamp) {
-        if (state.sealStamp != 0L) haptics.done()
+    LaunchedEffect(state.marks) {
+        if (state.marks != 0L) haptics.paint()
     }
 
     Box(modifier = Modifier.fillMaxSize().background(CrayonerColors.Desk)) {
@@ -84,8 +79,6 @@ fun PlayScreen(
                     soundOn = soundOn,
                     onSound = onSound,
                     onSample = { onPeek(true) },
-                    onSeal = onSeal,
-                    sealed = state.sealed,
                     page = state.page,
                     announce = state.progress.strokes.isEmpty(),
                 )
@@ -165,7 +158,7 @@ fun PlayScreen(
  */
 private val WIDE_AT = 640.dp
 
-/** How tall the bar is, in both shapes. Home, the seal, the sample, sound. */
+/** How tall the bar is, in both shapes. Home, the sample, the sound switch. */
 private val BAR_HEIGHT = 66.dp
 
 /** How much room the two coins are given under the sheet on a phone. */
@@ -175,13 +168,8 @@ private val TRAY_HEIGHT = 126.dp
 private val TOOLS_WIDTH = 300.dp
 
 /**
- * Home on the left, the seal, then the sample and the sound switch. One
- * size, one shape and one shadow, so a small hand learns the row once.
- *
- * The seal is here rather than in the tray because it is not a tool: the
- * child picks up a crayon and a rubber to work with, and stamps the page when
- * the work is done. It is the one button that says I am finished, and it is
- * the only thing in the app that ever says so.
+ * Home on the left, then the sample and the sound switch. One size, one
+ * shape and one shadow, so a small hand learns the row once.
  */
 @Composable
 private fun TopBar(
@@ -189,8 +177,6 @@ private fun TopBar(
     soundOn: Boolean,
     onSound: (Boolean) -> Unit,
     onSample: () -> Unit,
-    onSeal: () -> Unit,
-    sealed: Boolean,
     page: Page,
     announce: Boolean,
 ) {
@@ -210,35 +196,15 @@ private fun TopBar(
             HomeIcon(color = CrayonerColors.Ink, size = 26.dp)
         }
         Spacer(Modifier.weight(1f))
-        // The sample stands beside the seal: the two things a child reaches
-        // for while working, look at the picture and finish the picture.
+        // The sample stands at the right, one tap from the page: look at the
+        // picture, look at the sheet, color.
         SampleButton(onClick = onSample, page = page, announce = announce)
-        SealButton(sealed = sealed, onClick = onSeal)
         CircleButton(
             onClick = { onSound(!soundOn) },
             background = CrayonerColors.Card,
             label = stringResource(if (soundOn) R.string.sound_on else R.string.sound_off),
         ) {
             SoundIcon(on = soundOn, color = CrayonerColors.Ink, size = 26.dp)
-        }
-    }
-}
-
-/** The stamp: press it when the picture is done, press it again to take it off. */
-@Composable
-private fun SealButton(sealed: Boolean, onClick: () -> Unit) {
-    val label = stringResource(if (sealed) R.string.unseal else R.string.seal)
-    CircleButton(
-        onClick = onClick,
-        background = CrayonerColors.Card,
-        label = label,
-    ) {
-        if (sealed) {
-            // Already stamped: the button wears the stamp itself, so the
-            // child can see from the bar that this picture has been sealed.
-            WaxSeal(modifier = Modifier.size(SealSize))
-        } else {
-            SealIcon(color = CrayonerColors.Ink, size = 26.dp)
         }
     }
 }

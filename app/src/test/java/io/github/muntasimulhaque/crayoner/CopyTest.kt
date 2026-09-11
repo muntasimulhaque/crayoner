@@ -5,11 +5,14 @@ import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.ui.areaLabel
 import io.github.muntasimulhaque.crayoner.ui.areaNameRes
 import io.github.muntasimulhaque.crayoner.ui.crayonNameRes
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.w3c.dom.Element
 
 /**
  * The two places where the app's own tables can drift: the word for a crayon
@@ -73,12 +76,40 @@ class CopyTest {
     }
 
     @Test
-    fun theAppNeverSaysWellDoneOnItsOwn() {
-        // The one word of praise in the app belongs to the child's own
-        // stamp, and the string table holds no other. A build that grew a
-        // congratulations screen would have to grow a string for it first,
-        // and this is where that would be caught.
-        assertTrue(R.string.seal != 0)
-        assertNotEquals(R.string.seal, R.string.app_name)
+    fun noWordInTheAppJudgesOrFinishes() {
+        // Every word a person can read in this app lives in the one string
+        // table, so that is where a build that grew a judgment would have to
+        // put it first. Nothing here says a picture is done, and nothing
+        // praises or corrects a child: there is no finished state anywhere,
+        // and this is where one would be caught.
+        val table = stringTable()
+        assertTrue("the string table moved", table.size >= 20)
+        val words = listOf(
+            "done", "finish", "seal", "stamp",
+            "congrat", "well done", "wrong", "score", "try again",
+        )
+        for ((name, text) in table) {
+            for (word in words) {
+                val says = "$name $text".lowercase()
+                assertFalse(
+                    "the string $name carries \"$word\": $text",
+                    says.contains(word),
+                )
+            }
+        }
+    }
+
+    /** The one string table, by name, read straight from the source. */
+    private fun stringTable(): Map<String, String> {
+        val file = File("src/main/res/values/strings.xml")
+        assertTrue("no string table at ${file.absolutePath}", file.isFile)
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val nodes = document.getElementsByTagName("string")
+        val out = LinkedHashMap<String, String>()
+        for (i in 0 until nodes.length) {
+            val element = nodes.item(i) as? Element ?: continue
+            out[element.getAttribute("name")] = element.textContent.orEmpty()
+        }
+        return out
     }
 }

@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -62,10 +61,10 @@ import kotlinx.coroutines.withContext
  * Every card shows the finished picture, because the picture is the promise
  * the card makes: tap it and this is what you get to color.
  *
- * The wall never changes what it holds: all sixteen are here from the first
- * launch. Nothing on it is locked, and the two marks it can carry are the
- * child's own: a wax seal on the pictures they stamped as done, and a small
- * crayon beside the name of the one they were last working on.
+ * The wall never changes what it holds and never marks it: all sixteen are
+ * here from the first launch, none of them is locked, none of them is
+ * stamped, and nothing on the wall says where the child left off. A page
+ * they were working on simply comes back the way they left it.
  */
 @Composable
 fun HomeScreen(
@@ -185,8 +184,6 @@ private fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
             items(pages, key = { it.id }) { page ->
                 HungPicture(
                     page = page,
-                    sealed = shelf.isSealed(page.id),
-                    started = shelf.hasDraft(page.id),
                     nameSize = nameSize,
                     onOpen = { onOpen(page.id) },
                 )
@@ -235,17 +232,10 @@ private fun rememberNameFontSize(names: List<String>, textWidth: Dp): TextUnit {
 @Composable
 private fun HungPicture(
     page: Page,
-    sealed: Boolean,
-    started: Boolean,
     nameSize: TextUnit,
     onOpen: () -> Unit,
 ) {
     val name = stringResource(pageNameRes(page.id))
-    val mark = when {
-        sealed -> stringResource(R.string.finished_mark)
-        started -> stringResource(R.string.started_mark)
-        else -> stringResource(R.string.page_plain)
-    }
     // A small, stable tilt per picture: enough that the wall looks placed by
     // hand, small enough that nothing ever looks broken. Derived from the id
     // so a picture hangs at the same angle every single launch.
@@ -262,7 +252,7 @@ private fun HungPicture(
                 .clip(RoundedCornerShape(6.dp))
                 .background(CrayonerColors.Card)
                 .clickable(role = Role.Button, onClick = onOpen)
-                .semantics { contentDescription = "$name, $mark" }
+                .semantics { contentDescription = name }
                 // A taller top margin, so the tape crosses the mount's own
                 // paper and only kisses the picture's top edge. The picture
                 // is the reason the card exists and no art may hide behind
@@ -287,41 +277,15 @@ private fun HungPicture(
                     .align(Alignment.TopCenter)
                     .padding(top = 4.dp),
             )
-            if (sealed) {
-                // The seal, pressed into the corner of the work itself: the
-                // picture the child stamped, stamped.
-                WaxSeal(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp)
-                        .size(SealSize),
-                )
-            }
         }
         Spacer(Modifier.height(6.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            if (started && !sealed) {
-                // A small crayon beside the name, drawn from the same geometry
-                // as the crayon in the tray: the picture the child was last
-                // working on.
-                CrayonGlyph(
-                    color = CrayonerColors.Coral,
-                    lying = true,
-                    modifier = Modifier.size(width = 26.dp, height = 9.dp),
-                )
-                Spacer(Modifier.width(5.dp))
-            }
-            Text(
-                text = name,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = nameSize),
-                color = CrayonerColors.Ink,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-            )
-        }
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = nameSize),
+            color = CrayonerColors.Ink,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
     }
 }
 
