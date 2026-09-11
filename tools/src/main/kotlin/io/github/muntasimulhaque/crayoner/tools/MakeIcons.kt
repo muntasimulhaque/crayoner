@@ -19,15 +19,19 @@ import javax.imageio.ImageIO
  * The launcher icon, drawn from code so every PNG has exactly one author.
  *
  * The mark: one crayon, the tool the whole app is about, held the way the
- * app's own tray draws it, with its point down and its body leaning a
- * little, as if it had just come off a page. It is drawn in a crayon's real
- * material: the wax color of the tip, a paper wrapper in the wax's own hue,
- * the two dark rules a real wrapper wears, the same wax grain every colored
- * area in the book carries, and the ink line the app draws everything in.
+ * app's own tray draws it, with its point down and its body leaning, as if
+ * it had just come off a page. It is drawn in a crayon's real material: the
+ * wax color of the tip, a paper wrapper in the wax's own hue, the two dark
+ * rules a real wrapper wears, the same wax grain every colored area in the
+ * book carries, and the ink line the app draws everything in.
  *
  * The point is down for two reasons. A crayon is used point down, so that is
  * the way it looks in a hand and the way a child recognizes it; and a crayon
  * standing on its point cannot read as anything but a crayon.
+ *
+ * The whole mark leans the other way from the wall's own crayon and points
+ * the other way round: the app's icon is the one mark that faces inward at
+ * the launcher, and nothing else in the app is drawn mirrored.
  *
  * Rendered three ways: the legacy tile for API 24-25, the adaptive
  * foreground for API 26+, and a white monochrome sibling (the crayon
@@ -80,7 +84,15 @@ internal fun paintCrayon(g: Graphics2D, size: Int, mono: Boolean, inset: Double 
     // One turn around the canvas center. The half turn stands the crayon on
     // its point, and the lean is the wrist: because both happen here, every
     // layer and every density lean by exactly the same amount.
+    //
+    // The whole mark is then mirrored about the canvas center, which is what
+    // makes the launcher icon the wall's crayon facing the other way. The
+    // mirror goes on first in code and so lands outermost in the transform,
+    // which is what keeps it a mirror of the finished drawing rather than a
+    // change to the drawing itself: same crayon, same lean, other way round.
     val lean = -14.0
+    g.translate(size.toDouble(), 0.0)
+    g.scale(-1.0, 1.0)
     g.rotate(Math.toRadians(180.0), size / 2.0, size / 2.0)
     g.rotate(Math.toRadians(lean), size / 2.0, size / 2.0)
 
@@ -131,20 +143,26 @@ internal fun paintCrayon(g: Graphics2D, size: Int, mono: Boolean, inset: Double 
         // The wax grain, the same tile the pages carry, so the mark is made
         // of the same material as the pictures it draws.
         paintGrain(g, body)
-        // The two dark rules a real wrapper wears.
+        // The two dark rules a real wrapper wears. They are drawn as floats:
+        // rounding them to whole pixels would make the mark a hair different
+        // on the two sides of the mirror that turns it the other way round.
         g.color = shade
         g.stroke = BasicStroke(
             (thickness * 0.077).toFloat().coerceAtLeast(1f),
             BasicStroke.CAP_ROUND,
             BasicStroke.JOIN_ROUND,
         )
-        g.drawLine(
-            pxX(band.x).toInt(), pxY(band.y + 0.012).toInt(),
-            pxX(band.right).toInt(), pxY(band.y + 0.012).toInt(),
+        g.draw(
+            java.awt.geom.Line2D.Double(
+                pxX(band.x), pxY(band.y + 0.012),
+                pxX(band.right), pxY(band.y + 0.012),
+            ),
         )
-        g.drawLine(
-            pxX(band.x).toInt(), pxY(band.bottom - 0.012).toInt(),
-            pxX(band.right).toInt(), pxY(band.bottom - 0.012).toInt(),
+        g.draw(
+            java.awt.geom.Line2D.Double(
+                pxX(band.x), pxY(band.bottom - 0.012),
+                pxX(band.right), pxY(band.bottom - 0.012),
+            ),
         )
     }
 

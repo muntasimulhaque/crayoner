@@ -17,11 +17,12 @@ import kotlin.math.ceil
 
 /**
  * The Play Store art, drawn from the same pictures and the same mark as the
- * app: the brand coral ground, one crayon, the name, and one line under it.
+ * app: the brand coral ground, one crayon, the name written in the app's own
+ * hand, and one line under it.
  *
  * The banner's left side is a real coloring page from the book (the
  * sailboat), half finished: the child's own view of the app, in the app's
- * own colors.
+ * own colors, with the wax laid down by the same code the app colors with.
  *
  * Outputs (never hand-edited; regenerate with :tools:makeArt):
  *   play-store/feature-graphic-1024x500.png
@@ -74,34 +75,32 @@ object MakeArt {
                     corner.first - 38.0, corner.second - 11.0, 76.0, 22.0,
                 ),
             )
-            g.color = Color(0xD6F6E7C4.toInt(), true)
+            g.color = Color(0xE0EFD9A8.toInt(), true)
             g.fill(strip)
-            g.color = Color(0x38A08B5E.toInt(), true)
-            g.stroke = BasicStroke(1.5f)
+            g.color = Color(0x599C7F45.toInt(), true)
+            g.stroke = BasicStroke(2.0f)
             g.draw(strip)
         }
         val plateG = g.create(px, py, plate, plate) as Graphics2D
         val page = Pages.byId("sail") ?: error("the sail page is gone")
-        // Everything printed, and then the child's hand: the sky, the clouds,
-        // the sea and the sail scribbled in, the boat and its mast left for
-        // next time. Two marks even miss nothing: a real page is like that.
-        RenderKit.renderPage(plateG, page, plate.toDouble(), emptyMap(), grain = false)
-        val half = listOf("sky", "cloud", "cloud_high", "sea")
-            .mapNotNull { id -> page.region(page.indexOfRegion(id)) }
-            .flatMap { region ->
-                listOf(
-                    Strokes.scribble(region, region.fillArgb),
-                    Strokes.scribble(region, region.fillArgb, 0.012),
-                )
-            }
-        RenderKit.renderStrokes(plateG, half, plate.toDouble())
+        // Everything printed, and then the child's own hand: the sky, the
+        // clouds and the sea rubbed in with real wax, the sail and the boat
+        // still bare lines waiting for next time. The wax is the same wax the
+        // app lays down, so the banner shows the app and not an artist's
+        // idea of it.
+        val started = setOf("sky", "cloud", "cloud_high", "sea")
+            .mapNotNull { id -> page.indexOfRegion(id).takeIf { it >= 0 } }
+        val half = page.regions.indices
+            .filter { it in started }
+            .associateWith { page.regions[it].fillArgb }
+        RenderKit.renderPage(plateG, page, plate.toDouble(), half)
         plateG.dispose()
 
-        drawCleanString(g, "Crayoner", "baloo2_extrabold.ttf", 116f, 0xFFFFFDF8.toInt(), 486f, 246f, rootDir)
+        drawCleanString(g, "Crayoner", "chewy.ttf", 124f, 0xFFFFFDF8.toInt(), 486f, 250f, rootDir)
         drawCleanString(
             g,
             "Color the picture, just like the book.",
-            "baloo2_bold.ttf",
+            "chewy.ttf",
             30f,
             0xFFF7DCD7.toInt(),
             490f,
@@ -126,11 +125,14 @@ fun main(args: Array<String>) {
 }
 
 /**
- * Baloo slices above 96 pt under Java2D (gaps across the stems), so store
- * words render small and scale up. Same font files the app bundles, same
- * shapes, verified clean.
+ * The app's own face, loaded from the files it bundles, so no word in the
+ * store art is set in a font the app does not own.
+ *
+ * Chewy has thin joins that Java2D fills in when it is asked for a very
+ * large point size, so the words are laid out small and scaled up: the same
+ * shapes the device draws, with none of the joins lost.
  */
-internal fun balooFont(rootDir: File, file: String, size: Float): java.awt.Font =
+internal fun brandFont(rootDir: File, file: String, size: Float): java.awt.Font =
     java.awt.Font.createFont(
         java.awt.Font.TRUETYPE_FONT,
         File(rootDir, "app/src/main/res/font/$file"),
@@ -148,7 +150,7 @@ internal fun drawCleanString(
 ) {
     val base = 96f
     val k = target / base
-    val font = balooFont(rootDir, file, base)
+    val font = brandFont(rootDir, file, base)
     val tmp = BufferedImage(4, 4, BufferedImage.TYPE_INT_ARGB)
     val g0 = tmp.createGraphics()
     g0.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)

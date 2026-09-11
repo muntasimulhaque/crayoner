@@ -96,7 +96,7 @@ private fun card(g: Graphics2D, page: Page, x: Int, y: Int, sample: Boolean, roo
 }
 
 private fun drawText(g: Graphics2D, text: String, centerX: Int, baselineY: Int, rootDir: File) {
-    val font = balooFont(rootDir, "baloo2_bold.ttf", 24f)
+    val font = brandFont(rootDir, "chewy.ttf", 24f)
     g.font = font
     g.color = INK
     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)

@@ -5,25 +5,33 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.outputStream
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.exp
+import kotlin.math.sin
 import kotlin.system.exitProcess
 
 /**
- * Crayoner's four sound effects, synthesized to spec: tiny, license free,
+ * Crayoner's three sound effects, synthesized to spec: tiny, license free,
  * and deterministic down to the byte.
  *
  * The religious constraint is a design input here, not an afterthought:
- * there is no music in this app. The paint, the tick and the rustle are
- * deliberately inharmonic: short noise led bursts with no pitched partials,
- * so they read as physical events (a crayon touching paper, a color landing
- * where the picture asks, a crayon leaving its seat) rather than as notes.
- * Only [chime] has a pitch, it is a single struck bell, and the app never
- * plays it twice inside 1200 ms, because two pitched notes in sequence make
- * an interval and intervals are where melody starts.
+ * there is no music in this app. The rub and the rustle are deliberately
+ * inharmonic: noise, shaped, with no pitched partials at all, so they read
+ * as physical events (wax dragged over paper, a crayon lifted from its seat)
+ * rather than as notes. Only [chime] has a pitch, it is a single struck
+ * bell, and the app never plays it twice inside 1200 ms, because two pitched
+ * notes in sequence make an interval and intervals are where melody starts.
+ *
+ * [rub] is also the only sound in the app that loops: a real crayon makes a
+ * quiet, continuous scratch for as long as the hand keeps moving, so the
+ * loop is built to be seamless, out of harmonics of its own length, and it
+ * carries no attack and no decay of its own. The hand is the envelope.
  */
 object SoundGen {
 
     private const val RATE = 44100
-    private val NAMES = listOf("sfx_paint", "sfx_tick", "sfx_rustle", "sfx_chime")
+    private val NAMES = listOf("sfx_rub", "sfx_rustle", "sfx_chime")
 
     // -- DSP ------------------------------------------------------------------
 
@@ -37,7 +45,7 @@ object SoundGen {
                 i.toDouble() / a
             } else {
                 val t = (i - a).toDouble() / denom
-                kotlin.math.exp(-curve * t)
+                exp(-curve * t)
             }
         }
         return out
@@ -48,7 +56,7 @@ object SoundGen {
 
     /** One pole low pass; enough to turn white noise into something soft. */
     private fun lowpass(samples: DoubleArray, cutoff: Double): DoubleArray {
-        val alpha = 1.0 - kotlin.math.exp(-2.0 * Math.PI * cutoff / RATE)
+        val alpha = 1.0 - exp(-2.0 * PI * cutoff / RATE)
         val out = DoubleArray(samples.size)
         var prev = 0.0
         for (i in samples.indices) {
@@ -60,7 +68,7 @@ object SoundGen {
 
     /** A gentle high pass, so a noise led effect keeps a little air. */
     private fun highpass(samples: DoubleArray, cutoff: Double): DoubleArray {
-        val alpha = 1.0 / (1.0 + 2.0 * Math.PI * cutoff / RATE)
+        val alpha = 1.0 / (1.0 + 2.0 * PI * cutoff / RATE)
         val out = DoubleArray(samples.size)
         var prevIn = 0.0
         var prevOut = 0.0
@@ -72,52 +80,91 @@ object SoundGen {
         return out
     }
 
-    /** Sum of damped sinusoids. Non integer ratios keep it inharmonic. */
-    private fun partials(n: Int, freqs: DoubleArray, decays: DoubleArray, gains: DoubleArray): DoubleArray {
+    /**
+     * Noise that loops: every partial is a whole number of cycles across the
+     * buffer, so the last sample runs into the first without a step. A rub
+     * that clicks once per loop is a metronome, and a metronome is music's
+     * front door.
+     *
+     * The band is the sound of the thing: a crayon over paper lives between
+     * roughly 1.5 and 7 kHz, with more energy up top when the wax is thin and
+     * a duller, grainier middle when it is laid on thick.
+     */
+    private fun loopNoise(
+        seconds: Double,
+        rng: CpythonRandom,
+        lowHz: Double,
+        highHz: Double,
+        partials: Int = 420,
+    ): DoubleArray {
+        val n = (seconds * RATE).toInt()
         val out = DoubleArray(n)
-        for ((layer, f) in freqs.withIndex()) {
-            val d = decays[layer]
-            val g = gains[layer]
+        val base = 1.0 / seconds
+        val lo = (lowHz / base).toInt().coerceAtLeast(1)
+        val hi = (highHz / base).toInt().coerceAtLeast(lo + 1)
+        for (k in lo..hi) {
+            // Sparse picks across the band: adjacent bins in phase agreement
+            // would add up to a tone, and a tone is not paper.
+            if (rng.uniform(0.0, 1.0) > 0.32) continue
+            val f = k * base
+            val a = rng.uniform(-1.0, 1.0)
+            val b = rng.uniform(-1.0, 1.0)
+            // Louder through the middle of the band, quieter at both ends.
+            val t = (f - lowHz) / (highHz - lowHz)
+            val tilt = sin(PI * t.coerceIn(0.0, 1.0))
+            val amp = tilt * 0.55 + 0.45
+            val step = 2.0 * PI * f / RATE
+            var phase = 0.0
             for (i in 0 until n) {
-                val t = i.toDouble() / RATE
-                out[i] += g * kotlin.math.sin(2.0 * Math.PI * f * t) * kotlin.math.exp(-t / d)
+                out[i] += amp * (a * cos(phase) + b * sin(phase))
+                phase += step
             }
         }
         return out
     }
 
-    private fun mix(vararg layers: DoubleArray): DoubleArray {
-        val n = layers.maxOf { it.size }
-        val out = DoubleArray(n)
-        for (layer in layers) for (i in layer.indices) out[i] += layer[i]
-        return out
+    /** Scales a buffer to its own peak, so the peak is one. */
+    private fun normalize(samples: DoubleArray): DoubleArray {
+        val high = samples.maxOf { kotlin.math.abs(it) }.takeIf { it > 0.0 } ?: 1.0
+        return DoubleArray(samples.size) { samples[it] / high }
     }
 
     private operator fun DoubleArray.times(k: Double): DoubleArray = DoubleArray(size) { this[it] * k }
 
+    private operator fun DoubleArray.plus(other: DoubleArray): DoubleArray =
+        DoubleArray(size) { this[it] + other[it] }
+
     private fun applyEnv(samples: DoubleArray, env: DoubleArray): DoubleArray =
         DoubleArray(samples.size) { samples[it] * env[it] }
 
-    // -- The four sounds -------------------------------------------------------
+    // -- The three sounds ------------------------------------------------------
 
-    /** 90 ms: a crayon touching paper. A soft, very quiet scratch. */
-    private fun paint(rng: CpythonRandom): DoubleArray {
-        val n = (0.090 * RATE).toInt()
-        val body = lowpass(highpass(noise(n, rng), 900.0), 5200.0) * 0.5
-        return applyEnv(body, envelope(n, 0.004, 0.026, curve = 3.6))
-    }
-
-    /** 70 ms: a color landing where the picture asks. A small wooden tick. */
-    private fun tick(rng: CpythonRandom): DoubleArray {
-        val n = (0.070 * RATE).toInt()
-        val body = lowpass(noise(n, rng), 3600.0) * 0.45
-        val knock = partials(
-            n,
-            doubleArrayOf(420.0, 690.0, 1040.0),
-            doubleArrayOf(0.016, 0.010, 0.006),
-            doubleArrayOf(0.8, 0.35, 0.15),
-        )
-        return applyEnv(mix(body, knock), envelope(n, 0.0008, 0.022, curve = 4.5))
+    /**
+     * 1.20 s: a crayon moving over paper, made to be played in a loop while
+     * the child's finger is down. It has no attack and no decay of its own,
+     * because the finger is the envelope: the sound starts when the wax
+     * touches the paper and stops when it lifts, exactly as it does in a
+     * room. The grain of the wax is the amplitude modulation: a hand does not
+     * push evenly, and the paper's tooth makes it catch, several times a
+     * second, in no pattern at all.
+     */
+    private fun rub(rng: CpythonRandom): DoubleArray {
+        val n = (1.20 * RATE).toInt()
+        // The body: broadband paper hiss, and a grainy lower layer for the
+        // wax itself.
+        val hiss = loopNoise(1.20, rng, 1500.0, 7200.0)
+        val grain = loopNoise(1.20, rng, 380.0, 1600.0, partials = 90) * 0.32
+        val body = hiss + grain
+        // A slow wobble, also a whole number of cycles per loop so the join
+        // stays silent, so the rub breathes the way a moving hand does.
+        val wobble = DoubleArray(n) { i ->
+            val t = i.toDouble() / RATE
+            1.0 +
+                0.22 * sin(2.0 * PI * 1.0 / 1.20 * t) +
+                0.14 * sin(2.0 * PI * 2.0 / 1.20 * t + 0.7) +
+                0.10 * sin(2.0 * PI * 4.0 / 1.20 * t + 2.1)
+        }
+        return normalize(DoubleArray(n) { body[it] * wobble[it] })
     }
 
     /** 60 ms: a crayon lifted from its seat. Paper rustle, no pitch at all. */
@@ -131,27 +178,33 @@ object SoundGen {
     private fun chime(): DoubleArray {
         val n = (0.480 * RATE).toInt()
         val f = 523.25 // a single note, struck once, never followed by another
-        val bell = partials(
-            n,
-            doubleArrayOf(f, f * 2.0, f * 3.01, f * 4.17),
-            doubleArrayOf(0.240, 0.160, 0.095, 0.055),
-            doubleArrayOf(1.0, 0.34, 0.15, 0.07),
-        )
-        return applyEnv(bell, envelope(n, 0.004, 0.200, curve = 2.2))
+        val out = DoubleArray(n)
+        val freqs = doubleArrayOf(f, f * 2.0, f * 3.01, f * 4.17)
+        val decays = doubleArrayOf(0.240, 0.160, 0.095, 0.055)
+        val gains = doubleArrayOf(1.0, 0.34, 0.15, 0.07)
+        for (layer in freqs.indices) {
+            for (i in 0 until n) {
+                val t = i.toDouble() / RATE
+                out[i] += gains[layer] * sin(2.0 * PI * freqs[layer] * t) * exp(-t / decays[layer])
+            }
+        }
+        return applyEnv(out, envelope(n, 0.004, 0.200, curve = 2.2))
     }
 
     // -- Output -----------------------------------------------------------------
 
     /** Normalizes, fades the tail, and writes a canonical 16 bit mono WAV. */
-    private fun write(outDir: Path, name: String, samples: DoubleArray, peak: Double) {
+    private fun write(outDir: Path, name: String, samples: DoubleArray, peak: Double, loop: Boolean = false) {
         val n = samples.size
         val high = samples.maxOf { kotlin.math.abs(it) }.takeIf { it > 0 } ?: 1.0
         val scale = peak / high
-        val fade = minOf((0.006 * RATE).toInt(), n)
+        // A looping effect is never faded: its ends have to meet, and the
+        // loop seam is already silent by construction.
+        val fade = if (loop) 0 else minOf((0.006 * RATE).toInt(), n)
         val frames = ByteArrayOutputStream(n * 2)
         for (i in 0 until n) {
             var v = samples[i] * scale
-            if (i >= n - fade) v *= (n - i).toDouble() / fade
+            if (fade > 0 && i >= n - fade) v *= (n - i).toDouble() / fade
             val q = (v * 32767.0).toInt().coerceIn(-32767, 32767)
             frames.write(q and 0xFF)
             frames.write((q shr 8) and 0xFF)
@@ -195,8 +248,7 @@ object SoundGen {
     fun generateAll(outDir: Path) {
         Files.createDirectories(outDir)
         val rng = CpythonRandom(20260911L)
-        write(outDir, "sfx_paint", paint(rng), peak = 0.32)
-        write(outDir, "sfx_tick", tick(rng), peak = 0.55)
+        write(outDir, "sfx_rub", rub(rng), peak = 0.30, loop = true)
         write(outDir, "sfx_rustle", rustle(rng), peak = 0.30)
         write(outDir, "sfx_chime", chime(), peak = 0.70)
     }
@@ -204,7 +256,8 @@ object SoundGen {
     /**
      * Regenerates into a temp dir and byte compares against the committed
      * WAVs; exits non zero if any committed asset would change, so an
-     * accidental binary edit cannot ride along unnoticed until release.
+     * accidental binary edit cannot ride along unnoticed until release. A
+     * committed asset that is no longer generated at all is reported too.
      */
     fun check(rawDir: Path): Int {
         val tmp = Files.createTempDirectory("crayoner-sounds")
@@ -220,6 +273,15 @@ object SoundGen {
             if (!fresh.contentEquals(Files.readAllBytes(committed))) {
                 bad += "${committed.absolutePathString()} differs from a fresh regeneration"
             }
+        }
+        val known = NAMES.map { "$it.wav" }.toSet()
+        Files.list(rawDir).use { files ->
+            files.filter { it.fileName.toString().startsWith("sfx_") }
+                .forEach { stray ->
+                    if (stray.fileName.toString() !in known) {
+                        bad += "${stray.absolutePathString()} is no effect this app plays"
+                    }
+                }
         }
         return if (bad.isNotEmpty()) {
             for (line in bad) println("MISMATCH: $line")
