@@ -15,26 +15,26 @@ import org.junit.Test
 
 /**
  * The rules the host rests on, tested on the JVM with no device: the shelf's
- * answers, the way a hand is read into marks, and the completion rule. The
- * ViewModel itself is Android flavored (DataStore, SoundPool) and is
- * exercised on the emulator by the capture run; everything here is the pure
- * logic underneath it, which is where a bug would actually live.
+ * answers, the way a hand is read into marks, and the way marks come back
+ * from a save. The ViewModel itself is Android flavored (DataStore,
+ * SoundPool) and is exercised on the emulator by the capture run; everything
+ * here is the pure logic underneath it, which is where a bug would live.
  */
 class HostRulesTest {
 
     private val page: Page = Pages.byId("sail") ?: error("the sail page is gone")
 
     @Test
-    fun theShelfKnowsWhatIsFinishedAndWhatIsStarted() {
+    fun theShelfKnowsWhatIsSealedAndWhatIsStarted() {
         val shelf = ShelfState(
-            finished = setOf("sail"),
-            drafts = mapOf("rainbow" to "FF7ED9EB(0.5,0.5)"),
+            sealed = setOf("sail"),
+            drafts = mapOf("rainbow" to "FF76D7EA(0.5,0.5)"),
         )
-        assertTrue(shelf.isFinished("sail"))
-        assertFalse(shelf.isFinished("tree"))
+        assertTrue(shelf.isSealed("sail"))
+        assertFalse(shelf.isSealed("tree"))
         assertTrue(shelf.hasDraft("rainbow"))
         assertFalse(shelf.hasDraft("tree"))
-        // A blank draft string is not a draft: wiping a page clears it.
+        // A blank draft string is not a draft: a page rubbed clean clears it.
         assertFalse(ShelfState(drafts = mapOf("rainbow" to "")).hasDraft("rainbow"))
     }
 
@@ -55,60 +55,56 @@ class HostRulesTest {
     }
 
     @Test
-    fun theCrayonReachingEveryAreaFinishesThePictureWhateverTheColorsAre() {
-        // A real coloring book does not refuse to be finished because the sky
-        // was colored green. The app celebrates the work the child chose to
-        // do, which is also the only rule that can never scold them.
-        var progress = Progress()
-        assertFalse(page.isComplete(progress.strokes))
-        for (index in page.regions.indices) {
-            val p = aVisiblePoint(index)
-            progress = progress.with(Stroke(Crayons.RED, listOf(p, Vec2(p.x + 0.01, p.y))))
+    fun theFirstTouchOfAFreshPageLandsOnRealPaper() {
+        // The color a first touch picks up is the area's own, so it has to
+        // resolve on every page of the book, at every corner of it.
+        for (p in Pages.all) {
+            var landings = 0
+            for (i in 0 until 12) {
+                for (j in 0 until 12) {
+                    val point = Vec2((i + 0.5) / 12.0, (j + 0.5) / 12.0)
+                    val index = p.regionIndexAt(point)
+                    if (index >= 0) {
+                        landings++
+                        val color = p.region(index)?.fillArgb
+                        assertTrue("${p.id} asks for a color outside the box", color != null && Crayons.exists(color))
+                    }
+                }
+            }
+            assertEquals("${p.id} leaves paper untouched", 144, landings)
         }
-        assertTrue(page.isComplete(progress.strokes))
-        assertEquals(page.regionCount, page.reachedCount(progress.strokes))
-        assertEquals(page.regionCount, progress.coloredCount)
     }
 
     @Test
-    fun oneAreaLeftAloneLeavesThePictureUnfinished() {
-        val last = page.regionCount - 1
-        val progress = page.regions.indices.filter { it != last }.fold(Progress.Empty) { acc, index ->
-            acc.with(Stroke(Crayons.RED, listOf(aVisiblePoint(index))))
-        }
-        assertFalse(page.isComplete(progress.strokes))
-        assertEquals(page.regionCount - 1, page.reachedCount(progress.strokes))
+    fun marksNeverStandStillAndNeverGrowWithoutBound() {
+        var stroke = Strokes.dot(Crayons.BLUE, Vec2(0.0, 0.5))
+        for (i in 1..5000) stroke = Strokes.extend(stroke, Vec2(i / 5000.0, 0.5))
+        assertTrue("a mark grew without bound", stroke.points.size <= Strokes.MAX_POINTS)
+        assertFalse("a mark was taken away", stroke.isEmpty)
     }
 
     @Test
-    fun aMarkInTheWrongColorStillLands() {
-        // Nothing is ever refused. A mark drawn in a color the picture did
-        // not ask for is on the paper, is counted where it landed, and is
-        // never taken away.
-        val sail = page.region(page.indexOfRegion("sail")) ?: error("no sail")
-        val wrong = Crayons.BLUE.takeIf { it != sail.fillArgb } ?: Crayons.RED
-        val inked = Progress.Empty.with(Strokes.scribble(sail, wrong))
-        assertEquals(1, inked.coloredCount)
-        assertEquals(wrong, inked.strokes.first().color)
-        assertTrue("a wrong mark reached nothing", page.reachedCount(inked.strokes) >= 1)
-    }
-
-    @Test
-    fun everyMarkTheChildMakesSurvivesARoundTripThroughTheStore() {
-        val progress = page.regions.indices.take(3).fold(Progress.Empty) { acc, index ->
-            acc.with(Strokes.scribble(page.regions[index], page.regions[index].fillArgb))
+    fun aMarkInEitherHandSurvivesARoundTripThroughTheStore() {
+        val colored = Progress.Empty.with(Strokes.scribble(page.regions[1], Crayons.SKY_BLUE))
+        val erased = Progress.Empty.with(
+            Stroke(Stroke.ERASE_COLOR, (0..8).map { Vec2(0.3 + it * 0.02, 0.7) }, erase = true),
+        )
+        for (progress in listOf(colored, erased)) {
+            val parsed = Progress.parse(progress.serialize())
+            assertEquals(progress.strokes.size, parsed.strokes.size)
+            assertEquals(progress.strokes[0].erase, parsed.strokes[0].erase)
+            assertEquals(progress.strokes[0].color, parsed.strokes[0].color)
+            assertEquals(progress.strokes[0].points.size, parsed.strokes[0].points.size)
         }
-        val text = progress.serialize()
-        val parsed = Progress.parse(text)
-        assertEquals(progress.strokes.size, parsed.strokes.size)
-        assertEquals(page.reachedCount(progress.strokes), page.reachedCount(parsed.strokes))
     }
 
     @Test
     fun theUniversalBoxCanColorEveryAreaOfEveryPicture() {
         // One box for the whole book: every area's picture color is in it, or
         // a child holding every crayon at once still could not match the
-        // picture. This is the rule that makes one universal box possible.
+        // picture. This is the rule that makes one universal box possible,
+        // and the reason the box carries thirty two colors rather than
+        // sixteen.
         for (p in Pages.all) {
             for ((index, region) in p.regions.withIndex()) {
                 assertTrue(
@@ -127,17 +123,5 @@ class HostRulesTest {
         for (argb in Crayons.all) {
             assertTrue("a crayon is unnamed", Crayons.exists(argb))
         }
-    }
-
-    /** A point on the page that really is visible as area [index]. */
-    private fun aVisiblePoint(index: Int): Vec2 {
-        val steps = 120
-        for (i in 0 until steps) {
-            for (j in 0 until steps) {
-                val p = Vec2((i + 0.5) / steps, (j + 0.5) / steps)
-                if (page.regionIndexAt(p) == index) return p
-            }
-        }
-        throw AssertionError("the sail page hides region $index")
     }
 }

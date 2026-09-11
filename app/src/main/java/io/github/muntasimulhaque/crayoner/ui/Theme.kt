@@ -1,10 +1,10 @@
 package io.github.muntasimulhaque.crayoner.ui
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.ripple
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
@@ -39,68 +39,87 @@ object CrayonerColors {
     val Ink = Color(Crayons.INK)
     /** The brand: the crayon red of the sailboat, the book's first page. */
     val Coral = Color(Crayons.RED)
-    /** Celebration only, never chrome: the star a finished picture earns. */
+    /** Celebration only, never chrome: the seal a finished picture earns. */
     val Honey = Color(0xFFEFB53A)
     /** The crayon box: toasted cardboard. */
     val Cardboard = Color(0xFFEFE1C6)
-    /** The washi tape holding paper down: warm, translucent. */
-    val Tape = Color(0x8CF6E7C4)
-    /** The fiber running through the tape, a whisper darker. */
-    val TapeFiber = Color(0x33A08B5E)
+    /**
+     * The tape holding paper down. It is cream, lighter than the desk and
+     * deeper than the paper, with a real edge: tape you cannot see is not
+     * holding anything, and the whole reason the strip is there is to say
+     * this sheet is lying on a table.
+     */
+    val Tape = Color(0xE0EFD9A8)
+    /** The edge of the roll, and the fiber running through it. */
+    val TapeEdge = Color(0x4D9C7F45)
+    val TapeFiber = Color(0x59B08F52)
     /** One scrim for every layer that stands the world back. */
     val Scrim = Ink.copy(alpha = 0.62f)
     /** The whisper of a shadow under coins, cards and pages. */
     val Shadow = Ink.copy(alpha = 0.22f)
 }
 
-// The display face: Baloo 2, bundled offline (OFL text lives in docs/).
-private val Baloo = FontFamily(
-    Font(R.font.baloo2_bold, FontWeight.Bold),
-    Font(R.font.baloo2_extrabold, FontWeight.ExtraBold),
+/**
+ * The one face: Chewy, bundled offline (Apache 2.0, text in docs/). Every
+ * word in the app is written in it and painted with [WaxInkBrush], so the
+ * words and the pictures are made of the same thing, and a child who cannot
+ * read yet still sees a page that was drawn by hand rather than set in type.
+ */
+private val Chewy = FontFamily(
+    Font(R.font.chewy, FontWeight.Normal),
 )
 
 // Every style the app uses is defined here, no defaults anywhere.
 private val BrandTypography = Typography(
     displayMedium = TextStyle(
-        fontFamily = Baloo,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 44.sp,
+        fontFamily = Chewy,
+        fontWeight = FontWeight.Normal,
+        fontSize = 42.sp,
         lineHeight = 50.sp,
+        brush = WaxInkBrush,
     ),
     // The shelf's wordmark: one clear step above the picture names.
     displaySmall = TextStyle(
-        fontFamily = Baloo,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 36.sp,
-        lineHeight = 42.sp,
+        fontFamily = Chewy,
+        fontWeight = FontWeight.Normal,
+        fontSize = 37.sp,
+        lineHeight = 44.sp,
+        brush = WaxInkBrush,
     ),
     titleLarge = TextStyle(
-        fontFamily = Baloo,
-        fontWeight = FontWeight.Bold,
-        fontSize = 25.sp,
-        lineHeight = 31.sp,
+        fontFamily = Chewy,
+        fontWeight = FontWeight.Normal,
+        fontSize = 26.sp,
+        lineHeight = 32.sp,
+        brush = WaxInkBrush,
     ),
     titleMedium = TextStyle(
-        fontFamily = Baloo,
-        fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
-        lineHeight = 24.sp,
+        fontFamily = Chewy,
+        fontWeight = FontWeight.Normal,
+        fontSize = 21.sp,
+        lineHeight = 26.sp,
+        brush = WaxInkBrush,
     ),
     bodyLarge = TextStyle(
+        fontFamily = Chewy,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
-        lineHeight = 26.sp,
+        fontSize = 19.sp,
+        lineHeight = 27.sp,
+        brush = WaxInkBrush,
     ),
     bodyMedium = TextStyle(
+        fontFamily = Chewy,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
+        fontSize = 17.sp,
+        lineHeight = 24.sp,
+        brush = WaxInkBrush,
     ),
     labelLarge = TextStyle(
-        fontFamily = Baloo,
-        fontWeight = FontWeight.Bold,
-        fontSize = 15.sp,
-        lineHeight = 20.sp,
+        fontFamily = Chewy,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 21.sp,
+        brush = WaxInkBrush,
     ),
 )
 
@@ -114,11 +133,10 @@ private val BrandScheme = lightColorScheme(
 )
 
 /**
- * The one theme: the desk, the paper, the two voices (Baloo for display, the
- * system face for reading under it), and a soft ink ripple. Material's
- * default ripple paints itself in the primary color, so every tap would
- * flash coral; ink at a tenth is the quiet answer a button already gives
- * with its shadow.
+ * The one theme: the desk, the paper, the one hand-drawn voice, and a soft
+ * ink ripple. Material's default ripple paints itself in the primary color,
+ * so every tap would flash coral; ink at a tenth is the quiet answer a
+ * button already gives with its shadow.
  */
 @Composable
 fun CrayonerTheme(content: @Composable () -> Unit) {

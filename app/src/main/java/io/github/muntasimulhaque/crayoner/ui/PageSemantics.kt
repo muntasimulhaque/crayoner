@@ -17,21 +17,24 @@ import io.github.muntasimulhaque.crayoner.core.Page
 /**
  * The page, described to a screen reader.
  *
- * A coloring page is one picture, not a list of controls, so a sighted
- * child simply draws on it. Without help, a screen reader would see one big
- * canvas and nothing to aim at. This overlay gives every area its own
- * focusable target, named with what it is and what color it still wants,
- * with one action that colors the area with the crayon in hand.
+ * A coloring page is one picture, not a list of controls, so a sighted child
+ * simply draws on it. Without help, a screen reader would see one big canvas
+ * and nothing to aim at. This overlay gives every area its own focusable
+ * target, named for what it is and what color it wants, with one action that
+ * colors the area with the crayon in hand.
  *
  * The nodes carry semantics only: no pointer input, no clickable, so a
  * normal finger passes straight through to the sheet underneath and drawing
- * is exactly as it was. The nodes are drawn invisible; a screen reader
- * draws its own focus rectangle around whichever one it is on.
+ * is exactly as it was. The nodes are drawn invisible; a screen reader draws
+ * its own focus rectangle around whichever one it is on.
+ *
+ * Nothing here says done, because the app does not know what done means. It
+ * says what the area is and what color the book prints it in, which is
+ * everything a child needs to color it.
  */
 @Composable
 fun PageSemantics(
     page: Page,
-    reached: Set<Int>,
     crayon: Long?,
     onColor: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -46,7 +49,6 @@ fun PageSemantics(
             val region = page.regions[index]
             val label = areaLabel(
                 kind = stringResource(areaNameRes(region.kind)),
-                done = index in reached,
                 wanted = stringResource(crayonNameRes(region.fillArgb)).lowercase(),
                 ready = crayon == region.fillArgb,
             )
@@ -63,12 +65,8 @@ fun PageSemantics(
 }
 
 /** Builds the one sentence a screen reader reads for an area. */
-internal fun areaLabel(kind: String, done: Boolean, wanted: String, ready: Boolean): String =
-    when {
-        done -> "$kind, done"
-        ready -> "$kind, needs $wanted, ready to color"
-        else -> "$kind, needs $wanted"
-    }
+internal fun areaLabel(kind: String, wanted: String, ready: Boolean): String =
+    if (ready) "$kind, needs $wanted, ready to color" else "$kind, needs $wanted"
 
 /** One invisible focus target, sized to its own area on the page. */
 @Composable

@@ -8,31 +8,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 
 /**
- * The app's three touches. Haptics need no permission and follow the
- * system's own haptics setting, so a device set to silent is silent.
+ * The app's two touches. Haptics need no permission and follow the system's
+ * own haptics setting, so a device set to silent is silent.
  *
- * They are deliberately few: a color landing, a color landing right, and a
- * finished picture. A toy that buzzes at every tap is a toy a parent turns
- * off, and the two effects that matter are the two the child earned.
+ * They are deliberately few, and neither is a judgment: a mark landing on
+ * the paper (the child's hand did something, and that is what a haptic is
+ * for), and the seal going down on a finished picture. A toy that buzzes at
+ * every touch is a toy a parent turns off.
  */
 class Haptics(private val view: View) {
 
-    /** A color landing anywhere on the page. */
+    /** A mark landing anywhere on the page. */
     fun paint() {
         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
     }
 
-    /** A color landing where the picture asked for it. */
-    fun correct() {
-        val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            HapticFeedbackConstants.CONFIRM
-        } else {
-            HapticFeedbackConstants.KEYBOARD_TAP
-        }
-        view.performHapticFeedback(effect)
-    }
-
-    /** The whole picture, finished. */
+    /** The seal, pressed down onto a picture the child says is done. */
     fun done() {
         val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             HapticFeedbackConstants.CONFIRM

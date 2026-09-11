@@ -6,17 +6,24 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
  * The one strip of tape in the app.
  *
  * It is a single material everywhere, the way real tape off a roll is: a
- * warm translucent paper with a faint fiber running through it, a little
- * wider than it is deep, and never quite square. The shelf uses it to hold
- * pictures to the wall; the coloring sheet uses it to hold paper to the
- * desk. One drawing, so the same roll was used on every page of the book.
+ * cream paper strip with a faint fiber running through it, a little wider
+ * than it is deep, never quite square, with a soft shadow along its lower
+ * edge so it sits on the paper instead of being printed on it. The shelf
+ * uses it to hold pictures to the wall; the coloring sheet uses it to hold
+ * paper to the desk. One drawing, so the same roll was used on every page of
+ * the book.
+ *
+ * Its color is chosen against both grounds it lands on: lighter than the
+ * desk and deeper than the paper, so a strip crossing the corner of a sheet
+ * is visible on the sheet and on the table at the same time. Tape you cannot
+ * see is not holding anything, and the whole reason the strip is there is to
+ * say that this paper is lying on a table.
  */
 internal fun DrawScope.drawTape(
     center: Offset,
@@ -44,6 +51,17 @@ internal fun DrawScope.drawTape(
             lineTo(left + width, top)
             close()
         }
+        // The shadow the strip casts on the paper under it, offset down, so
+        // the tape reads as something laid on top of the sheet.
+        rotate(-1.5f, pivot = center) {
+            drawPath(
+                strip,
+                CrayonerColors.Shadow.copy(alpha = 0.18f * alpha),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = (height * 0.22f).coerceAtLeast(1f),
+                ),
+            )
+        }
         drawPath(strip, color.copy(alpha = color.alpha * alpha))
         // Its fibers: two fine lines along the roll's direction, a whisper
         // darker, so the strip reads as paper rather than as a painted bar.
@@ -52,15 +70,26 @@ internal fun DrawScope.drawTape(
                 fiber.copy(alpha = fiber.alpha * alpha),
                 Offset(left, top + height * 0.34f),
                 Offset(left + width, top + height * 0.28f),
-                strokeWidth = (height * 0.07f).coerceAtLeast(0.5f),
+                strokeWidth = (height * 0.10f).coerceAtLeast(0.5f),
             )
             drawLine(
                 fiber.copy(alpha = fiber.alpha * alpha),
                 Offset(left, top + height * 0.72f),
                 Offset(left + width, top + height * 0.66f),
-                strokeWidth = (height * 0.05f).coerceAtLeast(0.5f),
+                strokeWidth = (height * 0.08f).coerceAtLeast(0.5f),
             )
         }
+        // The edge of the roll: the top and bottom lines of the strip, a
+        // shade deeper, which is what makes it a piece of tape and not a
+        // paint sample.
+        val edge = CrayonerColors.TapeEdge.copy(alpha = CrayonerColors.TapeEdge.alpha * alpha)
+        drawLine(edge, Offset(left, top), Offset(left + width, top), (height * 0.09f).coerceAtLeast(0.5f))
+        drawLine(
+            edge,
+            Offset(left, top + height),
+            Offset(left + width, top + height),
+            (height * 0.09f).coerceAtLeast(0.5f),
+        )
     }
 }
 

@@ -21,19 +21,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -46,23 +45,27 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.muntasimulhaque.crayoner.R
-import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.host.ShelfState
 import kotlin.math.abs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The picture wall: every picture in the book, hung the way a child's
  * drawing gets hung on a wall. Each one is a sheet of paper with a strip of
  * washi tape over its top edge, set at a small angle of its own so the wall
  * looks made by hand rather than laid out by a grid, and named underneath in
- * the app's one display face.
+ * the app's one hand.
  *
- * The wall never changes what it holds: all sixteen pictures are here from
- * the first launch. A finished one wears a honey star sticker; the one being
- * colored wears a small crayon. Both sit beside the name, never over the
- * picture, because the picture is the reason the card exists.
+ * Every card shows the finished picture, because the picture is the promise
+ * the card makes: tap it and this is what you get to color.
+ *
+ * The wall never changes what it holds: all sixteen are here from the first
+ * launch. Nothing on it is locked, and the two marks it can carry are the
+ * child's own: a wax seal on the pictures they stamped as done, and a small
+ * crayon beside the name of the one they were last working on.
  */
 @Composable
 fun HomeScreen(
@@ -99,7 +102,9 @@ private fun ShelfHeader(soundOn: Boolean, onSound: (Boolean) -> Unit) {
         ) {
             // The brand's own mark, drawn by the same hand that draws the
             // box: one crayon, in the coral the first picture in the book
-            // wears, leaning the way a crayon put down on a desk leans.
+            // wears, leaning the way a crayon put down on a desk leans. It
+            // points the way the app's own icon does, so the mark on the wall
+            // is the mark on the home screen.
             CrayonGlyph(
                 color = CrayonerColors.Coral,
                 lying = true,
@@ -151,8 +156,22 @@ private fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
         val cell = (maxWidth - horizontal * 2 - gap * (columns - 1)) / columns
         val nameSize = rememberNameFontSize(names, cell - 12.dp)
 
+        // The wall's pictures are drawn once each, off the main thread, the
+        // moment the shelf knows how wide its cards are: sixteen pages of wax
+        // is real work, and doing it here rather than under the first
+        // scrolling finger is the difference between a wall that slides and
+        // a wall that stutters.
+        val cellPx = with(LocalDensity.current) { cell.roundToPx() }
+        LaunchedEffect(cellPx, pages) {
+            if (cellPx <= 0) return@LaunchedEffect
+            withContext(Dispatchers.Default) {
+                prewarmPageImages(pages, ::sampleFills, cellPx)
+            }
+        }
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
+            state = rememberLazyGridState(),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = horizontal,
@@ -166,7 +185,7 @@ private fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
             items(pages, key = { it.id }) { page ->
                 HungPicture(
                     page = page,
-                    finished = shelf.isFinished(page.id),
+                    sealed = shelf.isSealed(page.id),
                     started = shelf.hasDraft(page.id),
                     nameSize = nameSize,
                     onOpen = { onOpen(page.id) },
@@ -207,28 +226,25 @@ private fun rememberNameFontSize(names: List<String>, textWidth: Dp): TextUnit {
 
 /**
  * One picture on the wall: a sheet of paper, taped at its top edge, with the
- * picture on it, the name under it, and the tape's color taken from the
- * picture itself, so the wall is scattered with the same colors the crayons
- * hold.
+ * picture on it and the name under it.
  *
  * The whole card is one button: a small hand never has to find the picture
- * inside the plate, and where it lands on the card it always opens the same
+ * inside the plate, and wherever it lands on the card it opens the same
  * picture.
  */
 @Composable
 private fun HungPicture(
     page: Page,
-    finished: Boolean,
+    sealed: Boolean,
     started: Boolean,
     nameSize: TextUnit,
     onOpen: () -> Unit,
 ) {
     val name = stringResource(pageNameRes(page.id))
-    val areas = stringResource(R.string.page_areas, page.regionCount)
-    val state = when {
-        finished -> ", " + stringResource(R.string.finished_mark)
-        started -> ", " + stringResource(R.string.started_mark)
-        else -> ""
+    val mark = when {
+        sealed -> stringResource(R.string.finished_mark)
+        started -> stringResource(R.string.started_mark)
+        else -> stringResource(R.string.page_plain)
     }
     // A small, stable tilt per picture: enough that the wall looks placed by
     // hand, small enough that nothing ever looks broken. Derived from the id
@@ -246,7 +262,7 @@ private fun HungPicture(
                 .clip(RoundedCornerShape(6.dp))
                 .background(CrayonerColors.Card)
                 .clickable(role = Role.Button, onClick = onOpen)
-                .semantics { contentDescription = "$name, $areas$state" }
+                .semantics { contentDescription = "$name, $mark" }
                 // A taller top margin, so the tape crosses the mount's own
                 // paper and only kisses the picture's top edge. The picture
                 // is the reason the card exists and no art may hide behind
@@ -271,11 +287,14 @@ private fun HungPicture(
                     .align(Alignment.TopCenter)
                     .padding(top = 4.dp),
             )
-            if (finished) {
-                FinishedSticker(
+            if (sealed) {
+                // The seal, pressed into the corner of the work itself: the
+                // picture the child stamped, stamped.
+                WaxSeal(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(8.dp),
+                        .padding(8.dp)
+                        .size(SealSize),
                 )
             }
         }
@@ -284,9 +303,16 @@ private fun HungPicture(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            if (started && !finished) {
-                CrayonMarkIcon(color = CrayonerColors.Coral, size = 14.dp)
-                Spacer(Modifier.width(4.dp))
+            if (started && !sealed) {
+                // A small crayon beside the name, drawn from the same geometry
+                // as the crayon in the tray: the picture the child was last
+                // working on.
+                CrayonGlyph(
+                    color = CrayonerColors.Coral,
+                    lying = true,
+                    modifier = Modifier.size(width = 26.dp, height = 9.dp),
+                )
+                Spacer(Modifier.width(5.dp))
             }
             Text(
                 text = name,
@@ -308,32 +334,12 @@ private fun tiltFor(id: String): Float {
 
 /**
  * The strip of tape holding a picture to the wall. It is the app's one roll
- * of washi tape, drawn by the same hand as the tape on the coloring sheet:
- * warm translucent paper with a faint fiber running through it, never quite
- * straight, tinted never.
+ * of tape, drawn by the same hand as the tape on the coloring sheet.
  */
 @Composable
 private fun WashiTape(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.width(46.dp).height(15.dp)) {
         drawWallTape(size.width, size.height)
-    }
-}
-
-/** The honey star sticker a finished picture earns. */
-@Composable
-private fun FinishedSticker(modifier: Modifier = Modifier) {
-    val label = stringResource(R.string.finished_mark)
-    Box(
-        modifier = modifier
-            .size(30.dp)
-            .rotate(-12f)
-            .buttonShadow(CircleShape, elevation = 3.dp)
-            .clip(CircleShape)
-            .background(CrayonerColors.Honey)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) {
-        StarIcon(color = CrayonerColors.Card, size = 17.dp)
     }
 }
 
@@ -344,8 +350,12 @@ private fun SamplePlate(page: Page) {
         val sidePx = with(LocalDensity.current) { maxWidth.roundToPx() }
         PageCanvas(
             page = page,
-            fills = sampleFills(page),
+            fills = remember(page) { sampleFills(page) },
             sidePx = sidePx,
+            // A card never stalls a frame: until its picture is rendered,
+            // it draws itself live, and the shelf renders every card off
+            // the main thread as soon as it knows how wide one is.
+            blocking = false,
             modifier = Modifier.fillMaxSize(),
         )
     }

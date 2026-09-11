@@ -20,7 +20,6 @@ import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
-import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
 import io.github.muntasimulhaque.crayoner.host.ShelfState
@@ -30,6 +29,8 @@ import io.github.muntasimulhaque.crayoner.ui.PlayScreen
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.math.PI
+import kotlin.math.sin
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -44,6 +45,11 @@ import org.junit.runner.RunWith
  * touch injection and no semantics queries are needed to render and copy
  * pixels, and dropping that machinery keeps these captures working on
  * whatever framework image the app targets, forever.
+ *
+ * The coloring captures show marks the way a hand really makes them: long
+ * sweeps across an area, wobbling the way a wrist does, stopping where a
+ * three year old would stop, and overlapping the printed lines now and then,
+ * because that is what coloring in looks like.
  */
 @RunWith(AndroidJUnit4::class)
 class ScreenshotTest {
@@ -106,8 +112,8 @@ class ScreenshotTest {
     /**
      * The eight store captures, the Play listing maximum per form factor.
      * The set leads with the shelf, shows the page from bare lines to a
-     * finished picture, includes the crayon being picked and the sample
-     * held up, and closes on the finished picture.
+     * finished picture, includes the box of colors and the sample held up,
+     * and closes on a picture the child has stamped.
      */
     @Test
     fun captureStoreScreenshots() {
@@ -119,168 +125,146 @@ class ScreenshotTest {
         shot(scenario, outDir, "02_home_progress") {
             HomeScreen(
                 shelf = ShelfState(
-                    finished = setOf("sail", "rainbow", "house"),
-                    drafts = mapOf("balloon" to "FFEF2D57(0.4,0.3;0.5,0.4)"),
+                    sealed = setOf("sail", "rainbow", "house"),
+                    drafts = mapOf("balloon" to "FFEE204D(0.4,0.3;0.5,0.4)"),
                 ),
                 onOpen = {},
-                onSound = { },
+                onSound = {},
             )
         }
         shot(scenario, outDir, "03_blank") {
-            PlayScreen(
-                state = emptyState("sail"),
-                soundOn = true,
-                onStrokeStart = {},
-                onStrokeMove = {},
-                onStrokeEnd = {},
-                onPick = {},
-                onHome = {},
-                onSound = {},
-                onPeek = {},
-                onAskClear = {},
-                onClear = {},
-            )
+            play(blankState("sail"))
         }
-        shot(scenario, outDir, "04_picked") {
-            PlayScreen(
-                state = emptyState("sail").copy(crayon = Crayons.SKY),
-                soundOn = true,
-                onStrokeStart = {},
-                onStrokeMove = {},
-                onStrokeEnd = {},
-                onPick = {},
-                onHome = {},
-                onSound = {},
-                onPeek = {},
-                onAskClear = {},
-                onClear = {},
-            )
+        shot(scenario, outDir, "04_box") {
+            play(blankState("kite").copy(crayon = Crayons.SKY_BLUE, boxOpen = true))
         }
         shot(scenario, outDir, "05_coloring") {
-            PlayScreen(
-                state = halfState("kite"),
-                soundOn = true,
-                onStrokeStart = {},
-                onStrokeMove = {},
-                onStrokeEnd = {},
-                onPick = {},
-                onHome = {},
-                onSound = {},
-                onPeek = {},
-                onAskClear = {},
-                onClear = {},
-            )
+            play(coloredState("kite", crayon = Crayons.RED))
         }
         shot(scenario, outDir, "06_peek") {
-            PlayScreen(
-                state = halfState("rainbow").copy(peeking = true),
-                soundOn = true,
-                onStrokeStart = {},
-                onStrokeMove = {},
-                onStrokeEnd = {},
-                onPick = {},
-                onHome = {},
-                onSound = {},
-                onPeek = {},
-                onAskClear = {},
-                onClear = {},
-            )
+            play(coloredState("rainbow", crayon = Crayons.BLUE).copy(peeking = true))
         }
         shot(scenario, outDir, "07_most") {
-            PlayScreen(
-                state = almostState("house"),
-                soundOn = false,
-                onStrokeStart = {},
-                onStrokeMove = {},
-                onStrokeEnd = {},
-                onPick = {},
-                onHome = {},
-                onSound = {},
-                onPeek = {},
-                onAskClear = {},
-                onClear = {},
-            )
+            play(erasedState("house"))
         }
         shot(scenario, outDir, "08_done") {
-            PlayScreen(
-                state = finishedState("icecream"),
-                soundOn = true,
-                onStrokeStart = {},
-                onStrokeMove = {},
-                onStrokeEnd = {},
-                onPick = {},
-                onHome = {},
-                onSound = {},
-                onPeek = {},
-                onAskClear = {},
-                onClear = {},
-            )
+            play(coloredState("icecream", crayon = Crayons.CARNATION_PINK, sealed = true))
         }
         scenario.close()
+    }
+
+    /** One coloring screen, with every callback a no-op. */
+    @Composable
+    private fun play(state: Screen.Coloring, soundOn: Boolean = true) {
+        PlayScreen(
+            state = state,
+            soundOn = soundOn,
+            onStrokeStart = {},
+            onStrokeMove = {},
+            onStrokeEnd = {},
+            onPick = {},
+            onErase = {},
+            onOpenBox = {},
+            onSeal = {},
+            onHome = {},
+            onSound = {},
+            onPeek = {},
+        )
     }
 
     // -- Fixtures -----------------------------------------------------------
 
     private fun page(id: String): Page = Pages.byId(id) ?: error("no page $id")
 
-    private fun emptyState(id: String) = Screen.Coloring(page = page(id), progress = Progress.Empty)
+    private fun blankState(id: String) = Screen.Coloring(page = page(id), progress = Progress.Empty)
 
     /**
-     * The first few areas colored the way a hand really does it: a few
-     * swipes across the part of the picture the child has got to so far, not
-     * a machine fill. The picture underneath still reads, which is the point
-     * of the capture.
+     * A page a child has been working on: real marks, made the way a hand
+     * makes them, in the colors the picture asks for, with the last area
+     * still bare so the sheet reads as unfinished.
      */
-    private fun halfState(id: String): Screen.Coloring {
-        val page = page(id)
-        val sky = page.regions.first()
-        val progress = Progress.Empty
-            .with(swipes(sky.fillArgb, y = 0.06, width = 0.9))
-            .with(swipes(sky.fillArgb, y = 0.17, width = 0.86))
-            .with(swipes(sky.fillArgb, y = 0.28, width = 0.8))
-        val next = page.regions[1].fillArgb
-        return Screen.Coloring(page = page, progress = progress, crayon = next)
-    }
-
-    /**
-     * Everything but the last area, each colored in the child's own hand: a
-     * scribble in the area's own color, and a loose second pass over it.
-     */
-    private fun almostState(id: String): Screen.Coloring {
+    private fun coloredState(
+        id: String,
+        crayon: Long,
+        sealed: Boolean = false,
+        erasing: Boolean = false,
+    ): Screen.Coloring {
         val page = page(id)
         val last = page.regionCount - 1
-        val progress = (0 until last).fold(Progress.Empty) { acc, index ->
-            acc.with(Strokes.scribble(page.regions[index], page.regions[index].fillArgb, 0.12))
-        }
+        val strokes = page.regions.indices
+            .filter { it != last }
+            .flatMap { index -> sweeps(page.regions[index]) }
         return Screen.Coloring(
             page = page,
-            progress = progress,
-            crayon = page.regions.last().fillArgb,
+            progress = Progress(strokes),
+            crayon = crayon,
+            erasing = erasing,
+            sealed = sealed,
         )
     }
 
-    private fun finishedState(id: String): Screen.Coloring {
-        val page = page(id)
-        val progress = page.regions.indices.fold(Progress.Empty) { acc, index ->
-            acc.with(Strokes.scribble(page.regions[index], page.regions[index].fillArgb, 0.07))
+    /**
+     * One area, colored in by hand: a few long sweeps across it, each at a
+     * slightly different angle and slightly different length, the way an arm
+     * covers a shape. Some strokes run a little past the line, because a
+     * three year old's do.
+     */
+    private fun sweeps(region: io.github.muntasimulhaque.crayoner.core.Region): List<Stroke> {
+        val b = region.bounds
+        if (b.w <= 0.0 || b.h <= 0.0) return emptyList()
+        val angle = Math.toRadians(io.github.muntasimulhaque.crayoner.core.Wax.angleDeg(region))
+        val dx = kotlin.math.cos(angle)
+        val dy = kotlin.math.sin(angle)
+        val nx = -dy
+        val ny = dx
+        val reach = kotlin.math.hypot(b.w, b.h) * 0.55
+        val lanes = (minOf(b.w, b.h) / 0.055).toInt().coerceIn(2, 9)
+        val seed = kotlin.math.abs(region.id.hashCode())
+        return (0 until lanes).map { lane ->
+            val t = (lane + 0.5) / lanes - 0.5
+            val offX = b.center.x + nx * t * b.w * 0.9
+            val offY = b.center.y + ny * t * b.h * 0.9
+            val wobble = 0.012 + 0.004 * ((seed + lane) % 3)
+            val points = ArrayList<Vec2>(24)
+            val steps = 18
+            for (i in 0..steps) {
+                val u = i.toDouble() / steps
+                val spread = (u - 0.5) * 2.0 * reach
+                // The wrist wobbles along the sweep, and no two sweeps wobble
+                // the same way.
+                val w = sin(u * 3.0 * PI + lane) * wobble + sin(u * 7.0 * PI + seed) * wobble * 0.4
+                points += Vec2(
+                    offX + dx * spread + nx * w,
+                    offY + dy * spread + ny * w,
+                )
+            }
+            Stroke(region.fillArgb, points)
         }
-        return Screen.Coloring(page = page, progress = progress, celebrating = true)
     }
 
-    /** A few diagonal swipes across one band of the page, hand on paper. */
-    private fun swipes(color: Long, y: Double, width: Double): Stroke {
-        val points = ArrayList<Vec2>()
-        val steps = 26
-        // Left to right, wobbling the way a wrist does, and back once.
-        for (i in 0..steps) {
-            val t = i.toDouble() / steps
-            points += Vec2(0.06 + width * t, y + 0.035 * kotlin.math.sin(t * 6.0 * Math.PI))
-        }
-        for (i in steps downTo 0) {
-            val t = i.toDouble() / steps
-            points += Vec2(0.06 + width * t, y + 0.055 + 0.030 * kotlin.math.sin(t * 5.0 * Math.PI))
-        }
-        return Stroke(color, points)
+    /**
+     * A page the child has gone over with the rubber: colored in, then rubbed
+     * at, so the capture shows what an eraser mark really leaves behind. The
+     * print comes back; the wax does not.
+     */
+    private fun erasedState(id: String): Screen.Coloring {
+        val page = page(id)
+        val last = page.regionCount - 1
+        val colored = page.regions.indices
+            .filter { it != last }
+            .flatMap { index -> sweeps(page.regions[index]) }
+        val rubbed = listOf(
+            Stroke(Stroke.ERASE_COLOR, (0..24).map { i ->
+                val t = i / 24.0
+                Vec2(0.20 + t * 0.55, 0.42 + kotlin.math.sin(t * 5.0) * 0.05)
+            }, erase = true),
+        )
+        return Screen.Coloring(
+            page = page,
+            progress = Progress(colored + rubbed),
+            crayon = page.regions.last().fillArgb,
+            erasing = true,
+        )
     }
 
     /** Render one state, settle it, and copy the window's own pixels out. */
@@ -315,6 +299,6 @@ class ScreenshotTest {
     }
 
     private companion object {
-        const val SETTLE_MS = 700L
+        const val SETTLE_MS = 900L
     }
 }

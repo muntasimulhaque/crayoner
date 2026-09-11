@@ -1,37 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="app_name">Crayoner</string>
     <string name="home">Back to the pictures</string>
-    <string name="well_done">Well done!</string>
-    <string name="again">Color again</string>
-    <string name="more_pictures">More pictures</string>
     <string name="sound_on">Sound is on</string>
     <string name="sound_off">Sound is off</string>
     <string name="show_sample">Look at the picture closely</string>
     <string name="hide_sample">Put the picture back down</string>
-    <string name="erase">Start this picture over</string>
-    <string name="clear_title">Start this picture over?</string>
-    <string name="clear_message">Every color on this page will go back to plain paper.</string>
-    <string name="stay">Keep coloring</string>
-    <string name="clear">Start over</string>
-    <string name="finished_mark">Finished</string>
+    <string name="seal">This picture is done</string>
+    <string name="unseal">Keep coloring</string>
+    <string name="eraser_on">Put the rubber down</string>
+    <string name="eraser_off">Pick up the rubber</string>
+    <string name="pick_color">Pick a color</string>
+    <string name="close_box">Put the crayons away</string>
+    <string name="finished_mark">Done</string>
     <string name="started_mark">Being colored</string>
+    <string name="page_plain">Not started</string>
 
     <string name="crayon_red">Red</string>
+    <string name="crayon_scarlet">Scarlet</string>
+    <string name="crayon_red_orange">Red orange</string>
     <string name="crayon_orange">Orange</string>
+    <string name="crayon_yellow_orange">Yellow orange</string>
+    <string name="crayon_apricot">Apricot</string>
     <string name="crayon_yellow">Yellow</string>
+    <string name="crayon_green_yellow">Green yellow</string>
+    <string name="crayon_yellow_green">Yellow green</string>
     <string name="crayon_green">Green</string>
-    <string name="crayon_forest">Forest green</string>
-    <string name="crayon_teal">Teal</string>
-    <string name="crayon_sky">Sky blue</string>
+    <string name="crayon_blue_green">Blue green</string>
+    <string name="crayon_cerulean">Cerulean</string>
+    <string name="crayon_sky_blue">Sky blue</string>
     <string name="crayon_blue">Blue</string>
-    <string name="crayon_navy">Navy blue</string>
-    <string name="crayon_purple">Purple</string>
-    <string name="crayon_lilac">Lilac</string>
-    <string name="crayon_pink">Pink</string>
+    <string name="crayon_bluetiful">Bluetiful</string>
+    <string name="crayon_indigo">Indigo</string>
+    <string name="crayon_blue_violet">Blue violet</string>
+    <string name="crayon_violet">Violet</string>
+    <string name="crayon_wisteria">Wisteria</string>
+    <string name="crayon_red_violet">Red violet</string>
+    <string name="crayon_violet_red">Violet red</string>
+    <string name="crayon_carnation_pink">Carnation pink</string>
+    <string name="crayon_melon">Melon</string>
+    <string name="crayon_peach">Peach</string>
+    <string name="crayon_tan">Tan</string>
     <string name="crayon_brown">Brown</string>
-    <string name="crayon_sand">Sand</string>
+    <string name="crayon_chestnut">Chestnut</string>
     <string name="crayon_gray">Gray</string>
+    <string name="crayon_timberwolf">Timberwolf</string>
+    <string name="crayon_cadet_blue">Cadet blue</string>
+    <string name="crayon_black">Black</string>
     <string name="crayon_white">White</string>
 
     <string name="page_sail">Sailboat</string>
@@ -109,7 +124,4 @@
     <string name="area_canopy">Canopy</string>
     <string name="area_panel">Panel</string>
     <string name="area_pole">Pole</string>
-
-    <string name="page_progress" tools:ignore="PluralsCandidate">%1$d of %2$d areas colored</string>
-    <string name="page_areas" tools:ignore="PluralsCandidate">%1$d areas</string>
 </resources>

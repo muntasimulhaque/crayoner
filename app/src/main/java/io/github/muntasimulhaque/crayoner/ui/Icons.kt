@@ -20,9 +20,9 @@ import kotlin.math.sin
 
 /**
  * The app's own icon set, drawn as geometry: a house for the shelf, a
- * speaker for the sound switch, an eraser for clearing the page, and a
- * star for a finished picture. No icon fonts, no third party packs: same
- * hand, same weights, everywhere.
+ * speaker for the sound switch, a stamp for a finished picture, and a small
+ * crayon for a picture being worked on. No icon fonts, no third party packs:
+ * same hand, same weights, everywhere.
  */
 @Composable
 fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
@@ -79,77 +79,53 @@ fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp
     }
 }
 
-/** An eraser, tilted the way one sits in a hand. */
+/**
+ * The stamp: a rubber stamp seen from the side, which is what a finished
+ * piece of work wears. It is not a star and not a tick, because neither of
+ * those means this is mine and I finished it.
+ */
 @Composable
-fun EraseIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
+fun SealIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
     GeoIcon(modifier, color, size) { w, h ->
         val line = Stroke(w * 0.10f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        val body = Path().apply {
-            moveTo(w * 0.24f, h * 0.74f)
-            lineTo(w * 0.60f, h * 0.22f)
-            lineTo(w * 0.82f, h * 0.38f)
-            lineTo(w * 0.52f, h * 0.84f)
-            close()
-        }
-        drawPath(body, color, style = line)
-        // The line the eraser is clearing, under its working edge.
+        // The handle, the collar, and the pad: three strokes, and it reads
+        // as a stamp from across a room.
         drawLine(
             color,
-            Offset(w * 0.16f, h * 0.86f),
-            Offset(w * 0.86f, h * 0.86f),
+            Offset(w * 0.38f, h * 0.14f),
+            Offset(w * 0.38f, h * 0.42f),
             line.width,
             line.cap,
         )
-        // The rubber's own seam.
         drawLine(
             color,
-            Offset(w * 0.42f, h * 0.46f),
-            Offset(w * 0.64f, h * 0.62f),
-            line.width * 0.8f,
+            Offset(w * 0.62f, h * 0.14f),
+            Offset(w * 0.62f, h * 0.42f),
+            line.width,
             line.cap,
         )
-    }
-}
-
-/** A five pointed star: the sticker a finished picture earns. */
-@Composable
-fun StarIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
-    GeoIcon(modifier, color, size) { w, h ->
-        val path = Path()
-        val cx = w / 2f
-        val cy = h / 2f
-        val outer = w * 0.46f
-        val inner = outer * 0.46f
-        for (i in 0 until 10) {
-            val r = if (i % 2 == 0) outer else inner
-            val a = Math.toRadians(-90.0 + i * 36.0)
-            val x = cx + r * cos(a).toFloat()
-            val y = cy + r * sin(a).toFloat()
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        path.close()
-        drawPath(path, color)
-    }
-}
-
-/** A crayon, the marker a picture being worked on wears. */
-@Composable
-fun CrayonMarkIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
-    GeoIcon(modifier, color, size) { w, h ->
-        val body = Path().apply {
-            moveTo(w * 0.26f, h * 0.30f)
-            lineTo(w * 0.74f, h * 0.30f)
-            lineTo(w * 0.74f, h * 0.82f)
-            lineTo(w * 0.26f, h * 0.82f)
-            close()
-        }
-        drawPath(body, color, style = Stroke(w * 0.10f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        val tip = Path().apply {
-            moveTo(w * 0.26f, h * 0.30f)
-            lineTo(w * 0.50f, h * 0.12f)
-            lineTo(w * 0.74f, h * 0.30f)
-        }
-        drawPath(tip, color, style = Stroke(w * 0.10f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawRoundRect(
+            color,
+            topLeft = Offset(w * 0.30f, h * 0.42f),
+            size = Size(w * 0.40f, h * 0.16f),
+            cornerRadius = CornerRadius(w * 0.05f),
+            style = line,
+        )
+        drawRoundRect(
+            color,
+            topLeft = Offset(w * 0.16f, h * 0.62f),
+            size = Size(w * 0.68f, h * 0.16f),
+            cornerRadius = CornerRadius(w * 0.05f),
+            style = line,
+        )
+        // The mark it leaves.
+        drawLine(
+            color,
+            Offset(w * 0.24f, h * 0.88f),
+            Offset(w * 0.76f, h * 0.88f),
+            line.width * 0.9f,
+            line.cap,
+        )
     }
 }
 

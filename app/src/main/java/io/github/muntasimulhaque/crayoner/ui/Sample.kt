@@ -1,5 +1,8 @@
 package io.github.muntasimulhaque.crayoner.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,9 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,7 +63,6 @@ fun SampleButton(
     announce: Boolean = false,
 ) {
     val label = stringResource(R.string.show_sample)
-    val side = with(LocalDensity.current) { size.roundToPx() }
     val breath = if (announce) rememberBreath(stamp = page.id.hashCode().toLong()) else 0f
     Box(
         modifier = modifier
@@ -80,13 +79,14 @@ fun SampleButton(
         contentAlignment = Alignment.Center,
     ) {
         // The whole picture, mounted in the round button like a picture in a
-        // round frame: the sample is the lesson of the app, so none of it may
-        // fall outside the edge of the thing that shows it.
+        // round frame. It is inset well inside the coin: a picture pressed
+        // right up against the rim of the thing holding it looks like it is
+        // spilling out of it, and this one never does.
         val side = size * PICTURE_IN_SET
         Box(modifier = Modifier.size(side)) {
             PageCanvas(
                 page = page,
-                fills = sampleFills(page),
+                fills = remember(page) { sampleFills(page) },
                 sidePx = with(LocalDensity.current) { side.roundToPx() },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -95,7 +95,7 @@ fun SampleButton(
 }
 
 /** How much of the round sample button the picture itself fills. */
-private const val PICTURE_IN_SET = 0.78f
+private const val PICTURE_IN_SET = 0.64f
 
 /**
  * A once-in, three breath pulse at page start: zero, then three slow
@@ -160,7 +160,7 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
         // fills the screen on a phone.
         val margin = minOf(maxWidth, maxHeight) * 0.09f
         val plateMax = minOf(maxWidth - margin * 2f, maxHeight - margin * 2f)
-        val nameBlock = 54.dp
+        val nameBlock = 50.dp
         val platePadding = 16.dp
         val side = (plateMax - platePadding * 2 - nameBlock).coerceAtLeast(96.dp)
         val total = side + platePadding * 2 + nameBlock
@@ -185,7 +185,7 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
                     Box(modifier = Modifier.size(side)) {
                         PageCanvas(
                             page = page,
-                            fills = sampleFills(page),
+                            fills = remember(page) { sampleFills(page) },
                             sidePx = sidePx,
                             modifier = Modifier.fillMaxSize(),
                         )

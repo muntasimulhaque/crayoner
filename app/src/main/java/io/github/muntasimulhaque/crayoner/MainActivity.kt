@@ -67,9 +67,8 @@ class MainActivity : ComponentActivity() {
                             // what is open rather than leaving the app.
                             BackHandler(enabled = true) {
                                 when {
+                                    s.boxOpen -> host.setBoxOpen(false)
                                     s.peeking -> host.setPeek(false)
-                                    s.confirmingClear -> host.askClear(false)
-                                    s.celebrating -> host.home()
                                     else -> host.home()
                                 }
                             }
@@ -80,11 +79,12 @@ class MainActivity : ComponentActivity() {
                                 onStrokeMove = host::moveStroke,
                                 onStrokeEnd = host::endStroke,
                                 onPick = host::pickCrayon,
+                                onErase = host::setErasing,
+                                onOpenBox = host::setBoxOpen,
+                                onSeal = host::sealPage,
                                 onHome = host::home,
                                 onSound = host::setSound,
                                 onPeek = host::setPeek,
-                                onAskClear = host::askClear,
-                                onClear = host::clearPage,
                                 onColorArea = host::colorArea,
                             )
                         }
