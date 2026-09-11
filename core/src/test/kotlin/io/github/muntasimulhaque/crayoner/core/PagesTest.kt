@@ -49,14 +49,17 @@ class PagesTest {
         val used = Pages.all.flatMap { page -> page.regions.map { it.fillArgb } }.toSet()
         assertEquals("the box has a duplicate crayon", Crayons.all.size, Crayons.all.toSet().size)
         assertTrue("the book uses a crayon outside the box", Crayons.all.containsAll(used))
-        // Every crayon in the box should earn its place: a crayon no picture
-        // ever uses is a crayon the child can only ever misuse.
-        assertEquals("a crayon in the box is never used by any picture", 16, Crayons.all.size)
-        assertTrue(
+        // Every crayon in the box must earn its place: a crayon no picture
+        // ever asks for is a crayon the child has no reason to reach for,
+        // and a box with dust in it is not a box between two covers.
+        assertEquals(
             "the book never uses these crayons: " +
                 (Crayons.all.toSet() - used).joinToString { it.toString(16) },
-            used.size >= Crayons.all.size - 1,
+            Crayons.all.size,
+            used.size,
         )
+        // The box is the real thirty two count box, in its own order.
+        assertEquals(32, Crayons.all.size)
     }
 
     @Test
@@ -178,5 +181,42 @@ class PagesTest {
         for (page in Pages.all) {
             assertTrue("${page.id} has too many areas", page.regionCount in 5..10)
         }
+    }
+
+    @Test
+    fun theBookTeachesTheWholeBox() {
+        // The app is a lesson as well as a toy, and the lesson is the box:
+        // a child who colors all sixteen pictures has held every crayon in
+        // it. Every crayon is used (held above), and the colors are spread
+        // across the wheel rather than piled into red, green and blue, so a
+        // page cannot be colored with four crayons of one family.
+        val areas = Pages.all.flatMap { page -> page.regions.map { it.fillArgb } }
+        val families = areas.map { hueFamily(it) }.toSet()
+        assertTrue("the book uses only ${families.size} color families", families.size >= 9)
+        val worst = areas.groupingBy { it }.eachCount().maxByOrNull { it.value }
+        val share = (worst?.value ?: 0).toDouble() / areas.size
+        assertTrue(
+            "one crayon covers ${(share * 100).toInt()}% of the book: ${worst?.key?.toString(16)}",
+            share <= 0.25,
+        )
+    }
+
+    /** Which of twelve slices of the wheel a color sits in. */
+    private fun hueFamily(argb: Long): Int {
+        val r = ((argb shr 16) and 0xFF) / 255.0
+        val g = ((argb shr 8) and 0xFF) / 255.0
+        val b = (argb and 0xFF) / 255.0
+        val max = maxOf(r, g, b)
+        val min = minOf(r, g, b)
+        val spread = max - min
+        // A color with almost no chroma is its own family: the grays, the
+        // whites and the blacks are what a picture is drawn on and in.
+        if (spread < 0.10) return 12
+        val hue = when (max) {
+            r -> ((g - b) / spread + if (g < b) 6.0 else 0.0)
+            g -> (b - r) / spread + 2.0
+            else -> (r - g) / spread + 4.0
+        }
+        return ((hue / 6.0) * 12.0).toInt().coerceIn(0, 11)
     }
 }

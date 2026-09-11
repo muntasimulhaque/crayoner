@@ -5,43 +5,64 @@ package io.github.muntasimulhaque.crayoner.core
  * a real box of crayons does not change its contents because of the page
  * you open. The child reaches for red because red is where red always is.
  *
- * Every color here is a real crayon color, taken from the Crayola standard
- * list (the sixteen a child actually opens: red, red orange, orange, yellow
- * orange, yellow, yellow green, green, blue green, sky blue, blue, blue
- * violet, violet, carnation pink, brown, gray, white), then softened by six
- * percent toward paper. The softening is the medium, not a taste: wax sits
- * on top of the paper's tooth instead of soaking in, so a crayon stroke is
- * always a little lighter and a little less absolute than the stick it came
- * from. The reference hexes: Red #EE204D, Orange #FF7538, Yellow #FCE883,
- * Green #1CAC78, Blue Green #0D98BA, Sky Blue #76D7EA, Blue #1F75FE, Violet
- * #926EAE, Carnation Pink #FFAACC, Brown #B4674D, Gray #95918C.
+ * The thirty-two colors are the ones in the real thirty-two count box, in
+ * the order the box itself lays them out: the sixteen a child meets first,
+ * then the eight the twenty-four adds, then the eight the thirty-two adds.
+ * Every hex is the printed crayon's own color, taken from Crayola's
+ * published values (Red #EE204D, Scarlet #FC2847, Red Orange #FF5349,
+ * Orange #FF7538, Yellow Orange #FFAE42, Apricot #FDD9B5, Yellow #FCE883,
+ * Green Yellow #F0E891, Yellow Green #C5E384, Green #1CAC78, Blue Green
+ * #0D98BA, Cerulean #1DACD6, Sky Blue #76D7EA, Blue #1F75FE, Bluetiful
+ * #3C88EE, Indigo #5D76CB, Blue Violet #7366BD, Violet #926EAE, Wisteria
+ * #C9A0DC, Red Violet #C0448F, Violet Red #F75394, Carnation Pink #FFAACC,
+ * Melon #FEBAAD, Peach #FFCBA4, Tan #D99A6C, Brown #B4674D, Chestnut
+ * #B94E48, Gray #95918C, Timberwolf #DBD7D2, Cadet Blue #B0B7C6, Black
+ * #000000, White #FFFFFF).
  *
- * Two of the sixteen are not single reference colors, and each says so:
- * [SAND] is Crayola's Tan and Peach held together, and [FOREST] is Crayola's
- * Green pressed harder, which is how a crayon really makes a deeper shade.
+ * Nothing here is softened toward paper, and that is the whole point: a
+ * crayon over a paper tooth leaves crumbly edges and bare paper between its
+ * passes, but the pigment it does lay down is the stick's own color. A
+ * lightened palette is not a softer crayon, it is faded wax, which is what
+ * this file used to carry.
  *
  * A picture's own colors are drawn from this box, so every area of every
- * picture can always be matched exactly. Nothing here is a pure black:
- * [INK] is the darkest, and it belongs to the line work.
+ * picture can always be matched exactly. [INK] is not a crayon: it is the
+ * line the pictures are printed with, and it belongs to the paper.
  */
 object Crayons {
 
-    const val RED: Long = 0xFFEF2D57
-    const val ORANGE: Long = 0xFFFF7D44
-    const val YELLOW: Long = 0xFFFCE98A
-    const val SAND: Long = 0xFFFDB886
-    const val GREEN: Long = 0xFF2AB180
-    const val FOREST: Long = 0xFF22815F
-    const val TEAL: Long = 0xFF1C9EBE
-    const val SKY: Long = 0xFF7ED9EB
-    const val BLUE: Long = 0xFF2C7DFE
-    const val NAVY: Long = 0xFF28537E
-    const val PURPLE: Long = 0xFF9977B2
-    const val LILAC: Long = 0xFFCCA6DE
-    const val PINK: Long = 0xFFFFAFCF
-    const val BROWN: Long = 0xFFB97057
-    const val GRAY: Long = 0xFF9B9792
-    const val WHITE: Long = 0xFFFBF8F0
+    const val RED: Long = 0xFFEE204D
+    const val SCARLET: Long = 0xFFFC2847
+    const val RED_ORANGE: Long = 0xFFFF5349
+    const val ORANGE: Long = 0xFFFF7538
+    const val YELLOW_ORANGE: Long = 0xFFFFAE42
+    const val APRICOT: Long = 0xFFFDD9B5
+    const val YELLOW: Long = 0xFFFCE883
+    const val GREEN_YELLOW: Long = 0xFFF0E891
+    const val YELLOW_GREEN: Long = 0xFFC5E384
+    const val GREEN: Long = 0xFF1CAC78
+    const val BLUE_GREEN: Long = 0xFF0D98BA
+    const val CERULEAN: Long = 0xFF1DACD6
+    const val SKY_BLUE: Long = 0xFF76D7EA
+    const val BLUE: Long = 0xFF1F75FE
+    const val BLUETIFUL: Long = 0xFF3C88EE
+    const val INDIGO: Long = 0xFF5D76CB
+    const val BLUE_VIOLET: Long = 0xFF7366BD
+    const val VIOLET: Long = 0xFF926EAE
+    const val WISTERIA: Long = 0xFFC9A0DC
+    const val RED_VIOLET: Long = 0xFFC0448F
+    const val VIOLET_RED: Long = 0xFFF75394
+    const val CARNATION_PINK: Long = 0xFFFFAACC
+    const val MELON: Long = 0xFFFEBAAD
+    const val PEACH: Long = 0xFFFFCBA4
+    const val TAN: Long = 0xFFD99A6C
+    const val BROWN: Long = 0xFFB4674D
+    const val CHESTNUT: Long = 0xFFB94E48
+    const val GRAY: Long = 0xFF95918C
+    const val TIMBERWOLF: Long = 0xFFDBD7D2
+    const val CADET_BLUE: Long = 0xFFB0B7C6
+    const val BLACK: Long = 0xFF000000
+    const val WHITE: Long = 0xFFFFFFFF
 
     /** The ink every picture's lines are drawn in. Dark, never black. */
     const val INK: Long = 0xFF3B4351
@@ -50,13 +71,16 @@ object Crayons {
     const val PAPER: Long = 0xFFFFFDF8
 
     /**
-     * The whole box, in the order a child opens it: the warm colors first,
-     * then the greens and blues, then the quiet ones. Sixteen crayons, and
-     * the same sixteen on every page, in the same places, forever.
+     * The whole box, in the order a child lifts the lid on it: the warm
+     * colors first, then the greens and blues, then the quiet ones. Thirty
+     * two crayons, and the same thirty two on every page, in the same
+     * places, forever.
      */
     val all: List<Long> = listOf(
-        RED, ORANGE, YELLOW, SAND, GREEN, FOREST, TEAL, SKY,
-        BLUE, NAVY, PURPLE, LILAC, PINK, BROWN, GRAY, WHITE,
+        RED, SCARLET, RED_ORANGE, ORANGE, YELLOW_ORANGE, APRICOT, YELLOW, GREEN_YELLOW,
+        YELLOW_GREEN, GREEN, BLUE_GREEN, CERULEAN, SKY_BLUE, BLUE, BLUETIFUL, INDIGO,
+        BLUE_VIOLET, VIOLET, WISTERIA, RED_VIOLET, VIOLET_RED, CARNATION_PINK, MELON, PEACH,
+        TAN, BROWN, CHESTNUT, GRAY, TIMBERWOLF, CADET_BLUE, BLACK, WHITE,
     )
 
     /** True when [argb] is a real crayon from this box. */

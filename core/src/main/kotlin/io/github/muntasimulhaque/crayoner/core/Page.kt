@@ -3,14 +3,17 @@ package io.github.muntasimulhaque.crayoner.core
 /**
  * One area of a picture the child can color. A region is a list of shapes,
  * painted together in order and read as one: a cloud is three circles, a
- * sail is a triangle carrying its mast. Grouping them keeps the number of
- * tappable areas low, which is what a small hand can hold.
+ * sail is a triangle carrying its mast.
  *
- * [id] is stable forever: saved progress is written against it, so
- * reordering regions in code never moves a child's colors. [kind] names the
- * thing for the screen reader and is resolved to a word in res/values.
- * [fillArgb] is the color the finished picture uses, and it is always a
- * crayon from [Crayons], so every area can be matched exactly.
+ * A region is a piece of the print, not a slot to be filled: the picture is
+ * one drawing made of areas, the child's wax goes wherever the hand takes
+ * it, and the app never counts which areas have felt it. Areas still exist
+ * because the picture is drawn from them and because a screen reader needs
+ * one named target per part of the picture.
+ *
+ * [kind] names the thing for the screen reader and is resolved to a word in
+ * res/values. [fillArgb] is the color the finished picture uses, and it is
+ * always a crayon from [Crayons], so every area can be matched exactly.
  */
 data class Region(
     val id: String,
@@ -28,9 +31,9 @@ data class Region(
 /**
  * One page of the coloring book: a name and the areas that make the picture.
  * Region order is paint order, first at the back, so the background is region
- * zero and every later region covers what came before it. Taps resolve the
- * same way, topmost first, which is why what a child sees is always what a
- * child gets.
+ * zero and every later region covers what came before it. A finger resolves
+ * the same way, topmost first, which is why what a child sees is always what
+ * a child gets.
  *
  * Region zero is the ground: it covers the whole paper, and both renderers
  * deliberately skip its outline, because a real coloring page prints no
@@ -53,9 +56,10 @@ data class Page(
     fun indexOfRegion(regionId: String): Int = regions.indexOfFirst { it.id == regionId }
 
     /**
-     * The region a tap at [p] lands on: the topmost one containing the point,
-     * or -1 when the point is outside the paper. The ground covers the whole
-     * square, so a tap on the page always lands somewhere.
+     * The region a touch at [p] lands on: the topmost one containing the
+     * point, or -1 when the point is outside the paper. The ground covers the
+     * whole square, so a touch on the page always lands somewhere, which is
+     * how the first touch knows which color the child is reaching for.
      */
     fun regionIndexAt(p: Vec2): Int {
         for (i in regions.indices.reversed()) {
@@ -63,30 +67,4 @@ data class Page(
         }
         return -1
     }
-
-    /** How many areas the crayon has touched. */
-    fun reachedCount(strokes: List<Stroke>): Int = regionsReached(strokes).size
-
-    /** Which areas the crayon has touched, resolved the way a tap is. */
-    fun regionsReached(strokes: List<Stroke>): Set<Int> {
-        val hits = HashSet<Int>()
-        for (stroke in strokes) {
-            for (p in stroke.points) {
-                val index = regionIndexAt(p)
-                if (index >= 0) hits += index
-            }
-        }
-        return hits
-    }
-
-    /**
-     * The picture is finished when the crayon has been everywhere on it,
-     * whatever colors were used. A real coloring book does not refuse to be
-     * finished because the sky was colored green: the child decides, and the
-     * app's only job is to celebrate the work.
-     */
-    fun isComplete(reached: Set<Int>): Boolean = reached.size == regionCount
-
-    /** The same rule, read from a mark list instead of a ready set. */
-    fun isComplete(strokes: List<Stroke>): Boolean = isComplete(regionsReached(strokes))
 }

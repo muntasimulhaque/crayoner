@@ -7,17 +7,21 @@ import kotlin.math.hypot
  * traveled while the crayon was down. A stroke of a single point is a real
  * mark too, the dot a crayon leaves when it is pressed and lifted.
  *
+ * A stroke can also be an eraser mark ([erase]): the same line, made with
+ * the rubber end of the crayon box instead of wax. An eraser mark removes
+ * the wax the child put on the paper and leaves the printed line alone,
+ * the way a real rubber does, so [color] means nothing while [erase] is
+ * true.
+ *
  * The app no longer fills areas for the child. A coloring page is a piece
  * of paper with a picture printed on it, and coloring it means moving wax
  * across the paper: what the child sees on their sheet is exactly what
- * their hand did, and nothing appears that they did not draw. Areas still
- * exist, because the picture is drawn from them and because the app counts
- * which parts of the picture have felt the crayon, but an area is never
- * painted by a tap.
+ * their hand did, and nothing appears that they did not draw.
  */
 data class Stroke(
     val color: Long,
     val points: List<Vec2>,
+    val erase: Boolean = false,
 ) {
     val isEmpty: Boolean get() = points.isEmpty()
 
@@ -30,6 +34,11 @@ data class Stroke(
             total += hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
         }
         return total
+    }
+
+    companion object {
+        /** The color an eraser mark carries; it is never painted. */
+        const val ERASE_COLOR: Long = 0L
     }
 }
 
@@ -44,8 +53,8 @@ data class Stroke(
  */
 object Strokes {
 
-    /** The shortest movement worth a point, in page units (0.4% of the page). */
-    const val MIN_STEP = 0.004
+    /** The shortest movement worth a point, in page units (0.3% of the page). */
+    const val MIN_STEP = 0.003
 
     /** No single stroke may hold more than this many points. */
     const val MAX_POINTS = 900
@@ -67,6 +76,10 @@ object Strokes {
 
     /** The mark a first touch leaves, before the finger has moved at all. */
     fun dot(color: Long, at: Vec2): Stroke = Stroke(color, listOf(at))
+
+    /** The eraser's mark: the same dot, made with the rubber. */
+    fun eraseDot(at: Vec2): Stroke =
+        Stroke(Stroke.ERASE_COLOR, listOf(at), erase = true)
 
     /**
      * A whole area colored by the app, for a screen reader: the child cannot
@@ -182,12 +195,9 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
 
     fun cleared(): Progress = Progress()
 
-    /** Which areas of [page] the crayon has touched, topmost area first. */
-    fun reached(page: Page): Set<Int> = page.regionsReached(strokes)
-
     fun serialize(): String = strokes.joinToString("|") { stroke ->
         buildString {
-            append(stroke.color.toString(16).uppercase())
+            if (stroke.erase) append(ERASE_TAG) else append(stroke.color.toString(16).uppercase())
             append('(')
             for ((i, p) in stroke.points.withIndex()) {
                 if (i > 0) append(';')
@@ -202,8 +212,14 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
     companion object {
         val Empty: Progress = Progress()
 
+        /** What an eraser mark's chunk starts with instead of a color. */
+        const val ERASE_TAG = "X"
+
         /** Never more than this many strokes may be read back from a save. */
         private const val READ_LIMIT = 4000
+
+        /** No stroke read back may hold more points than one drawn may. */
+        private const val READ_POINTS = Strokes.MAX_POINTS
 
         /**
          * Reads back a save written by [serialize]. Anything malformed, an
@@ -218,10 +234,13 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
                 val open = chunk.indexOf('(')
                 val close = chunk.lastIndexOf(')')
                 if (open <= 0 || close <= open) continue
-                val argb = chunk.substring(0, open).toLongOrNull(16) ?: continue
-                if (!Crayons.exists(argb)) continue
+                val head = chunk.substring(0, open)
+                val erase = head == ERASE_TAG
+                val argb = if (erase) Stroke.ERASE_COLOR else head.toLongOrNull(16) ?: continue
+                if (!erase && !Crayons.exists(argb)) continue
                 val points = ArrayList<Vec2>()
                 for (pair in chunk.substring(open + 1, close).split(';')) {
+                    if (points.size >= READ_POINTS) break
                     val cut = pair.indexOf(',')
                     if (cut <= 0) continue
                     val x = pair.substring(0, cut).toDoubleOrNull() ?: continue
@@ -230,7 +249,7 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
                     if (x < 0.0 || x > 1.0 || y < 0.0 || y > 1.0) continue
                     points += Vec2(x, y)
                 }
-                if (points.isNotEmpty()) strokes += Stroke(argb, points)
+                if (points.isNotEmpty()) strokes += Stroke(argb, points, erase)
             }
             return Progress(strokes)
         }

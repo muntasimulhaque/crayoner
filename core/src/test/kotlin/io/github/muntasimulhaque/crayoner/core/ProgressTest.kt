@@ -8,9 +8,9 @@ import org.junit.Test
 
 /**
  * The marks a child's hand leaves: how they are read, how they are saved,
- * and what it takes for the app to call a picture finished. A coloring page
- * is finished when the crayon has been everywhere on it, whatever colors
- * were chosen along the way.
+ * and how they come back. A mark is a line with a color on it, or a line
+ * made with the rubber, and the app never reads more into it than that: no
+ * area is ever counted, filled, or judged.
  */
 class ProgressTest {
 
@@ -67,6 +67,7 @@ class ProgressTest {
         for (text in listOf(
             null, "", "  ", "(", ")", "|", ";;", "a:b:c", "1:2",
             "FFEF2D57()", "FFEF2D57(,)", "FFEF2D57(0.5)", "🖍(0.5,0.5)",
+            "X()", "X(,)", "X(0.5;0.5)", "X", "x(0.5,0.5)",
             "FFEF2D57(" + "0.5,0.5;".repeat(5000) + ")",
         )) {
             Progress.parse(text)
@@ -75,7 +76,7 @@ class ProgressTest {
 
     @Test
     fun aPointOffThePaperIsDropped() {
-        val parsed = Progress.parse("FFEF2D57(0.5,0.5;-0.2,0.5;0.5,1.4)")
+        val parsed = Progress.parse("FFEE204D(0.5,0.5;-0.2,0.5;0.5,1.4)")
         assertEquals(1, parsed.strokes.size)
         assertEquals(1, parsed.strokes[0].points.size)
     }
@@ -130,29 +131,35 @@ class ProgressTest {
     }
 
     @Test
-    fun theCrayonHasBeenEverywhereFinishesThePictureWhateverTheColorsAre() {
-        // A real coloring book does not refuse to be finished because the
-        // sky was colored green. Marks everywhere on the paper finish it,
-        // and the app celebrates the work either way.
-        var progress = Progress()
-        assertFalse(page.isComplete(progress.strokes))
-        for (index in page.regions.indices) {
-            val p = visiblePoint(page, index)
-            progress = progress.with(Stroke(Crayons.RED, listOf(p, Vec2(p.x + 0.01, p.y))))
-            assertEquals(index + 1, page.reachedCount(progress.strokes))
-        }
-        assertTrue(page.isComplete(progress.strokes))
-        assertEquals(page.regionCount, progress.coloredCount)
+    fun anEraserMarkSurvivesASaveAndKeepsItsMeaning() {
+        // The eraser is a mark like any other: the same line, made with the
+        // rubber. It has to come back from a save as an eraser and not as a
+        // crayon named black, or a restored page would grow a dark line
+        // where the child had rubbed one out.
+        val progress = Progress()
+            .with(strokeOver("sea", Crayons.BLUE))
+            .with(Stroke(Stroke.ERASE_COLOR, listOf(Vec2(0.4, 0.8), Vec2(0.5, 0.82)), erase = true))
+            .with(strokeOver("sail", Crayons.WHITE))
+        val parsed = Progress.parse(progress.serialize())
+        assertEquals(3, parsed.strokes.size)
+        assertFalse(parsed.strokes[0].erase)
+        assertTrue(parsed.strokes[1].erase)
+        assertEquals(2, parsed.strokes[1].points.size)
+        assertFalse(parsed.strokes[2].erase)
+        assertEquals(Crayons.WHITE, parsed.strokes[2].color)
     }
 
     @Test
-    fun oneAreaLeftAloneLeavesThePictureUnfinished() {
-        val last = page.regionCount - 1
-        val progress = page.regions.indices.filter { it != last }.fold(Progress.Empty) { acc, index ->
-            acc.with(Stroke(Crayons.RED, listOf(visiblePoint(page, index))))
-        }
-        assertFalse(page.isComplete(progress.strokes))
-        assertEquals(page.regionCount - 1, page.reachedCount(progress.strokes))
+    fun marksSurviveAPageWhoseAreasWereRearranged() {
+        // A mark belongs to the paper, not to an area: a save made against
+        // an older order of regions still reads back whole, because nothing
+        // in it names an area at all.
+        val progress = Progress()
+            .with(strokeOver("sea", Crayons.BLUE))
+            .with(strokeOver("boat", Crayons.RED))
+        val parsed = Progress.parse(progress.serialize())
+        assertEquals(progress.strokes.map { it.color }, parsed.strokes.map { it.color })
+        assertEquals(progress.strokes[0].points.size, parsed.strokes[0].points.size)
     }
 
     @Test
@@ -168,18 +175,4 @@ class ProgressTest {
         assertEquals(Progress.Empty, Progress.parse(null))
         assertNotEquals(Progress.Empty, Progress().with(Stroke(Crayons.RED, listOf(Vec2(0.1, 0.1)))))
     }
-}
-
-/** A point on [page] that really is visible as region [index], by the same
- * topmost-first rule a finger uses. Every region of every page has one, and
- * a structural test in PagesTest holds the whole book to that. */
-internal fun visiblePoint(page: Page, index: Int): Vec2 {
-    val steps = 120
-    for (i in 0 until steps) {
-        for (j in 0 until steps) {
-            val p = Vec2((i + 0.5) / steps, (j + 0.5) / steps)
-            if (page.regionIndexAt(p) == index) return p
-        }
-    }
-    throw AssertionError("${page.id}: region $index is not visible anywhere")
 }

@@ -22,11 +22,11 @@ import io.github.muntasimulhaque.crayoner.core.wavyEdge
  * rocket is a shape, and the rain is water.
  */
 
-/** Rocket: white body, red nose and fins, orange flame, blue window. */
+/** Rocket: white body, indigo space, blue violet fins, orange flame. */
 fun rocketPage(): Page = Page(
     id = "rocket",
     regions = listOf(
-        area("space", "space", Crayons.NAVY, rect(0.0, 0.0, 1.0, 1.0)),
+        area("space", "space", Crayons.INDIGO, rect(0.0, 0.0, 1.0, 1.0)),
         area(
             "stars", "stars", Crayons.YELLOW,
             star(0.16, 0.18, 0.048, 0.019, 4),
@@ -48,27 +48,27 @@ fun rocketPage(): Page = Page(
             ),
         ),
         area(
-            "fins", "fins", Crayons.RED,
+            "fins", "fins", Crayons.BLUE_VIOLET,
             poly(0.395, 0.56, 0.395, 0.72, 0.28, 0.765, 0.30, 0.655),
             poly(0.605, 0.56, 0.605, 0.72, 0.72, 0.765, 0.70, 0.655),
         ),
         area("body", "body", Crayons.WHITE, round(0.395, 0.26, 0.21, 0.48, 0.03)),
         area("nose", "nose", Crayons.RED, poly(0.38, 0.30, 0.50, 0.07, 0.62, 0.30)),
-        area("window", "window", Crayons.SKY, circle(0.50, 0.40, 0.065)),
+        area("window", "window", Crayons.SKY_BLUE, circle(0.50, 0.40, 0.065)),
     ),
 )
 
-/** Lighthouse: white tower with red stripes on gray rocks, in blue sea. */
+/** Lighthouse: white tower with red stripes on gray rocks, in blue green sea. */
 fun lighthousePage(): Page = Page(
     id = "lighthouse",
     regions = listOf(
-        area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
+        area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
         areaOf(
             "clouds", "cloud", Crayons.WHITE,
             cloud(0.16, 0.15, 0.85),
             cloud(0.72, 0.10, 0.55),
         ),
-        area("sea", "sea", Crayons.BLUE, band(wavyEdge(0.72, 0.02, 3, 0))),
+        area("sea", "sea", Crayons.BLUE_GREEN, band(wavyEdge(0.72, 0.02, 3, 0))),
         area(
             "rocks", "rocks", Crayons.GRAY,
             blob(
@@ -89,19 +89,19 @@ fun lighthousePage(): Page = Page(
             poly(0.370, 0.58, 0.630, 0.58, 0.643, 0.66, 0.357, 0.66),
         ),
         area("lamp", "lamp", Crayons.YELLOW, round(0.435, 0.175, 0.13, 0.115, 0.025)),
-        area("roof", "roof", Crayons.RED, poly(0.415, 0.185, 0.50, 0.075, 0.585, 0.185)),
+        area("roof", "roof", Crayons.RED_ORANGE, poly(0.415, 0.185, 0.50, 0.075, 0.585, 0.185)),
     ),
 )
 
-/** Castle: gray towers and walls with red roofs, a brown door, a green hill. */
+/** Castle: timberwolf stone with yellow orange roofs, on a green hill. */
 fun castlePage(): Page = Page(
     id = "castle",
     regions = listOf(
-        area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
+        area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
         areaOf("clouds", "cloud", Crayons.WHITE, cloud(0.83, 0.13, 0.62)),
         area("hill", "hill", Crayons.GREEN, band(wavyEdge(0.72, 0.02, 3, 1))),
         area(
-            "walls", "walls", Crayons.GRAY,
+            "walls", "walls", Crayons.TIMBERWOLF,
             round(0.28, 0.50, 0.44, 0.30, 0.02),
             round(0.20, 0.44, 0.16, 0.36, 0.03),
             round(0.64, 0.44, 0.16, 0.36, 0.03),
@@ -111,12 +111,12 @@ fun castlePage(): Page = Page(
             rect(0.605, 0.445, 0.055, 0.055),
         ),
         area(
-            "roofs", "roof", Crayons.RED,
+            "roofs", "roof", Crayons.YELLOW_ORANGE,
             poly(0.17, 0.445, 0.28, 0.295, 0.39, 0.445),
             poly(0.61, 0.445, 0.72, 0.295, 0.83, 0.445),
         ),
         area(
-            "windows", "windows", Crayons.SKY,
+            "windows", "windows", Crayons.SKY_BLUE,
             circle(0.28, 0.56, 0.036),
             circle(0.72, 0.56, 0.036),
         ),
@@ -124,11 +124,11 @@ fun castlePage(): Page = Page(
     ),
 )
 
-/** Umbrella: a red canopy with a yellow panel, in the rain. */
+/** Umbrella: a red canopy with a yellow panel, under a rainy gray sky. */
 fun umbrellaPage(): Page = Page(
     id = "umbrella",
     regions = listOf(
-        area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
+        area("sky", "sky", Crayons.CADET_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.50, 0.17, 1.5)),
         area(
             "rain", "rain", Crayons.BLUE,
