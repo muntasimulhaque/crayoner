@@ -1,19 +1,18 @@
 package io.github.muntasimulhaque.crayoner.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.Animatable
@@ -28,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
@@ -42,51 +43,59 @@ import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 
 /**
- * The picture to copy. It is the whole lesson of the app: the sample sits
- * in the top bar beside the page, big enough to compare against at a
- * glance, and one tap holds it up large when a child needs to look closely.
+ * The picture to copy, as one more round button in the bar.
  *
- * The card is a picture, not a button with a picture in it: it wears the
- * page's own paper, a thin ink rule and the page's rounded corners, so the
- * two read as the same kind of object. Its first appearance on a page is
- * announced by a slow, gentle pulse, because a three year old cannot read
- * the label that explains it and should not have to guess.
+ * It is the same size, the same shape and the same shadow as every other
+ * button on the screen, with the finished picture inside it instead of an
+ * icon: the picture is the whole lesson of the app, and it should be the
+ * most inviting thing to press. One tap holds it up big.
+ *
+ * On a fresh page it breathes, three slow swells and then stillness, because
+ * a three year old cannot read a label that explains it and should not have
+ * to guess.
  */
 @Composable
-fun SampleCard(
+fun SampleButton(
     page: Page,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 68.dp,
+    size: Dp = 52.dp,
     announce: Boolean = false,
 ) {
     val label = stringResource(R.string.show_sample)
     val side = with(LocalDensity.current) { size.roundToPx() }
-    // One slow breath, three times, when the page opens. It is the app
-    // saying look here, and it stops on its own so it can never nag.
     val breath = if (announce) rememberBreath(stamp = page.id.hashCode().toLong()) else 0f
     Box(
         modifier = modifier
             .size(size)
             .graphicsLayer {
-                scaleX = 1f + 0.055f * breath
-                scaleY = 1f + 0.055f * breath
+                scaleX = 1f + 0.06f * breath
+                scaleY = 1f + 0.06f * breath
             }
-            .buttonShadow(RoundedCornerShape(size * 0.26f), elevation = 5.dp)
-            .clip(RoundedCornerShape(size * 0.26f))
+            .buttonShadow(CircleShape)
+            .clip(CircleShape)
             .background(CrayonerColors.Card)
-            .border(2.dp, CrayonerColors.Ink.copy(alpha = 0.62f), RoundedCornerShape(size * 0.26f))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
     ) {
-        PageCanvas(
-            page = page,
-            fills = sampleFills(page),
-            sidePx = side,
-            modifier = Modifier.fillMaxSize().padding(3.dp),
-        )
+        // The whole picture, mounted in the round button like a picture in a
+        // round frame: the sample is the lesson of the app, so none of it may
+        // fall outside the edge of the thing that shows it.
+        val side = size * PICTURE_IN_SET
+        Box(modifier = Modifier.size(side)) {
+            PageCanvas(
+                page = page,
+                fills = sampleFills(page),
+                sidePx = with(LocalDensity.current) { side.roundToPx() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
+
+/** How much of the round sample button the picture itself fills. */
+private const val PICTURE_IN_SET = 0.78f
 
 /**
  * A once-in, three breath pulse at page start: zero, then three slow
@@ -123,11 +132,19 @@ fun sampleFills(page: Page): Map<Int, Long> =
 /**
  * The sample held up big: one tap anywhere puts it back down. The page
  * underneath is dimmed but never hidden, so the child keeps their place.
+ *
+ * The plate is a sheet too, taped at its corners like the page it explains:
+ * the picture the child is copying and the paper they are copying it onto
+ * are visibly the same kind of object.
  */
 @Composable
 fun SamplePeek(page: Page, onDismiss: () -> Unit) {
     val name = stringResource(pageNameRes(page.id))
     val hint = stringResource(R.string.hide_sample)
+    val density = LocalDensity.current
+    val tapeReach = with(density) { SHEET_TAPE_REACH.roundToPx() }
+    val tapeWidth = with(density) { SHEET_TAPE_WIDTH.roundToPx() }.toFloat()
+    val tapeHeight = with(density) { SHEET_TAPE_HEIGHT.roundToPx() }.toFloat()
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -144,39 +161,59 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
         val margin = minOf(maxWidth, maxHeight) * 0.09f
         val plateMax = minOf(maxWidth - margin * 2f, maxHeight - margin * 2f)
         val nameBlock = 54.dp
-        val platePadding = 14.dp
+        val platePadding = 16.dp
         val side = (plateMax - platePadding * 2 - nameBlock).coerceAtLeast(96.dp)
-        val sidePx = with(LocalDensity.current) { side.roundToPx() }
-        Column(
-            modifier = Modifier
-                .buttonShadow(RoundedCornerShape(PageCorner), elevation = 12.dp)
-                .clip(RoundedCornerShape(PageCorner))
-                .background(CrayonerColors.Card)
-                .padding(platePadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        val total = side + platePadding * 2 + nameBlock
+        val sidePx = with(density) { side.roundToPx() }
+        Box(
+            modifier = Modifier.size(total + SHEET_TAPE_REACH * 2),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(side)
-                    .clip(RoundedCornerShape(10.dp)),
-            ) {
-                PageCanvas(
-                    page = page,
-                    fills = sampleFills(page),
-                    sidePx = sidePx,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-            Box(
-                modifier = Modifier.height(nameBlock),
+                    .size(total)
+                    .buttonShadow(PaperShape, elevation = 12.dp)
+                    .clip(PaperShape)
+                    .background(CrayonerColors.Card)
+                    .padding(platePadding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = CrayonerColors.Ink,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Box(modifier = Modifier.size(side)) {
+                        PageCanvas(
+                            page = page,
+                            fills = sampleFills(page),
+                            sidePx = sidePx,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.height(nameBlock),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = CrayonerColors.Ink,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val o = tapeReach.toFloat()
+                val spots = listOf(
+                    Offset(o, o) to -45f,
+                    Offset(size.width - o, o) to 45f,
+                    Offset(o, size.height - o) to 45f,
+                    Offset(size.width - o, size.height - o) to -45f,
                 )
+                for ((center, angle) in spots) {
+                    drawTape(center, tapeWidth, tapeHeight, angle)
+                }
             }
         }
     }
@@ -206,7 +243,6 @@ internal fun pageNameRes(pageId: String): Int = when (pageId) {
 /** The word for one area, read by the screen reader where it matters. */
 internal fun areaNameRes(kind: String): Int = when (kind) {
     "sky" -> R.string.area_sky
-    "sun" -> R.string.area_sun
     "cloud" -> R.string.area_cloud
     "clouds" -> R.string.area_clouds
     "sea" -> R.string.area_sea

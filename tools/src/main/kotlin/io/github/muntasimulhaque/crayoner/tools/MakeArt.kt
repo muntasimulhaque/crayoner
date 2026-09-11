@@ -1,6 +1,9 @@
 package io.github.muntasimulhaque.crayoner.tools
 
+import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Pages
+import io.github.muntasimulhaque.crayoner.core.Strokes
+import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.RenderingHints
@@ -26,7 +29,7 @@ import kotlin.math.ceil
  */
 object MakeArt {
 
-    private val BRAND: Int = 0xFFD6423A.toInt()
+    private val BRAND: Int = Crayons.RED.toInt()
 
     /** The 1024 x 500 feature graphic: the mark, the name, one line. */
     fun featureGraphic(rootDir: File): BufferedImage {
@@ -39,7 +42,10 @@ object MakeArt {
         g.color = Color(BRAND, true)
         g.fill(Rectangle2D.Double(0.0, 0.0, w.toDouble(), h.toDouble()))
 
-        // The picture plate on the left: the sailboat, the book's first page.
+        // The picture plate on the left: the sailboat, the book's first page,
+        // half colored by a child's own hand. Every mark on it is a real
+        // scribble from the same code the app draws with, so the banner shows
+        // the app and not an artist's idea of the app.
         val plate = 372
         val px = 62
         val py = (h - plate) / 2
@@ -48,20 +54,47 @@ object MakeArt {
             RoundRectangle2D.Double(
                 px.toDouble() - 14, py.toDouble() - 14,
                 plate.toDouble() + 28, plate.toDouble() + 28,
-                34.0, 34.0,
+                6.0, 6.0,
             ),
         )
+        // The tape at its corners, the same roll the app uses: short strips
+        // crossing each corner, half on the paper and half on the desk behind
+        // it.
+        for ((corner, angle) in listOf(
+            (px - 4 to py - 4) to 45,
+            (px + plate + 4 to py - 4) to -45,
+            (px - 4 to py + plate + 4) to -45,
+            (px + plate + 4 to py + plate + 4) to 45,
+        )) {
+            val tape = java.awt.geom.AffineTransform.getRotateInstance(
+                Math.toRadians(angle.toDouble()), corner.first.toDouble(), corner.second.toDouble(),
+            )
+            val strip = tape.createTransformedShape(
+                Rectangle2D.Double(
+                    corner.first - 38.0, corner.second - 11.0, 76.0, 22.0,
+                ),
+            )
+            g.color = Color(0xD6F6E7C4.toInt(), true)
+            g.fill(strip)
+            g.color = Color(0x38A08B5E.toInt(), true)
+            g.stroke = BasicStroke(1.5f)
+            g.draw(strip)
+        }
         val plateG = g.create(px, py, plate, plate) as Graphics2D
         val page = Pages.byId("sail") ?: error("the sail page is gone")
-        // Half colored, the way a child leaves a page: the sky, the sun and
-        // the sea are done, the sail and the boat still wait for crayons.
-        val halfFills = mapOf(
-            0 to page.regions[0].fillArgb,
-            1 to page.regions[1].fillArgb,
-            2 to page.regions[2].fillArgb,
-            3 to page.regions[3].fillArgb,
-        )
-        RenderKit.renderPage(plateG, page, plate.toDouble(), halfFills)
+        // Everything printed, and then the child's hand: the sky, the clouds,
+        // the sea and the sail scribbled in, the boat and its mast left for
+        // next time. Two marks even miss nothing: a real page is like that.
+        RenderKit.renderPage(plateG, page, plate.toDouble(), emptyMap(), grain = false)
+        val half = listOf("sky", "cloud", "cloud_high", "sea")
+            .mapNotNull { id -> page.region(page.indexOfRegion(id)) }
+            .flatMap { region ->
+                listOf(
+                    Strokes.scribble(region, region.fillArgb),
+                    Strokes.scribble(region, region.fillArgb, 0.012),
+                )
+            }
+        RenderKit.renderStrokes(plateG, half, plate.toDouble())
         plateG.dispose()
 
         drawCleanString(g, "Crayoner", "baloo2_extrabold.ttf", 116f, 0xFFFFFDF8.toInt(), 486f, 246f, rootDir)

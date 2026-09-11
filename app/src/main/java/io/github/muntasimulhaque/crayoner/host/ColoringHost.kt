@@ -7,7 +7,8 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
-import io.github.muntasimulhaque.crayoner.core.Region
+import io.github.muntasimulhaque.crayoner.core.Stroke
+import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,44 +24,50 @@ sealed interface Screen {
 
     data class Coloring(
         val page: Page,
-        /** What shows on the page right now, by region index. */
+        /** Every mark the child has made, in the order they made them. */
         val progress: Progress,
+        /**
+         * Which areas the crayon has touched so far. It is derived from
+         * [progress] and [page], and it is kept here rather than recomputed
+         * while drawing: deciding it means walking every point of every mark
+         * through the picture, which is not work a frame should repeat. The
+         * host owns it, so the bar's count, the screen reader's labels and
+         * the completion rule all read one answer.
+         */
+        val reached: Set<Int> = emptySet(),
         /** The crayon in hand; null until the child picks one up. */
         val crayon: Long? = null,
+        /**
+         * The mark under the finger right now. It is drawn with the finished
+         * ones and saved the moment the finger lifts, so what the child sees
+         * while drawing is what they get.
+         */
+        val live: Stroke? = null,
         /** The finished plate, risen over the page. */
         val celebrating: Boolean = false,
         /** The sample held up big, while the child looks closely. */
         val peeking: Boolean = false,
         /** The clear confirm, waiting for an answer. */
         val confirmingClear: Boolean = false,
-        /** The last region painted with the right color, and when. */
-        val rightIndex: Int = -1,
+        /** The areas the last mark got right, and when. */
+        val rightIndices: Set<Int> = emptySet(),
         val rightAt: Long = 0L,
-        /** The last region painted with the wrong color, and when. */
-        val wrongIndex: Int = -1,
+        /** The areas the last mark got wrong, and when. */
+        val wrongIndices: Set<Int> = emptySet(),
         val wrongAt: Long = 0L,
         /**
-         * The last color that landed: which area, where the crayon touched
-         * down in page units, what color was there before, and when. The
-         * sheet reads this to wipe the new color in from under the finger,
-         * which is the single most satisfying moment in the app.
+         * Counts finished marks. The write-only half of the state: it is
+         * what the one-shot answers (the haptic, the tick) read, so a mark
+         * that lands over areas already colored still answers like a mark.
          */
-        val lastPaint: LastPaint? = null,
+        val stamp: Long = 0L,
     ) : Screen
 }
-
-/** One color arriving, in enough detail for the sheet to animate it. */
-data class LastPaint(
-    val index: Int,
-    val at: Vec2,
-    val before: Long?,
-    val stamp: Long,
-)
 
 /** What the shelf needs to draw itself. */
 data class ShelfState(
     val finished: Set<String> = emptySet(),
-    /** The colors of the page still being worked on, by page id. */
+    /** The marks of the page still being worked on, by page id. */
     val drafts: Map<String, String> = emptyMap(),
     val soundOn: Boolean = true,
     /**
@@ -78,10 +85,11 @@ data class ShelfState(
 /**
  * The host performs what the domain decides. It owns which screen is up,
  * which crayon is in hand, and what the page shows. The rules themselves
- * (hit testing, completion, saving) live in :core and are tested there.
+ * (geometry, saving, completion) live in :core and are tested there.
  *
- * Every color the child places is saved a fraction of a second later, so a
- * phone call, a rotation or a process death costs at most one tap. No
+ * A finger draws. Down starts a mark, moving draws it, up finishes it, and
+ * every finished mark is saved a fraction of a second later, so a phone
+ * call, a rotation or a process death costs at most the mark in flight. No
  * network, no accounts, nothing leaving the device.
  */
 class ColoringHost(app: Application) : ViewModel() {
@@ -95,7 +103,7 @@ class ColoringHost(app: Application) : ViewModel() {
     private val _shelf = MutableStateFlow(ShelfState(loaded = false))
     val shelf: StateFlow<ShelfState> = _shelf.asStateFlow()
 
-    /** Draft writes are conflated and slightly delayed, never per tap. */
+    /** Draft writes are conflated and slightly delayed, never per mark. */
     private val drafts = MutableSharedFlow<Draft>(extraBufferCapacity = 1)
 
     private class Draft(val pageId: String, val text: String)
@@ -120,18 +128,20 @@ class ColoringHost(app: Application) : ViewModel() {
         }
     }
 
-    /** Open a page: its saved colors if it has any, else a blank one. */
+    /** Open a page: its saved marks if it has any, else a blank sheet. */
     fun open(pageId: String) {
         val page = Pages.byId(pageId) ?: return
-        val saved = runCatching { store.draftFor(page, _shelf.value.drafts) }.getOrDefault(Progress.Empty)
+        val saved = runCatching { store.draftFor(page.id, _shelf.value.drafts) }
+            .getOrDefault(Progress.Empty)
         _screen.value = Screen.Coloring(
             page = page,
             progress = saved,
+            reached = saved.reached(page),
             crayon = null,
         )
     }
 
-    /** Pick a crayon up. Its color is the only thing a tap can paint with. */
+    /** Pick a crayon up. Its color is the only thing a mark can be drawn in. */
     fun pickCrayon(argb: Long) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
@@ -142,68 +152,85 @@ class ColoringHost(app: Application) : ViewModel() {
     }
 
     /**
-     * Colors one area by index. It is the same rule as a tap, with the
-     * point supplied by the area itself, so a screen reader's action and a
-     * finger do exactly the same thing, including the first touch rule.
+     * A finger touching the paper at [p], in page units.
+     *
+     * The first touch on a fresh page always works: with no crayon in hand
+     * yet, the app picks up the color the area under the finger is asking
+     * for, so a three year old's first act ends with their own mark on the
+     * paper in the right color, instead of in nothing happening. From then on
+     * the child is holding a crayon and every mark is drawn with it, which is
+     * the whole lesson.
+     */
+    fun beginStroke(p: Vec2) {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        if (s.celebrating || s.peeking || s.confirmingClear) return
+        val at = clamp(p)
+        val hand = s.crayon ?: colorWantedAt(s.page, at) ?: return
+        _screen.value = s.copy(crayon = hand, live = Strokes.dot(hand, at))
+    }
+
+    /** The finger moved: the mark grows under it. */
+    fun moveStroke(p: Vec2) {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        val live = s.live ?: return
+        if (s.celebrating || s.peeking || s.confirmingClear) return
+        val grown = Strokes.extend(live, clamp(p))
+        if (grown !== live) _screen.value = s.copy(live = grown)
+    }
+
+    /** The finger lifted: the mark is finished, saved, and answered. */
+    fun endStroke() {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        val live = s.live ?: return
+        if (s.celebrating || s.peeking || s.confirmingClear) {
+            _screen.value = s.copy(live = null)
+            return
+        }
+        commit(s, live)
+    }
+
+    /**
+     * Colors one whole area. It is how a screen reader colors, because a
+     * child who cannot aim a finger cannot draw a mark either: the app
+     * scribbles the area in the crayon in hand, and the result is the same
+     * kind of wax on the same paper as anybody else's mark.
      */
     fun colorArea(index: Int) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
         if (s.celebrating || s.peeking || s.confirmingClear) return
         val region = s.page.region(index) ?: return
-        colorRegion(s, index, region, s.crayon ?: region.fillArgb)
+        val hand = s.crayon ?: region.fillArgb
+        val scribble = Strokes.scribble(region, hand)
+        if (scribble.isEmpty) return
+        commit(s.copy(crayon = hand), scribble)
     }
 
-    /**
-     * A tap on the page at [p], in page units. Colors the topmost area the
-     * point lands on, with the crayon in hand.
-     *
-     * The first touch on a page always works: with no crayon in hand yet,
-     * the app picks up the color that area is asking for and colors it, so
-     * a three year old's first act ends in a colored picture instead of in
-     * nothing happening. From then on the child is holding a crayon and
-     * every later touch uses it, which is the whole lesson.
-     */
-    fun tap(p: Vec2) {
-        val s = _screen.value
-        if (s !is Screen.Coloring) return
-        if (s.celebrating || s.peeking || s.confirmingClear) return
-        val index = s.page.regionIndexAt(p)
-        if (index < 0) return
-        val region = s.page.region(index) ?: return
-        colorRegion(s, index, region, s.crayon ?: region.fillArgb, at = p)
-    }
-
-    /** The one place a color lands, shared by a tap and a reader's action. */
-    private fun colorRegion(
-        s: Screen.Coloring,
-        index: Int,
-        region: Region,
-        crayon: Long,
-        at: Vec2 = region.centroid,
-    ) {
-        val right = region.fillArgb == crayon
-        // A tap that changes nothing but the same color again is still real
-        // painting, but it should not re-cheer: only a fresh match earns
-        // the tick and the sparkle.
-        val wasRight = s.progress.colorOf(index) == region.fillArgb
-        val becameRight = right && !wasRight
-        val progress = s.progress.with(index, crayon)
-        val justFinished = s.page.isComplete(progress.asMap()) && !s.page.isComplete(s.progress.asMap())
+    /** The one place a mark is finished, answered, and saved. */
+    private fun commit(s: Screen.Coloring, live: Stroke) {
+        val wasReached = s.reached
+        val progress = s.progress.with(live)
+        val after = progress.reached(s.page)
+        val touched = after - wasReached
+        val right = touched.filter { s.page.region(it)?.fillArgb == live.color }.toSet()
+        val wrong = touched - right
+        val justFinished = s.page.isComplete(after) && wasReached.size < s.page.regionCount
         val now = System.nanoTime()
         _screen.value = s.copy(
             progress = progress,
-            // The color just used stays in hand, including the color the
-            // first touch picked up on its own.
-            crayon = crayon,
-            lastPaint = LastPaint(index, at, s.progress.colorOf(index), now),
-            rightIndex = if (becameRight) index else s.rightIndex,
-            rightAt = if (becameRight) now else s.rightAt,
-            wrongIndex = if (right) s.wrongIndex else index,
-            wrongAt = if (right) s.wrongAt else now,
+            reached = after,
+            live = null,
+            rightIndices = right,
+            rightAt = if (right.isNotEmpty()) now else s.rightAt,
+            wrongIndices = wrong,
+            wrongAt = if (wrong.isNotEmpty()) now else s.wrongAt,
             celebrating = justFinished,
+            stamp = s.stamp + 1,
         )
-        chime(if (becameRight) Sfx.TICK else Sfx.PAINT)
+        chime(if (right.isNotEmpty()) Sfx.TICK else Sfx.PAINT)
         if (justFinished) {
             chime(Sfx.CHIME)
             onFinished(s.page.id)
@@ -211,6 +238,15 @@ class ColoringHost(app: Application) : ViewModel() {
             rememberDraft(s.page, progress)
         }
     }
+
+    /** Which color the area under [p] asks for, if the point is on paper. */
+    private fun colorWantedAt(page: Page, p: Vec2): Long? {
+        val index = page.regionIndexAt(p)
+        return page.region(index)?.fillArgb
+    }
+
+    private fun clamp(p: Vec2): Vec2 =
+        Vec2(p.x.coerceIn(0.0, 1.0), p.y.coerceIn(0.0, 1.0))
 
     /** A finished picture earns a sticker, and its draft is done. */
     private fun onFinished(pageId: String) {
@@ -237,20 +273,22 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s is Screen.Coloring) _screen.value = s.copy(confirmingClear = on, peeking = false)
     }
 
-    /** Wipe this page back to bare outlines. */
+    /** Wipe this page back to blank paper. */
     fun clearPage() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        _screen.value = s.copy(progress = Progress.Empty, confirmingClear = false, rightIndex = -1, wrongIndex = -1)
+        _screen.value = s.copy(
+            progress = Progress.Empty,
+            reached = emptySet(),
+            confirmingClear = false,
+            rightIndices = emptySet(),
+            wrongIndices = emptySet(),
+        )
         viewModelScope.launch { runCatching { store.clearDraft() } }
     }
 
-    /** Back to the shelf. Nothing is lost: the draft is already saved. */
+    /** Back to the shelf. Nothing is lost: the marks are already saved. */
     fun home() {
-        val s = _screen.value
-        if (s is Screen.Coloring && s.progress.coloredCount == 0) {
-            viewModelScope.launch { runCatching { store.clearDraft() } }
-        }
         _screen.value = Screen.Home
     }
 
@@ -259,12 +297,9 @@ class ColoringHost(app: Application) : ViewModel() {
         viewModelScope.launch { runCatching { store.setSound(on) } }
     }
 
-    /** Reopen the page the child was coloring, if there is one. */
-    fun resume(pageId: String) = open(pageId)
-
     private fun rememberDraft(page: Page, progress: Progress) {
-        val text = progress.serialize(page)
-        drafts.tryEmit(Draft(page.id, if (progress.coloredCount == 0) "" else text))
+        val text = progress.serialize()
+        drafts.tryEmit(Draft(page.id, if (progress.isEmpty) "" else text))
     }
 
     /** The four effects, unless the sound switch is off. */

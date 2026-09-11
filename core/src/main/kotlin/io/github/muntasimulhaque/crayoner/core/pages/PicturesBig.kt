@@ -14,7 +14,6 @@ import io.github.muntasimulhaque.crayoner.core.poly
 import io.github.muntasimulhaque.crayoner.core.rect
 import io.github.muntasimulhaque.crayoner.core.round
 import io.github.muntasimulhaque.crayoner.core.star
-import io.github.muntasimulhaque.crayoner.core.sun
 import io.github.muntasimulhaque.crayoner.core.wavyEdge
 
 /**
@@ -99,7 +98,7 @@ fun castlePage(): Page = Page(
     id = "castle",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.85, 0.13, 0.07)),
+        areaOf("clouds", "cloud", Crayons.WHITE, cloud(0.83, 0.13, 0.62)),
         area("hill", "hill", Crayons.GREEN, band(wavyEdge(0.72, 0.02, 3, 1))),
         area(
             "walls", "walls", Crayons.GRAY,

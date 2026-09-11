@@ -71,16 +71,16 @@ block.
 Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a box of crayons. Color the outlines until they match the picture.
 
 How it plays
-Tap a picture on the wall and the page opens as clean black lines. The picture to copy sits right above it, the way a coloring book prints it facing the page, so a child looks up, looks down, and colors. Pick a crayon, touch an area, and the color spreads from right under the finger, with the soft grain of real wax on paper. Tap the picture to hold it up large whenever a closer look is wanted.
+Tap a picture on the wall and the page opens as clean black lines on a sheet of paper taped to the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does.
 
 A real box of crayons
-Sixteen crayons, the same sixteen on every page, in the same places every time, because a real box does not change its contents because of the page you open. The colors are crayon colors, chosen by hand to look like wax and not like paint.
+Sixteen crayons, the same sixteen on every page, in the same places every time, because a real box does not change its contents because of the page you open. They are real crayon colors, softened the way wax on paper is, and the crayon in hand lifts out of the box on a spring.
 
 Made for small hands
-Sixteen pictures, all of them available from the very first launch: a sailboat, a tree, a balloon, an ice cream, a mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an umbrella, a rocket, a train, a lighthouse and a castle. Five to eight big areas each, huge targets, and nothing that needs reading. There is no score, no timer, no fail state, and no picture is ever locked. Colors are saved as they land, so a phone call or a restart never loses a picture. Every screen fits any size of phone or tablet, held either way.
+Sixteen pictures, all of them available from the very first launch: a sailboat, a tree, a balloon, an ice cream, a mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an umbrella, a rocket, a train, a lighthouse and a castle. Big areas, huge targets, and nothing that needs reading. There is no score, no timer, no fail state, and no picture is ever locked. Marks are saved as they are made, so a phone call or a restart never loses a picture. Every screen fits any size of phone or tablet, held either way.
 
 Gentle by design
-A color that matches the picture earns a small sparkle. A color that does not match still goes on, quietly, with no buzzer and no scolding: this app has no way to say wrong, and a picture is finished when the child has filled it, not when it matches. Starting a page over always asks first.
+A mark in the color the picture asks for earns a small sparkle. A mark in any other color still goes on, quietly, with no buzzer and no scolding: this app has no way to say wrong. The picture is finished when the crayon has been everywhere on it, whatever colors were chosen, and that is celebrated with confetti in the very colors the child used. Starting a page over always asks first.
 
 Safe and private
 No ads. No trackers. No accounts. No in-app purchases. It asks for no permissions at all, not even internet. No data collected, so nothing shared: everything stays on your device.
@@ -130,10 +130,10 @@ subfolder's PNGs to its Play Console slot, in filename order:
 ```
 01_home          the picture wall, every picture finished
 02_home_progress a finished picture with its star, one being colored, one bare
-03_blank         a brand new page, the sample above it, the box below
-04_picked        a crayon lifted out of the box
-05_coloring      half the picture done, a crayon in hand
-06_peek          the sample held up large
+03_blank         a brand new page, the sheet taped to the desk, the box below
+04_picked        a crayon lifted out of the box, casting its shadow
+05_coloring      a few swipes of the sky colored by hand, a crayon in hand
+06_peek          the sample held up large, taped to the desk like the page
 07_most          nearly finished, sound switched off
 08_done          the finished picture on the celebration plate
 ```
@@ -207,10 +207,10 @@ versionCode 11 is 1.1, and so on. Never reuse a versionCode.
 
 ## Release notes
 
-### First release (versionCode 1, versionName 0.1)
+### Version 0.2 (versionCode 2)
 
 ```
-First release of Crayoner. Sixteen pictures to color, all open from the start: a sailboat, a tree, a balloon, an ice cream, a mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an umbrella, a rocket, a train, a lighthouse and a castle. The picture to copy sits right above the page, the crayons are the colors of real wax, and every screen fits any phone or tablet. No ads, no trackers, no permissions, fully offline. Thank you for trying it.
+Now you color it yourself, the way a real crayon works. Your finger draws the mark, it lays down wax with the grain of real paper, and it covers the lines it crosses. The picture to copy is now a round button in the top bar beside the sound switch: tap it to hold the picture up large, tap anywhere to put it down. The page is a sheet of paper taped to the desk at its corners, the crayons are real crayon colors now, and the one you pick up lifts out of the box. Thank you for coloring.
 ```
 
 ## Closed testing: step by step

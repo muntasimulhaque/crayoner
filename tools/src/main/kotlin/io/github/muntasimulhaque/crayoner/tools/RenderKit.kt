@@ -9,6 +9,7 @@ import io.github.muntasimulhaque.crayoner.core.Poly
 import io.github.muntasimulhaque.crayoner.core.RRect
 import io.github.muntasimulhaque.crayoner.core.Region
 import io.github.muntasimulhaque.crayoner.core.Shape
+import io.github.muntasimulhaque.crayoner.core.Stroke
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics2D
@@ -117,6 +118,62 @@ object RenderKit {
     }
 
     private val grainTiles = HashMap<Int, java.awt.image.BufferedImage>()
+
+    /**
+     * The child's own marks, in wax, exactly as the device draws them: the
+     * same three passes, the same grain tile, the same tip as a fraction of
+     * the page. The store art can then show a page a child really colored,
+     * and not an artist's impression of one.
+     */
+    fun renderStrokes(g: Graphics2D, strokes: List<Stroke>, side: Double) {
+        if (strokes.isEmpty()) return
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        val tip = side * CRAYON_TIP_FRACTION
+        val tile = grainTexture(g, side)
+        for (stroke in strokes) {
+            if (stroke.points.isEmpty()) continue
+            val color = Color(stroke.color.toInt(), true)
+            val path = Path2D.Double()
+            val first = stroke.points[0]
+            path.moveTo(first.x * side, first.y * side)
+            for (i in 1 until stroke.points.size) {
+                path.lineTo(stroke.points[i].x * side, stroke.points[i].y * side)
+            }
+            if (stroke.points.size == 1) {
+                val r = tip * 0.52
+                g.color = Color(color.red, color.green, color.blue, 210)
+                g.fill(java.awt.geom.Ellipse2D.Double(
+                    first.x * side - r, first.y * side - r, r * 2, r * 2,
+                ))
+                continue
+            }
+            fun pass(width: Double, alpha: Int, paint: java.awt.Paint) {
+                g.paint = paint
+                g.stroke = BasicStroke(
+                    width.toFloat(),
+                    BasicStroke.CAP_ROUND,
+                    BasicStroke.JOIN_ROUND,
+                )
+                g.draw(path)
+            }
+            pass(tip * 1.20, 66, Color(color.red, color.green, color.blue, 66))
+            pass(tip, 189, Color(color.red, color.green, color.blue, 189))
+            pass(
+                tip * 1.02,
+                255,
+                java.awt.TexturePaint(
+                    tile,
+                    java.awt.geom.Rectangle2D.Double(
+                        0.0, 0.0, tile.width.toDouble(), tile.height.toDouble(),
+                    ),
+                ),
+            )
+            pass(tip * 0.58, 199, Color(color.red, color.green, color.blue, 199))
+        }
+    }
+
+    /** The crayon tip, as a fraction of the page side. Mirrors the device. */
+    const val CRAYON_TIP_FRACTION = 0.052
 
     /** The picture's own colors, the way the sample card shows it. */
     fun sampleFills(page: Page): Map<Int, Long> =

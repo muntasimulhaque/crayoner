@@ -41,32 +41,6 @@ internal fun fadeAfter(stamp: Long): Float {
 
 internal const val FEEDBACK_MS = 560
 
-/** How long a color takes to sweep out from under the finger, in ms. */
-internal const val SWEEP_MS = 320
-
-/**
- * Runs from zero to one once whenever [stamp] changes: the clock the paint
- * sweep reads. It stands at one, not zero, before the first paint, so a page
- * opened with colors already on it draws them plainly with no sweep.
- */
-@Composable
-internal fun sweepAfter(stamp: Long): Float {
-    var value by remember { mutableFloatStateOf(1f) }
-    LaunchedEffect(stamp) {
-        if (stamp == 0L) {
-            value = 1f
-            return@LaunchedEffect
-        }
-        value = 0f
-        val anim = Animatable(0f)
-        anim.animateTo(1f, tween(SWEEP_MS, easing = FastOutSlowInEasing)) {
-            value = this.value
-        }
-        value = 1f
-    }
-    return value
-}
-
 /**
  * The small rise a page makes the first time it appears. One slow run, then
  * still forever: a page that breathes while a child is working would be a

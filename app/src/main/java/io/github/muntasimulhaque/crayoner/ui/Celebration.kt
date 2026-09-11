@@ -28,14 +28,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -45,30 +42,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
-import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Page
-import io.github.muntasimulhaque.crayoner.core.star
-import kotlin.math.PI
-import kotlin.math.sin
-import kotlin.random.Random
+import io.github.muntasimulhaque.crayoner.core.Stroke
 
 /**
- * The finish: the finished picture held up on one clean sheet, paper
- * confetti in the colors the child actually used, and the two ways onward
+ * The finish: the picture the child made, held up on one clean sheet, paper
+ * confetti in the colors they actually reached for, and the two ways onward
  * under it. No score, no timer, no fail state: the picture being finished
- * is the whole reward, and it is celebrated whether or not it matches.
+ * is the whole reward, and it is celebrated whatever colors went on it.
  */
 @Composable
 fun Celebration(
     page: Page,
-    fills: Map<Int, Long>,
+    strokes: List<Stroke>,
     onAgain: () -> Unit,
     onHome: () -> Unit,
 ) {
-    // The confetti falls in the child's own colors, taken from the page they
-    // just finished: a picture colored in five different blues celebrates in
-    // five different blues, which is the app saying look what you made.
-    val confetti = remember(page.id, fills) { buildConfetti(page, fills) }
+    // The confetti falls in the child's own colors, taken from the crayons
+    // they actually used: a picture colored in five different blues
+    // celebrates in five different blues, which is the app saying look what
+    // you made.
+    val confetti = remember(page.id, strokes) { buildConfetti(page, strokes) }
     val praise = stringResource(R.string.well_done)
     val fall = remember { Animatable(0f) }
     LaunchedEffect(page.id) {
@@ -101,7 +95,7 @@ fun Celebration(
         ) {
             CelebrationPlate(
                 page = page,
-                fills = fills,
+                strokes = strokes,
                 pop = pop.value,
                 onAgain = onAgain,
                 onHome = onHome,
@@ -114,7 +108,52 @@ fun Celebration(
 @Composable
 private fun CelebrationPlate(
     page: Page,
-    fills: Map<Int, Long>,
+    strokes: List<Stroke>,
+    pop: Float,
+    onAgain: () -> Unit,
+    onHome: () -> Unit,
+) {
+    // The tape on the plate's own corners: the work is pinned to the desk the
+    // way a child's drawing gets pinned up, with the same roll as the rest of
+    // the app.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val tapeWidth = with(density) { SHEET_TAPE_WIDTH.roundToPx() }.toFloat()
+    val tapeHeight = with(density) { SHEET_TAPE_HEIGHT.roundToPx() }.toFloat()
+    Box(
+        modifier = Modifier.padding(horizontal = 22.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            CelebrationPlateBody(
+                page = page,
+                strokes = strokes,
+                pop = pop,
+                onAgain = onAgain,
+                onHome = onHome,
+            )
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(SHEET_TAPE_REACH),
+            ) {
+                val spots = listOf(
+                    Offset(0f, 0f) to -45f,
+                    Offset(size.width, 0f) to 45f,
+                    Offset(0f, size.height) to 45f,
+                    Offset(size.width, size.height) to -45f,
+                )
+                for ((center, angle) in spots) {
+                    drawTape(center, tapeWidth, tapeHeight, angle)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CelebrationPlateBody(
+    page: Page,
+    strokes: List<Stroke>,
     pop: Float,
     onAgain: () -> Unit,
     onHome: () -> Unit,
@@ -122,8 +161,8 @@ private fun CelebrationPlate(
     BoxWithConstraints(
         modifier = Modifier
             .padding(horizontal = 22.dp)
-            .buttonShadow(RoundedCornerShape(28.dp), elevation = 10.dp)
-            .clip(RoundedCornerShape(28.dp))
+            .buttonShadow(PaperShape, elevation = 10.dp)
+            .clip(PaperShape)
             .background(CrayonerColors.Card)
             .padding(horizontal = 18.dp, vertical = 18.dp),
     ) {
@@ -144,7 +183,7 @@ private fun CelebrationPlate(
         ) {
             if (landscape) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    FinishedPicture(page = page, fills = fills, side = pictureSide, pop = pop)
+                    FinishedPicture(page = page, strokes = strokes, side = pictureSide, pop = pop)
                     Spacer(Modifier.width(22.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Praise()
@@ -153,7 +192,7 @@ private fun CelebrationPlate(
                     }
                 }
             } else {
-                FinishedPicture(page = page, fills = fills, side = pictureSide, pop = pop)
+                FinishedPicture(page = page, strokes = strokes, side = pictureSide, pop = pop)
                 Spacer(Modifier.height(14.dp))
                 Praise()
                 Spacer(Modifier.height(16.dp))
@@ -165,13 +204,12 @@ private fun CelebrationPlate(
 
 /** The finished work, popped to its place and centered. */
 @Composable
-private fun FinishedPicture(page: Page, fills: Map<Int, Long>, side: Dp, pop: Float) {
+private fun FinishedPicture(page: Page, strokes: List<Stroke>, side: Dp, pop: Float) {
     val sidePx = with(androidx.compose.ui.platform.LocalDensity.current) { side.roundToPx() }
     Box(
         modifier = Modifier
             .width(side)
             .height(side)
-            .clip(RoundedCornerShape(14.dp))
             .graphicsLayer {
                 scaleX = pop
                 scaleY = pop
@@ -180,7 +218,8 @@ private fun FinishedPicture(page: Page, fills: Map<Int, Long>, side: Dp, pop: Fl
     ) {
         PageCanvas(
             page = page,
-            fills = fills,
+            fills = emptyMap(),
+            strokes = strokes,
             sidePx = sidePx,
             modifier = Modifier.fillMaxSize(),
         )
@@ -278,87 +317,5 @@ private fun AgainIcon(color: Color, size: Dp) {
             close()
         }
         drawPath(head, color)
-    }
-}
-
-private fun DrawScope.drawConfetti(pieces: List<Confetti>, t: Float) {
-    for (p in pieces) {
-        val local = ((t - p.delay) / p.fall).coerceIn(0.0, 1.0)
-        if (local <= 0.0) continue
-        val y = ((-0.08 + local * 1.25) * size.height).toFloat()
-        val x = ((p.x0 + p.sway * sin(local * p.freq * 2 * PI + p.phase)) * size.width).toFloat()
-        val alpha = if (local > 0.82) ((1.0 - local) / 0.18).toFloat() else 1f
-        val angle = (p.rot0 + t * p.spin).toFloat()
-        withTransform({
-            translate(x, y)
-            rotate(angle)
-        }) {
-            when (p.kind) {
-                0 -> drawCircle(p.color.copy(alpha = alpha), radius = p.size.toFloat())
-                1 -> drawRoundRect(
-                    p.color.copy(alpha = alpha),
-                    topLeft = Offset(-p.size.toFloat(), -p.size.toFloat()),
-                    size = Size(p.size.toFloat() * 2, p.size.toFloat() * 2),
-                    cornerRadius = CornerRadius(2f),
-                )
-                2 -> drawPath(triangle(p.size.toFloat()), p.color.copy(alpha = alpha))
-                else -> drawPath(starPath(p.size.toFloat()), p.color.copy(alpha = alpha))
-            }
-        }
-    }
-}
-
-private fun triangle(s: Float): Path = Path().apply {
-    moveTo(0f, -s)
-    lineTo(s * 0.9f, s * 0.7f)
-    lineTo(-s * 0.9f, s * 0.7f)
-    close()
-}
-
-private fun starPath(s: Float): Path = Path().apply {
-    val pts = star(0.0, 0.0, s.toDouble(), (s * 0.45).toDouble(), 5)
-    val list = pts.points
-    moveTo(list[0].x.toFloat(), list[0].y.toFloat())
-    for (i in 1 until list.size) lineTo(list[i].x.toFloat(), list[i].y.toFloat())
-    close()
-}
-
-private class Confetti(
-    val x0: Double,
-    val delay: Double,
-    val fall: Double,
-    val sway: Double,
-    val freq: Double,
-    val phase: Double,
-    val rot0: Double,
-    val spin: Double,
-    val size: Double,
-    val color: Color,
-    val kind: Int,
-)
-
-/**
- * Confetti in the child's own colors: whatever they actually put on the
- * page, plus one honey for the celebration. A picture they colored in their
- * own way celebrates in their own way.
- */
-private fun buildConfetti(page: Page, fills: Map<Int, Long>): List<Confetti> {
-    val rnd = Random(page.id.hashCode().toLong())
-    val used = fills.values.toSet().ifEmpty { setOf(Crayons.YELLOW, Crayons.SKY) }
-    val colors = used.map { Color(it) } + CrayonerColors.Honey
-    return List(56) {
-        Confetti(
-            x0 = 0.05 + rnd.nextDouble() * 0.9,
-            delay = rnd.nextDouble() * 0.25,
-            fall = 0.85 + rnd.nextDouble() * 0.5,
-            sway = 0.02 + rnd.nextDouble() * 0.05,
-            freq = 1.0 + rnd.nextDouble() * 2.0,
-            phase = rnd.nextDouble() * 2 * PI,
-            rot0 = rnd.nextDouble() * 360,
-            spin = (rnd.nextDouble() - 0.5) * 720,
-            size = 5.0 + rnd.nextDouble() * 7.0,
-            color = colors[rnd.nextInt(colors.size)],
-            kind = rnd.nextInt(4),
-        )
     }
 }

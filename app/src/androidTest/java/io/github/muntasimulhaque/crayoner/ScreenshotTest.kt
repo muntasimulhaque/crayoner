@@ -19,6 +19,9 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
+import io.github.muntasimulhaque.crayoner.core.Stroke
+import io.github.muntasimulhaque.crayoner.core.Strokes
+import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
 import io.github.muntasimulhaque.crayoner.host.ShelfState
 import io.github.muntasimulhaque.crayoner.ui.CrayonerTheme
@@ -117,7 +120,7 @@ class ScreenshotTest {
             HomeScreen(
                 shelf = ShelfState(
                     finished = setOf("sail", "rainbow", "house"),
-                    drafts = mapOf("balloon" to "envelope:FFD94B3F"),
+                    drafts = mapOf("balloon" to "FFEF2D57(0.4,0.3;0.5,0.4)"),
                 ),
                 onOpen = {},
                 onSound = { },
@@ -127,7 +130,9 @@ class ScreenshotTest {
             PlayScreen(
                 state = emptyState("sail"),
                 soundOn = true,
-                onTap = {},
+                onStrokeStart = {},
+                onStrokeMove = {},
+                onStrokeEnd = {},
                 onPick = {},
                 onHome = {},
                 onSound = {},
@@ -140,7 +145,9 @@ class ScreenshotTest {
             PlayScreen(
                 state = emptyState("sail").copy(crayon = Crayons.SKY),
                 soundOn = true,
-                onTap = {},
+                onStrokeStart = {},
+                onStrokeMove = {},
+                onStrokeEnd = {},
                 onPick = {},
                 onHome = {},
                 onSound = {},
@@ -153,7 +160,9 @@ class ScreenshotTest {
             PlayScreen(
                 state = halfState("kite"),
                 soundOn = true,
-                onTap = {},
+                onStrokeStart = {},
+                onStrokeMove = {},
+                onStrokeEnd = {},
                 onPick = {},
                 onHome = {},
                 onSound = {},
@@ -166,7 +175,9 @@ class ScreenshotTest {
             PlayScreen(
                 state = halfState("rainbow").copy(peeking = true),
                 soundOn = true,
-                onTap = {},
+                onStrokeStart = {},
+                onStrokeMove = {},
+                onStrokeEnd = {},
                 onPick = {},
                 onHome = {},
                 onSound = {},
@@ -179,7 +190,9 @@ class ScreenshotTest {
             PlayScreen(
                 state = almostState("house"),
                 soundOn = false,
-                onTap = {},
+                onStrokeStart = {},
+                onStrokeMove = {},
+                onStrokeEnd = {},
                 onPick = {},
                 onHome = {},
                 onSound = {},
@@ -192,7 +205,9 @@ class ScreenshotTest {
             PlayScreen(
                 state = finishedState("icecream"),
                 soundOn = true,
-                onTap = {},
+                onStrokeStart = {},
+                onStrokeMove = {},
+                onStrokeEnd = {},
                 onPick = {},
                 onHome = {},
                 onSound = {},
@@ -211,26 +226,31 @@ class ScreenshotTest {
     private fun emptyState(id: String) = Screen.Coloring(page = page(id), progress = Progress.Empty)
 
     /**
-     * The first few areas done, the rest still bare, one crayon in hand. The
-     * child colors where the picture asks, so every done area wears its own
-     * color and the crayon in hand is the next area's.
+     * The first few areas colored the way a hand really does it: a few
+     * swipes across the part of the picture the child has got to so far, not
+     * a machine fill. The picture underneath still reads, which is the point
+     * of the capture.
      */
     private fun halfState(id: String): Screen.Coloring {
         val page = page(id)
-        val done = page.regions.indices.take((page.regionCount / 2).coerceAtLeast(2))
-        val progress = done.fold(Progress.Empty) { acc, index ->
-            acc.with(index, page.regions[index].fillArgb)
-        }
-        val next = page.regions.getOrNull(done.size)?.fillArgb ?: Crayons.RED
+        val sky = page.regions.first()
+        val progress = Progress.Empty
+            .with(swipes(sky.fillArgb, y = 0.06, width = 0.9))
+            .with(swipes(sky.fillArgb, y = 0.17, width = 0.86))
+            .with(swipes(sky.fillArgb, y = 0.28, width = 0.8))
+        val next = page.regions[1].fillArgb
         return Screen.Coloring(page = page, progress = progress, crayon = next)
     }
 
-    /** Everything but the last area, the crayon already wearing its color. */
+    /**
+     * Everything but the last area, each colored in the child's own hand: a
+     * scribble in the area's own color, and a loose second pass over it.
+     */
     private fun almostState(id: String): Screen.Coloring {
         val page = page(id)
         val last = page.regionCount - 1
         val progress = (0 until last).fold(Progress.Empty) { acc, index ->
-            acc.with(index, page.regions[index].fillArgb)
+            acc.with(Strokes.scribble(page.regions[index], page.regions[index].fillArgb, 0.12))
         }
         return Screen.Coloring(
             page = page,
@@ -242,9 +262,25 @@ class ScreenshotTest {
     private fun finishedState(id: String): Screen.Coloring {
         val page = page(id)
         val progress = page.regions.indices.fold(Progress.Empty) { acc, index ->
-            acc.with(index, page.regions[index].fillArgb)
+            acc.with(Strokes.scribble(page.regions[index], page.regions[index].fillArgb, 0.07))
         }
         return Screen.Coloring(page = page, progress = progress, celebrating = true)
+    }
+
+    /** A few diagonal swipes across one band of the page, hand on paper. */
+    private fun swipes(color: Long, y: Double, width: Double): Stroke {
+        val points = ArrayList<Vec2>()
+        val steps = 26
+        // Left to right, wobbling the way a wrist does, and back once.
+        for (i in 0..steps) {
+            val t = i.toDouble() / steps
+            points += Vec2(0.06 + width * t, y + 0.035 * kotlin.math.sin(t * 6.0 * Math.PI))
+        }
+        for (i in steps downTo 0) {
+            val t = i.toDouble() / steps
+            points += Vec2(0.06 + width * t, y + 0.055 + 0.030 * kotlin.math.sin(t * 5.0 * Math.PI))
+        }
+        return Stroke(color, points)
     }
 
     /** Render one state, settle it, and copy the window's own pixels out. */

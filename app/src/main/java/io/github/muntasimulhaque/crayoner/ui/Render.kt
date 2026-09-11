@@ -25,8 +25,11 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Ell
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Poly
+import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.RRect
 import io.github.muntasimulhaque.crayoner.core.Shape
+import io.github.muntasimulhaque.crayoner.core.Stroke as WaxStroke
+import io.github.muntasimulhaque.crayoner.core.Vec2
 
 /**
  * The device half of the one renderer. The picture line is drawn the way a
@@ -52,22 +55,6 @@ class PageGeometry(page: Page, private val side: Float) {
 }
 
 /**
- * A color arriving. [x] and [y] are the point in page units where the
- * crayon landed, and [progress] runs from zero to one: the color sweeps out
- * from under the finger like wet paint finding its edges, instead of
- * appearing all at once. Nothing about the finished page changes; this is
- * only how it gets there. [before] is the color the area wore a moment ago,
- * so coloring over a color sweeps just as clearly as coloring a bare one.
- */
-data class PaintSweep(
-    val index: Int,
-    val x: Double,
-    val y: Double,
-    val progress: Float,
-    val before: Long? = null,
-)
-
-/**
  * Draws one page the way a real coloring book prints it: each area is
  * filled, then its own outline is drawn, and only then is the next area
  * filled. Interleaving is the whole trick: a later fill covers an earlier
@@ -79,14 +66,13 @@ data class PaintSweep(
  * The ground (region zero) is never outlined: it is the paper's own edge,
  * and a coloring page has no border around the sheet.
  *
- * [sweep] is the one area currently arriving under a finger; when it is
- * null, or when it has finished, every area draws the plain way.
+ * An unfilled area shows paper, so passing no fills at all draws the bare
+ * line art the child colors on.
  */
 fun DrawScope.drawPage(
     page: Page,
     geometry: PageGeometry,
     fills: Map<Int, Long>,
-    sweep: PaintSweep? = null,
 ) {
     val ink = Color(Crayons.INK)
     val stroke = Stroke(
@@ -97,51 +83,10 @@ fun DrawScope.drawPage(
     val grain = GrainBrush
     for ((index, _) in page.regions.withIndex()) {
         val argb = fills[index] ?: Crayons.PAPER
-        val color = Color(argb)
-        val painted = fills[index] != null
-        val revealing = sweep != null && sweep.index == index && sweep.progress < 1f
-        if (revealing) {
-            val s = sweep!!
-            val b = page.regions[index].bounds
-            val reach = maxOf(
-                distance(s.x, s.y, b.x, b.y),
-                distance(s.x, s.y, b.right, b.y),
-                distance(s.x, s.y, b.x, b.bottom),
-                distance(s.x, s.y, b.right, b.bottom),
-            ) * size.width
-            val radius = (reach * s.progress).toFloat().coerceAtLeast(0.5f)
-            val clip = Path().apply {
-                addOval(
-                    Rect(
-                        Offset((s.x * size.width).toFloat(), (s.y * size.width).toFloat()),
-                        Size(radius * 2f, radius * 2f),
-                    ),
-                )
-            }
-            // The area is drawn twice: once as it was, then the new color
-            // wiped in over it through a growing circle. Drawing it twice is
-            // what lets a recolor sweep the same way a first color does.
-            val before = sweep.before
-            if (before != null) {
-                for (path in geometry.parts[index]) drawPath(path, Color(before))
-            }
-            clipPath(clip) {
-                for (path in geometry.parts[index]) drawPath(path, color)
-                if (grain != null) {
-                    // The wax grain rides in with the color, clipped to the
-                    // same growing circle, so the arriving paint looks like
-                    // wax from its first pixel.
-                    for (path in geometry.parts[index]) {
-                        clipPath(path) { drawRect(brush = grain) }
-                    }
-                }
-            }
-        } else {
-            for (path in geometry.parts[index]) drawPath(path, color)
-            if (grain != null && painted) {
-                for (path in geometry.parts[index]) {
-                    clipPath(path) { drawRect(brush = grain) }
-                }
+        for (path in geometry.parts[index]) drawPath(path, Color(argb))
+        if (grain != null && fills[index] != null) {
+            for (path in geometry.parts[index]) {
+                clipPath(path) { drawRect(brush = grain) }
             }
         }
         if (!page.isGround(index)) {
@@ -150,14 +95,85 @@ fun DrawScope.drawPage(
     }
 }
 
-private fun distance(x0: Double, y0: Double, x1: Double, y1: Double): Double {
-    val dx = x1 - x0
-    val dy = y1 - y0
-    return kotlin.math.sqrt(dx * dx + dy * dy)
+/**
+ * The child's own marks, in wax, on top of the printed picture.
+ *
+ * A crayon is not a brush: the wax is dragged across the tooth of the paper,
+ * so a mark is softer at its edges than down its middle, and where the hand
+ * moves fast it lays down less than where it lingers. Three concentric
+ * passes of the same path give the edge, and the wax grain over the whole
+ * mark gives the tooth: the same grain every colored area in the book
+ * carries, so a mark the child makes is made of the same material as the
+ * sample they are copying.
+ *
+ * The grain is drawn between the middle pass and the core, not over the
+ * finished mark, so it reads as wax pressed into paper rather than as a
+ * veil laid on top of the color.
+ *
+ * Marks are drawn after the line art, not under it, for the plain reason
+ * that wax covers ink: a child who colors over a line really does color over
+ * it, and the page they end up with is the page they made.
+ */
+fun DrawScope.drawStrokes(strokes: List<WaxStroke>, side: Float) {
+    if (strokes.isEmpty()) return
+    val grain = GrainBrush
+    val tip = side * CRAYON_TIP_FRACTION
+    for (stroke in strokes) {
+        if (stroke.points.isEmpty()) continue
+        val color = Color(stroke.color)
+        if (stroke.points.size == 1) {
+            val p = stroke.points[0]
+            val c = Offset((p.x * side).toFloat(), (p.y * side).toFloat())
+            drawCircle(color.copy(alpha = 0.30f), radius = tip * 0.70f, center = c)
+            if (grain != null) {
+                drawCircle(grain, radius = tip * 0.64f, center = c)
+            }
+            drawCircle(color.copy(alpha = 0.76f), radius = tip * 0.52f, center = c)
+            drawCircle(color.copy(alpha = 0.80f), radius = tip * 0.40f, center = c)
+            continue
+        }
+        val path = strokePath(stroke, side)
+        // Thin at the edges, waxed down the middle: the halo is the wax
+        // feathering into the paper's tooth, the core is where the hand
+        // pressed hardest. A real crayon mark is not translucent paint; it
+        // covers the paper it was pressed onto, and it is the grain that
+        // keeps it from reading as poured color.
+        drawPath(path, color.copy(alpha = 0.26f), style = tipStroke(tip * 1.20f))
+        drawPath(path, color.copy(alpha = 0.74f), style = tipStroke(tip))
+        if (grain != null) {
+            drawPath(path, grain, style = tipStroke(tip * 1.02f))
+        }
+        drawPath(path, color.copy(alpha = 0.78f), style = tipStroke(tip * 0.58f))
+    }
+}
+
+private fun tipStroke(width: Float) = Stroke(
+    width = width.coerceAtLeast(1f),
+    cap = StrokeCap.Round,
+    join = StrokeJoin.Round,
+)
+
+/** The centerline of one mark, in pixels. */
+private fun strokePath(stroke: WaxStroke, side: Float): Path = Path().apply {
+    val first = stroke.points[0]
+    moveTo((first.x * side).toFloat(), (first.y * side).toFloat())
+    for (i in 1 until stroke.points.size) {
+        val p = stroke.points[i]
+        lineTo((p.x * side).toFloat(), (p.y * side).toFloat())
+    }
 }
 
 /** The one line weight, as a fraction of the page side. Mirrors RenderKit. */
 const val STROKE_FRACTION = 0.0072f
+
+/**
+ * How wide one crayon mark is, as a fraction of the page side. A real crayon
+ * tip is about five millimeters across on a page of about two hundred, and
+ * this is a little past that: wide enough that a three year old's scribble
+ * covers the paper, narrow enough that a sprinkle sixteen pixels wide can
+ * still be colored on purpose.
+ */
+const val CRAYON_TIP_FRACTION = 0.052f
 
 /** One shape as a path, in page units scaled to [side] pixels. */
 fun pathOf(shape: Shape, side: Double): Path {
@@ -260,7 +276,9 @@ fun unionOf(shapes: List<Shape>, side: Double): Path {
 
 /**
  * One page, drawn to fill the canvas. [fills] may be empty: an uncolored
- * area shows paper, which is exactly what a coloring page looks like.
+ * area shows paper, which is exactly what a coloring page looks like. The
+ * child's own marks ride on top of the printed line art, the way wax rides
+ * on a printed page.
  */
 @Composable
 fun PageCanvas(
@@ -268,12 +286,13 @@ fun PageCanvas(
     fills: Map<Int, Long>,
     modifier: Modifier = Modifier,
     sidePx: Int,
-    sweep: PaintSweep? = null,
+    strokes: List<WaxStroke> = emptyList(),
     overlay: DrawScope.(PageGeometry) -> Unit = {},
 ) {
     val geometry = remember(page, sidePx) { PageGeometry(page, sidePx.toFloat()) }
     Canvas(modifier = modifier) {
-        drawPage(page, geometry, fills, sweep)
+        drawPage(page, geometry, fills)
+        drawStrokes(strokes, size.width)
         overlay(geometry)
     }
 }

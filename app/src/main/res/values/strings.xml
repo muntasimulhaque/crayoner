@@ -9,6 +9,7 @@
     <string name="sound_off">Sound is off</string>
     <string name="show_sample">Look at the picture closely</string>
     <string name="hide_sample">Put the picture back down</string>
+    <string name="erase">Start this picture over</string>
     <string name="clear_title">Start this picture over?</string>
     <string name="clear_message">Every color on this page will go back to plain paper.</string>
     <string name="stay">Keep coloring</string>
@@ -52,7 +53,6 @@
 
     <!-- Area words, spoken by the screen reader as the child explores. -->
     <string name="area_sky">Sky</string>
-    <string name="area_sun">Sun</string>
     <string name="area_cloud">Cloud</string>
     <string name="area_sea">Sea</string>
     <string name="area_sail">Sail</string>

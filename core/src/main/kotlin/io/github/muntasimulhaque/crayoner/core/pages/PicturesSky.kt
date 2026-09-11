@@ -13,7 +13,6 @@ import io.github.muntasimulhaque.crayoner.core.point
 import io.github.muntasimulhaque.crayoner.core.poly
 import io.github.muntasimulhaque.crayoner.core.rect
 import io.github.muntasimulhaque.crayoner.core.round
-import io.github.muntasimulhaque.crayoner.core.sun
 import io.github.muntasimulhaque.crayoner.core.wavyEdge
 
 /**
@@ -21,6 +20,11 @@ import io.github.muntasimulhaque.crayoner.core.wavyEdge
  * rainbow. Everything here is inanimate (a boat, a basket, a shape, an
  * arch of light), and every page paints its background first, so a tap
  * anywhere on the paper always lands on something.
+ *
+ * There is no sun in this sky. A sun in the corner of every outdoor page is
+ * the oldest habit in children's books, and sixteen pages of it is wallpaper:
+ * each page gets clouds instead, and each page's clouds sit differently, so
+ * the weather tells you which picture you are looking at.
  */
 
 /** Sailboat: the first page of the book, six areas, five crayons. */
@@ -28,8 +32,8 @@ fun sailPage(): Page = Page(
     id = "sail",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.83, 0.15, 0.072)),
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.20, 0.15, 0.9)),
+        areaOf("cloud_high", "cloud", Crayons.WHITE, cloud(0.80, 0.11, 0.6)),
         area("sea", "sea", Crayons.BLUE, band(wavyEdge(0.66, 0.02, 3, 0))),
         area("sail", "sail", Crayons.WHITE, poly(0.47, 0.15, 0.79, 0.62, 0.47, 0.62)),
         area(
@@ -53,8 +57,8 @@ fun balloonPage(): Page = Page(
     id = "balloon",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.85, 0.13, 0.068)),
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.17, 0.80, 1.0)),
+        areaOf("cloud_high", "cloud", Crayons.WHITE, cloud(0.82, 0.10, 0.7)),
         area(
             "envelope", "balloon", Crayons.RED,
             blob(
@@ -99,8 +103,8 @@ fun kitePage(): Page = Page(
     id = "kite",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.14, 0.14, 0.062)),
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.79, 0.16, 0.9)),
+        areaOf("cloud_low", "cloud", Crayons.WHITE, cloud(0.15, 0.33, 0.6)),
         area("kite", "kite", Crayons.RED, poly(0.50, 0.10, 0.73, 0.34, 0.50, 0.58, 0.27, 0.34)),
         area("stripe", "stripe", Crayons.YELLOW, poly(0.50, 0.10, 0.565, 0.34, 0.50, 0.58, 0.435, 0.34)),
         area(

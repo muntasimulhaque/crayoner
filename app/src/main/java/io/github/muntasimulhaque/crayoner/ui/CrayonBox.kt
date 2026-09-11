@@ -21,8 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -32,7 +30,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -41,7 +38,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
+import io.github.muntasimulhaque.crayoner.core.Area
+import io.github.muntasimulhaque.crayoner.core.CrayonShape
 import io.github.muntasimulhaque.crayoner.core.Crayons
+import io.github.muntasimulhaque.crayoner.core.Vec2
 
 /** The narrowest a crayon may be drawn and still be a comfortable target. */
 private val MIN_CRAYON_CELL = 52.dp
@@ -100,10 +100,10 @@ fun CrayonBox(
         val cellWidth = ((maxWidth - gaps * (columns - 1)) / columns)
             .coerceAtLeast(MIN_CRAYON_CELL)
             .coerceAtMost(MAX_CRAYON_CELL)
-        // A lying crayon is about three and a half times as long as it is
+        // A lying crayon is a little over three times as long as it is
         // thick, so the cell is that thickness plus air: a deeper cell would
         // eat the screen the picture needs and leave the crayon floating.
-        val cellHeight = cellWidth * 0.62f
+        val cellHeight = cellWidth * CrayonShape.THICKNESS.toFloat() * 1.6f
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(gaps),
@@ -127,9 +127,16 @@ fun CrayonBox(
 }
 
 /**
- * One crayon's place in the box: the wax, a cradle when it is the crayon in
- * hand, and a whole cell of touch target either way. The name of the color
- * is what a screen reader says, and whether it is the one being held.
+ * One crayon's place in the box: the wax, and the whole cell as a touch
+ * target either way. The name of the color is what a screen reader says, and
+ * whether it is the one being held.
+ *
+ * The picked crayon says so in three ways that are all real things a held
+ * crayon does: it lifts on a spring, it is drawn a little larger, and it
+ * wears a soft ink shadow on the cardboard under it, the way an object
+ * raised off a surface does. There is no plate, no pip and no highlight
+ * behind it: a crayon lying in a box casts a shadow, it does not sit on a
+ * white tile.
  */
 @Composable
 fun CrayonSeat(
@@ -152,6 +159,10 @@ fun CrayonSeat(
         ),
         label = "crayon-lift",
     ).value
+    // The crayon is exactly as long as the box it lies in and as thick as
+    // its own proportions say, so it is the same crayon at every size.
+    val length = cellWidth * (0.94f + 0.06f * lift)
+    val thickness = length * CrayonShape.THICKNESS.toFloat()
     Box(
         modifier = modifier
             .size(cellWidth, cellHeight)
@@ -162,28 +173,25 @@ fun CrayonSeat(
             .clickable(role = Role.RadioButton, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        val cradleWidth = cellWidth * (0.78f + 0.14f * lift)
-        val cradleHeight = cellHeight * (0.92f + 0.16f * lift)
-        if (lift > 0.01f) {
-            Box(
-                modifier = Modifier
-                    .size(cradleWidth, cradleHeight)
-                    .shadow(6.dp, RoundedCornerShape(cellHeight * 0.30f))
-                    .clip(RoundedCornerShape(cellHeight * 0.30f))
-                    .background(CrayonerColors.Card),
-            )
+        // The shadow under a raised crayon. It grows with the lift, so the
+        // crayon visibly comes off the cardboard and settles back down.
+        if (lift > 0.02f) {
+            Canvas(modifier = Modifier.size(length, thickness)) {
+                drawOval(
+                    color = CrayonerColors.Shadow.copy(alpha = 0.34f * lift),
+                    topLeft = Offset(0f, size.height * 0.30f),
+                    size = Size(size.width * 0.86f, size.height * 0.68f),
+                )
+            }
         }
         CrayonGlyph(
             color = Color(argb),
             contact = selected,
             lying = true,
-            // A crayon is long and slim: about three and a half times its
-            // own thickness. Anything fatter reads as a bullet, and a
-            // marker is the one thing this app must never look like.
-            modifier = Modifier.size(
-                width = cellWidth * (0.94f + 0.04f * lift),
-                height = cellWidth * 0.30f * (1f + 0.14f * lift),
-            ),
+            // A crayon is about three times as long as it is thick, which is
+            // the stub a child holds. Anything fatter reads as a bullet, and
+            // a marker is the one thing this app must never look like.
+            modifier = Modifier.size(width = length, height = thickness),
         )
     }
 }
@@ -229,37 +237,41 @@ fun CrayonGlyph(
     val shade = remember(color) { mix(color, ink, 0.32f) }
     val wrapper = remember(color) { mix(color, CrayonerColors.Card, 0.12f) }
     Canvas(modifier = modifier) {
-        if (!lying) {
-            drawCrayonShape(color, shade, wrapper, ink, contact, 0f, 0f, size.width, size.height)
-            return@Canvas
-        }
-        // Lying in the box, tip to the right. The crayon is drawn as if the
-        // canvas were tall, then the whole thing is turned a quarter turn
-        // around the cell's center, so one drawing serves both orientations.
-        val c = center
-        withTransform({ rotate(-90f, pivot = c) }) {
-            drawCrayonShape(
-                color, shade, wrapper, ink, contact,
-                left = c.x - size.height / 2f,
-                top = c.y - size.width / 2f,
-                w = size.height,
-                h = size.width,
-            )
-        }
+        // Standing, the crayon's length runs down the canvas; lying, it runs
+        // across it, tip to the right. The geometry is built in the frame it
+        // is drawn in either way, so nothing is ever rotated out of the
+        // canvas and clipped.
+        val length = if (lying) size.width else size.height
+        drawCrayonShape(
+            color = color,
+            shade = shade,
+            wrapper = wrapper,
+            ink = ink,
+            contact = contact,
+            left = 0f,
+            top = 0f,
+            length = length,
+            lying = lying,
+        )
     }
 }
 
 /**
- * Draws one crayon, point up, inside the box from ([left], [top]) to
- * ([w], [h]).
+ * Draws one crayon, [length] pixels long, in the box starting at ([left],
+ * [top]).
  *
- * The proportions are the real object's, and they are the whole reason this
- * reads as a crayon: a body about three and a half times as long as it is
- * thick, a cone that is as wide as the body and about four fifths as long,
- * and a small, bluntly rounded nose rather than a point. A longer or
- * sharper nose is a pencil; a shorter one is a bullet; a fatter body is a
- * marker. The wrapper is the crayon's own wax, barely lightened, with the
- * two dark rules a real wrapper wears.
+ * Standing, its length runs down the canvas and its tip is at the top.
+ * Lying, its length runs across the canvas and its tip is at the right, the
+ * way a crayon rests in a tray. The width always follows from the length,
+ * because a crayon's thickness is a property of the crayon and not of the
+ * box it happens to be drawn in: that is what keeps the tray's crayon and
+ * the launcher icon's crayon the same object at every size.
+ *
+ * The crayon itself is core's one crayon: the body, the blunt cone, the
+ * squared base, the wrapper in the wax's own color with its two dark rules,
+ * and the paper collar a held crayon wears. This function only decides the
+ * colors and the place it lands; nothing about the object's shape is decided
+ * here.
  */
 internal fun DrawScope.drawCrayonShape(
     color: Color,
@@ -269,68 +281,71 @@ internal fun DrawScope.drawCrayonShape(
     contact: Boolean,
     left: Float,
     top: Float,
-    w: Float,
-    h: Float,
+    length: Float,
+    lying: Boolean,
 ) {
-    // The crayon's own thickness, taken from the width it was given, and its
-    // length, taken from the height. A lying crayon is drawn tall and then
-    // turned by its caller, so this always draws point up.
-    val bodyLeft = left + w * 0.06f
-    val bodyRight = left + w * 0.94f
-    val diameter = bodyRight - bodyLeft
-    val cx = left + w * 0.5f
-    // A real crayon's cone is a little longer than the crayon is thick.
-    val tipLength = diameter * 1.15f
-    val shoulder = top + tipLength
-    // The nose is blunt: pressed wax, nothing like a sharpened point.
-    val nose = diameter * 0.13f
-    val bandTop = top + h * 0.30f
-    val bandBottom = top + h * 0.88f
-    val base = top + h * 0.97f
-    val line = Stroke(diameter * 0.11f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-
+    // The shape is measured in the crayon's own thicknesses, so one unit is
+    // the thickness on both axes and the crayon cannot be stretched.
+    val unit = length / CrayonShape.LENGTH.toFloat()
+    val thickness = unit
+    val line = Stroke(
+        (thickness * CrayonShape.LINE.toFloat()).coerceAtLeast(1f),
+        cap = StrokeCap.Round,
+        join = StrokeJoin.Round,
+    )
+    // One mapping for the whole drawing: a point in the shape's own unit box
+    // to a point on the canvas, in whichever way the crayon is lying.
+    fun px(p: Vec2): Offset = if (lying) {
+        Offset(
+            left + length - p.y.toFloat() * unit,
+            top + p.x.toFloat() * unit,
+        )
+    } else {
+        Offset(
+            left + p.x.toFloat() * unit,
+            top + p.y.toFloat() * unit,
+        )
+    }
+    fun bandPath(band: Area): Path {
+        val a = px(Vec2(band.x, band.y))
+        val b = px(Vec2(band.right, band.bottom))
+        return Path().apply {
+            addRect(
+                Rect(
+                    minOf(a.x, b.x),
+                    minOf(a.y, b.y),
+                    maxOf(a.x, b.x),
+                    maxOf(a.y, b.y),
+                ),
+            )
+        }
+    }
     val silhouette = Path().apply {
-        moveTo(bodyLeft, shoulder)
-        // The cone: straight flanks from the body's own edges, up to a small
-        // bluntly rounded nose. Straight flanks are what make it a cone; a
-        // bowed side makes it a bullet.
-        lineTo(cx - nose, top + nose * 0.6f)
-        cubicTo(
-            cx - nose, top + nose * 0.16f,
-            cx + nose, top + nose * 0.16f,
-            cx + nose, top + nose * 0.6f,
-        )
-        lineTo(bodyRight, shoulder)
-        lineTo(bodyRight, base)
-        // A squared base with only a hint of softness at its corners: this
-        // is one of the three things that says crayon and not marker.
-        cubicTo(
-            bodyRight, top + h * 0.995f,
-            bodyLeft, top + h * 0.995f,
-            bodyLeft, base,
-        )
+        val points = CrayonShape.outline()
+        val first = px(points[0])
+        moveTo(first.x, first.y)
+        for (i in 1 until points.size) {
+            val o = px(points[i])
+            lineTo(o.x, o.y)
+        }
         close()
     }
     drawPath(silhouette, color)
 
     // The wrapper: the crayon's own color, a whisper lighter, the way paper
     // takes wax. Never a pale sleeve, which would make it a pencil.
-    val wrap = Path().apply {
-        moveTo(bodyLeft, bandTop)
-        lineTo(bodyRight, bandTop)
-        lineTo(bodyRight, bandBottom)
-        lineTo(bodyLeft, bandBottom)
-        close()
-    }
-    drawPath(wrap, wrapper)
+    val band = CrayonShape.wrapperBand()
+    drawPath(bandPath(band), wrapper)
 
     // The two dark rules a real wrapper wears, at its top and its bottom.
     val rule = Stroke(line.width * 0.40f, cap = StrokeCap.Round)
-    for (y in listOf(bandTop + h * 0.012f, bandBottom - h * 0.012f)) {
+    for (y in listOf(band.y + 0.012, band.bottom - 0.012)) {
+        val a = px(Vec2(band.x, y))
+        val b = px(Vec2(band.right, y))
         drawPath(
             Path().apply {
-                moveTo(bodyLeft, y)
-                lineTo(bodyRight, y)
+                moveTo(a.x, a.y)
+                lineTo(b.x, b.y)
             },
             shade,
             style = rule,
@@ -341,17 +356,7 @@ internal fun DrawScope.drawCrayonShape(
         // The picked crayon wears a paper collar, the way a held crayon is
         // banded by a hand, so the choice reads at a glance even when two
         // colors are hard to tell apart.
-        val collar = Path().apply {
-            addRoundRect(
-                androidx.compose.ui.geometry.RoundRect(
-                    rect = Rect(
-                        Offset(bodyLeft - diameter * 0.16f, top + h * 0.48f),
-                        Size(diameter * 1.32f, h * 0.16f),
-                    ),
-                    cornerRadius = CornerRadius(w * 0.04f),
-                ),
-            )
-        }
+        val collar = bandPath(CrayonShape.collarBand())
         drawPath(collar, CrayonerColors.Card)
         drawPath(collar, ink, style = Stroke(line.width * 0.5f, cap = StrokeCap.Round))
     }

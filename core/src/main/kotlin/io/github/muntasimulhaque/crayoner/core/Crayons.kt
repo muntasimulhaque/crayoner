@@ -5,35 +5,42 @@ package io.github.muntasimulhaque.crayoner.core
  * a real box of crayons does not change its contents because of the page
  * you open. The child reaches for red because red is where red always is.
  *
- * The colors are crayon colors, not paint colors. Wax crayons are a little
- * softer and a little warmer than acrylic or ink: they sit slightly toward
- * earth, they never reach a screen's full saturation, and none of them is
- * pure. Every one of these is chosen by hand to read as a crayon tip rather
- * than as a pixel, and the surface of a colored area is given a real wax
- * grain by the renderers (see [WaxGrain]), which is what does most of the
- * work of saying crayon.
+ * Every color here is a real crayon color, taken from the Crayola standard
+ * list (the sixteen a child actually opens: red, red orange, orange, yellow
+ * orange, yellow, yellow green, green, blue green, sky blue, blue, blue
+ * violet, violet, carnation pink, brown, gray, white), then softened by six
+ * percent toward paper. The softening is the medium, not a taste: wax sits
+ * on top of the paper's tooth instead of soaking in, so a crayon stroke is
+ * always a little lighter and a little less absolute than the stick it came
+ * from. The reference hexes: Red #EE204D, Orange #FF7538, Yellow #FCE883,
+ * Green #1CAC78, Blue Green #0D98BA, Sky Blue #76D7EA, Blue #1F75FE, Violet
+ * #926EAE, Carnation Pink #FFAACC, Brown #B4674D, Gray #95918C.
+ *
+ * Two of the sixteen are not single reference colors, and each says so:
+ * [SAND] is Crayola's Tan and Peach held together, and [FOREST] is Crayola's
+ * Green pressed harder, which is how a crayon really makes a deeper shade.
  *
  * A picture's own colors are drawn from this box, so every area of every
  * picture can always be matched exactly. Nothing here is a pure black:
- * ink is the darkest, and it belongs to the line work.
+ * [INK] is the darkest, and it belongs to the line work.
  */
 object Crayons {
 
-    const val RED: Long = 0xFFD6423A
-    const val ORANGE: Long = 0xFFE48134
-    const val YELLOW: Long = 0xFFEFC33C
-    const val GREEN: Long = 0xFF5FA85A
-    const val FOREST: Long = 0xFF38794E
-    const val TEAL: Long = 0xFF37948C
-    const val SKY: Long = 0xFF77BEDC
-    const val BLUE: Long = 0xFF3F6FBD
-    const val NAVY: Long = 0xFF39507A
-    const val PURPLE: Long = 0xFF7B5CA7
-    const val LILAC: Long = 0xFFB59FD3
-    const val PINK: Long = 0xFFE784AE
-    const val BROWN: Long = 0xFF96603F
-    const val SAND: Long = 0xFFE0C48E
-    const val GRAY: Long = 0xFF949BA6
+    const val RED: Long = 0xFFEF2D57
+    const val ORANGE: Long = 0xFFFF7D44
+    const val YELLOW: Long = 0xFFFCE98A
+    const val SAND: Long = 0xFFFDB886
+    const val GREEN: Long = 0xFF2AB180
+    const val FOREST: Long = 0xFF22815F
+    const val TEAL: Long = 0xFF1C9EBE
+    const val SKY: Long = 0xFF7ED9EB
+    const val BLUE: Long = 0xFF2C7DFE
+    const val NAVY: Long = 0xFF28537E
+    const val PURPLE: Long = 0xFF9977B2
+    const val LILAC: Long = 0xFFCCA6DE
+    const val PINK: Long = 0xFFFFAFCF
+    const val BROWN: Long = 0xFFB97057
+    const val GRAY: Long = 0xFF9B9792
     const val WHITE: Long = 0xFFFBF8F0
 
     /** The ink every picture's lines are drawn in. Dark, never black. */

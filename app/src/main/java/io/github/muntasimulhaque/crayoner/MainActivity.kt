@@ -76,7 +76,9 @@ class MainActivity : ComponentActivity() {
                             PlayScreen(
                                 state = s,
                                 soundOn = shelf.soundOn,
-                                onTap = host::tap,
+                                onStrokeStart = host::beginStroke,
+                                onStrokeMove = host::moveStroke,
+                                onStrokeEnd = host::endStroke,
                                 onPick = host::pickCrayon,
                                 onHome = host::home,
                                 onSound = host::setSound,

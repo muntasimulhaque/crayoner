@@ -64,19 +64,29 @@ data class Page(
         return -1
     }
 
-    /** How many areas are still bare paper. */
-    fun blankCount(fills: Map<Int, Long>): Int =
-        regions.indices.count { fills[it] == null }
+    /** How many areas the crayon has touched. */
+    fun reachedCount(strokes: List<Stroke>): Int = regionsReached(strokes).size
 
-    /** How many areas carry the color the picture asks for. */
-    fun matchCount(fills: Map<Int, Long>): Int =
-        regions.indices.count { fills[it] == regions[it].fillArgb }
+    /** Which areas the crayon has touched, resolved the way a tap is. */
+    fun regionsReached(strokes: List<Stroke>): Set<Int> {
+        val hits = HashSet<Int>()
+        for (stroke in strokes) {
+            for (p in stroke.points) {
+                val index = regionIndexAt(p)
+                if (index >= 0) hits += index
+            }
+        }
+        return hits
+    }
 
     /**
-     * The picture is finished when every area has a color on it, whatever
-     * color that is. A real coloring book does not refuse to be finished
-     * because the sky was colored green: the child decides, and the app's
-     * only job is to celebrate the work.
+     * The picture is finished when the crayon has been everywhere on it,
+     * whatever colors were used. A real coloring book does not refuse to be
+     * finished because the sky was colored green: the child decides, and the
+     * app's only job is to celebrate the work.
      */
-    fun isComplete(fills: Map<Int, Long>): Boolean = blankCount(fills) == 0
+    fun isComplete(reached: Set<Int>): Boolean = reached.size == regionCount
+
+    /** The same rule, read from a mark list instead of a ready set. */
+    fun isComplete(strokes: List<Stroke>): Boolean = isComplete(regionsReached(strokes))
 }

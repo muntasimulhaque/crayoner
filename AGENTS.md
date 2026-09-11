@@ -30,7 +30,11 @@ than one machine; never build on a stale head.
    read. Only inanimate subjects: boats, houses, food, flowers, weather,
    vehicles, toys. Every region `kind` in `core/pages` is reviewed against
    this rule, and every page's spots and sprinkles are placed off center so
-   no arrangement can read as eyes.
+   no arrangement can read as eyes. There is also no sun: a sun in the
+   corner of every outdoor page is the oldest cliché in children's books,
+   and sixteen pages of it is wallpaper. Weather is clouds, and each page's
+   clouds sit differently, so the sky tells you which picture you are
+   looking at.
 3. **Zero manifest permissions.** This underpins the Data safety
    declaration and the Families listing. No `INTERNET`, no exceptions. Do
    not add one without the owner signing off in this file first. (androidx
@@ -113,31 +117,45 @@ Sixteen pictures. Tap one and color it.
   strip of the colors that picture needs, and one small mark of where the
   child left it: a honey star when it is finished, a coral crayon when it is
   being colored. The whole card is one button.
-- A page opens as bare outlines on paper, with the finished picture in a
-  card directly above it and the crayons below. Look up, look down, color.
-  The sample card is a button: one tap holds the picture up large, one tap
-  anywhere puts it back.
+- A page opens as bare outlines on paper, with the crayons below it and the
+  finished picture in the bar as one more round button. Look at the sample,
+  look at the page, color.
+- **The child colors with their own hand.** A finger on the paper draws a
+  crayon mark that follows the finger; nothing is filled in for them. A
+  touch starts a mark, moving grows it, lifting finishes it, and every
+  finished mark is remembered. Nothing appears on the paper that the child's
+  own hand did not put there.
+- The crayon is wide, so a three year old's scribble visibly covers the
+  paper, and it lays down wax: a soft edge, a darker middle, and the same
+  grain every colored area in the book carries. Wax covers the printed
+  lines it is dragged over, the way real wax does.
+- **The first touch on a fresh page always works.** With no crayon in hand,
+  the app picks up the color the area under the finger is asking for, and
+  the child's mark is in that color. From then on they are holding a crayon
+  and every mark uses it. A three year old's first act must never end in
+  nothing happening.
 - Crayons are the picture's own colors and nothing else, in the picture's
   own order, so the tray teaches which colors belong to the page. The picked
-  crayon lifts on a spring and is drawn larger. There is no scroll and no
-  hidden crayon: one row when the crayons stay comfortable, two centered
-  rows when they would not.
-- A touch paints the topmost area under the finger, and the color sweeps out
-  from that exact point like wet paint. A color that matches the picture
-  earns a sparkle, a warm outline pulse and a confirmation haptic; a color
-  the picture does not ask for lands anyway, quietly, with a soft ink ring
-  and no scolding. Nothing is ever refused.
-- **The first touch on a fresh page always works.** With no crayon in hand,
-  the app picks up the color that area is asking for and colors it. From
-  then on the child is holding a crayon and every later touch uses it. A
-  three year old's first act must never end in nothing happening.
-- Every color is saved to DataStore 250 ms after it lands, so Home, a phone
-  call, a rotation or a process death cost at most the tap in flight. Only
-  one draft is kept: the page last worked on. Finished pictures are
+  crayon lifts on a spring, is drawn larger, and casts a soft shadow on the
+  cardboard under it. There is no plate or highlight behind it: a crayon
+  lying in a box casts a shadow, it does not sit on a white tile. There is
+  no scroll and no hidden crayon: one row when the crayons stay comfortable,
+  two centered rows when they would not.
+- A mark earns a sparkle and a warm outline pulse on every area where it
+  used the color that area asks for, and a soft ink ring on every area where
+  it did not. A color the picture does not ask for lands anyway, quietly and
+  with no scolding. Nothing is ever refused, and nothing is ever erased
+  because it was wrong.
+- Every mark is saved to DataStore 250 ms after it is finished, so Home, a
+  phone call, a rotation or a process death cost at most the mark in flight.
+  Only one draft is kept: the page last worked on. Finished pictures are
   remembered as a set of ids.
-- Finishing the picture raises the plate: the finished work on a clean card,
-  paper confetti in that picture's own colors, one haptic, one bell, and the
-  two ways onward. Again leads by color.
+- The picture is finished when the crayon has been everywhere on it,
+  whatever colors were used. That is a deliberate rule and not an oversight:
+  the app may not judge a child's coloring, only celebrate it. See D-024.
+- Finishing the picture raises the plate: the child's own work on a clean
+  taped sheet, paper confetti in the colors they reached for, one haptic,
+  one bell, and the two ways onward. Again leads by color.
 - Starting a page over always asks first, and the eraser only appears once
   there is something worth erasing.
 
@@ -145,7 +163,8 @@ Sixteen pictures. Tap one and color it.
 
 ```
 core/     its own Gradle module, pure Kotlin, zero Android imports:
-          shapes, geometry, the crayon box, the sixteen pages, progress
+          shapes, geometry, the crayon box, the sixteen pages, wax grain,
+          the crayon's own geometry, strokes and progress
 :app      Android: host (ViewModel, DataStore, SoundPool), ui (Compose)
 :tools    offline asset generators: picture sheets, icons, store art, sounds
 ```
@@ -153,11 +172,11 @@ core/     its own Gradle module, pure Kotlin, zero Android imports:
 The organizing principle (inherited from the house): the rules are pure data
 and functions; Android is a player of those rules, not a participant. A
 `Page` is a list of `Region`s; a `Region` is a list of `Shape`s painted
-together; a `Progress` is region index to crayon color. Hit testing,
-completion, saving and parsing all live in `core` and are tested there
-without a device.
+together; a `Progress` is the list of `Stroke`s the child's hand has made.
+Hit testing, scribbling, completion, saving and parsing all live in `core`
+and are tested there without a device.
 
-The renderer's four rules live in their own section below, and every one of
+The renderer's five rules live in their own section below, and every one of
 them is a bug this project already shipped once.
 
 ## Forbidden
@@ -181,23 +200,40 @@ them is a bug this project already shipped once.
 - The table is warm cream `#F6EFE3`; the paper and every card is `#FFFDF8`,
   one clear step brighter, so a page always stands off the desk it lies on.
   Ink `#38404F` is both the line the pictures are drawn in and the color of
-  every word. Coral `#D94B3F`, the sailboat's red, is the brand, the picked
-  crayon's collar and the leading coin. Honey `#F2B233` is celebration only,
+  every word. Coral `#EF2D57`, the sailboat's red, is the brand, the picked
+  crayon's collar and the leading coin. Honey `#EFB53A` is celebration only,
   never chrome. The tray is `#EFE1C6`, deeper than the table so pale crayons
   read on it.
+- **The sixteen crayons are real crayon colors**, taken from the Crayola
+  standard list and softened six percent toward paper, because wax sits on
+  the paper's tooth instead of soaking in. Red `#EF2D57`, orange `#FF7D44`,
+  yellow `#FCE98A`, sand `#FDB886`, green `#2AB180`, forest `#22815F`, teal
+  `#1C9EBE`, sky `#7ED9EB`, blue `#2C7DFE`, navy `#28537E`, purple
+  `#9977B2`, lilac `#CCA6DE`, pink `#FFAFCF`, brown `#B97057`, gray
+  `#9B9792`, white `#FBF8F0`. Sand is Crayola's Tan and Peach held together
+  and forest is Crayola's Green pressed harder; both say so in the file.
 - Display face: Baloo 2 (OFL, bundled, offline), ExtraBold for the name,
   Bold for headings. Body text follows the system font under a 1.3 cap, the
   house rule: past that cap words stop fitting the fixed play surfaces.
-- The mark: one crayon, point up, wax coral, wrapper in the wax's own color
-  with its two dark rules, drawn by the same hand that draws the tray. A
-  dark cone tip or a pale sleeve turns a crayon into a pencil, and this app
-  must never show a pencil. The mark's one home is `IconDesign.paintCrayon`
-  in `:tools`, and it serves the launcher icon, the store icon and the shelf
-  header through `CrayonGlyph` on the device.
-- The store banner is the brand coral, the sailboat page half colored on the
-  left and the name given the whole right side.
-- Corners are generous; nothing sharp touches a child's game. The world is
-  light-fixed: one warm paper world, no night variant.
+- **The mark: one crayon, point down**, wax coral, wrapper in the wax's own
+  color with its two dark rules, with real wax grain over it, drawn point
+  down because that is how a crayon is held and how a child recognizes it.
+  A dark cone tip or a pale sleeve turns a crayon into a pencil, and this
+  app must never show a pencil. The crayon's geometry lives once, in
+  `core/CrayonShape`, and its one drawing lives in `IconDesign.paintCrayon`
+  in `:tools`; it serves the launcher icon, the store icon, the shelf header
+  and the tray through `CrayonGlyph` on the device.
+- **The sheet is a sheet of paper.** Square corners, a soft shadow, and a
+  strip of tape over each corner reaching past the paper onto the desk. The
+  tape is what tells the eye this is a sheet lying on a table and not a
+  panel in a layout, and it is the same roll the pictures on the shelf are
+  hung with. Every plate in the app (the peek, the celebration) is taped the
+  same way.
+- The store banner is the brand coral, the sailboat page part colored by a
+  child's own hand on the left and the name given the whole right side.
+- Corners are generous; nothing sharp touches a child's game except the
+  paper itself, which is paper. The world is light-fixed: one warm paper
+  world, no night variant.
 
 ## Accessibility
 
@@ -206,8 +242,11 @@ feature that may regress.
 
 - Every page overlays `PageSemantics`: one focusable target per area, named
   for what it is and what color it still wants, with an action that colors
-  it with the crayon in hand. The overlay carries semantics only, no pointer
-  input, so a normal finger passes straight through to the sheet.
+  it with the crayon in hand. The action scribbles the area in that color,
+  which is the same wax on the same paper as anybody else's mark; a child
+  who cannot aim a finger cannot draw a stroke either. The overlay carries
+  semantics only, no pointer input, so a normal finger passes straight
+  through to the sheet.
 - The overlay draws nothing. An invisible Box would paint nothing anyway,
   but drawing nothing keeps it true no matter how a future theme changes.
 - Every button has a spoken name, every state change has a spoken label, and
@@ -218,7 +257,7 @@ feature that may regress.
 ## The one renderer, in two languages
 
 `ui/Render.kt` (Compose) and `tools/RenderKit.kt` (Java2D) must produce the
-same picture, and they must agree on four things:
+same picture, and they must agree on five things:
 
 1. **Interleaved fills and strokes.** Fill an area, stroke its outline, then
    move to the next area. A later fill covers an earlier line, so hidden
@@ -229,7 +268,14 @@ same picture, and they must agree on four things:
 3. **The same line weight.** `STROKE_FRACTION` in both files, 0.0072.
 4. **The same grain.** Both lay `core/WaxGrain` over every colored area,
    through a tiled shader. One tile generator, so the store art and the
-   screen cannot drift.
+   screen cannot drift. The tile carries two scales, a four pixel tooth and
+   a sixteen pixel mottle, because a tooth alone reads as dirt and a mottle
+   alone reads as a stain.
+5. **The same crayon mark.** The child's marks are drawn by both renderers,
+   in the same order and with the same alphas: a soft halo, the wax body,
+   the grain through the mark, then a darker core. `CRAYON_TIP_FRACTION` in
+   both files, 0.052. A mark the child made on the device and the same mark
+   in the store art are the same mark.
 
 `Curves`: path bounds are control-point bounds, not curve bounds, so a
 sparkle is placed from the region's own `centroid`.
@@ -243,6 +289,8 @@ export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"   # not on PATH
 ./gradlew :app:assembleRelease
 ./gradlew :tools:makeSheets      # every page, sample and line art, for review
 ./gradlew :tools:makeIcons :tools:makeSounds :tools:makeArt
+./gradlew :tools:cropProbe "-PcropArgs=in.png out.png x y w h zoom"
+                                 # crop and enlarge any PNG, for close review
 ```
 
 CI is the loop: `build.yml` gates every push to `main` on tests, lint, asset
@@ -311,15 +359,22 @@ the screenshots, all in the same session.
 - D-008 Pictures are pure data in `core`, drawn by two renderers that must
   agree; the agreement is written out in Architecture above because every
   point of it has already been a bug.
-- D-009 The sample sits directly above the sheet, the way a coloring book
-  prints the finished picture facing the page. This is the app's one
-  distinctive layout choice and it is worth the space it costs.
+- D-009 The sample is the picture the child copies, and it is always one
+  gesture away: one tap holds it up large. It once sat directly above the
+  sheet, the way a coloring book prints the finished picture facing the
+  page; D-027 moved it into the bar because on a phone it cost the page too
+  much of its own height. The principle survives, the placement does not.
 - D-010 The tray shows only the picture's own colors, in the picture's own
   order. Fewer choices, every choice useful, and the tray teaches the page.
-- D-011 The first touch on a fresh page colors the area it lands on with the
-  color that area wants. Feedback beats instruction, and a first act that
-  does nothing teaches nothing.
-- D-012 Haptics on paint, on a match and on a finish, never on a miss.
+  Superseded in 0.1 by D-015 and still superseded: one box of sixteen for
+  the whole book.
+- D-011 The first touch on a fresh page starts a mark in the color that
+  area wants. Feedback beats instruction, and a first act that does nothing
+  teaches nothing. Amended by D-024: the app no longer fills the area, it
+  picks up the color and the child's own mark goes down in it.
+- D-012 Haptics on paint, on a match and on a finish, never on a miss. A
+  finished mark answers whether or not it landed on new paper: the child's
+  hand did something, and that is what a haptic is for.
 - D-013 A color the picture did not ask for still lands. Gentle, immediate,
   reversible, and never spoken as wrong.
 - D-014 No `.twa` suffix, no scar to inherit: this app was native from the
@@ -339,14 +394,16 @@ the screenshots, all in the same session.
   four-pixel tooth shared by both renderers. A flat fill is paint; the grain
   is what makes it a crayon. It is generated in core, wraps seamlessly, and
   is a whisper (average alpha under 6 of 255): a loud grain reads as dirt.
-- D-018 **No width slider, no tip sizes, no brush controls.** A width
-  control only means something if coloring is stroke based, and this app is
-  tap to fill because a four year old cannot trace inside a line and a fail
-  state is forbidden. In this model the crayon's mark already is the area, so
-  a width control would be a dead control. In real life the width is not a
-  control either: it is a property of the crayon, and nobody hands a small
-  child a slider. The crayon's fixed width is expressed as one perfect mark
-  per touch.
+- D-018 **No width slider, no tip sizes, no brush controls.** Amended by
+  D-024: the reasoning changed, the conclusion did not. Coloring is stroke
+  based now, so a width control would no longer be dead, and the second half
+  of the original argument is the one that carries: in real life width is
+  not a control either, it is a property of the crayon, and nobody hands a
+  small child a slider. The crayon has one fixed width (`CRAYON_TIP_FRACTION`,
+  0.052 of the page), wide enough that a three year old's scribble covers the
+  paper and narrow enough that a sprinkle can be colored on purpose. There is
+  no fail state still: a wide crayon over a line is not an error, it is how
+  wax behaves.
 - D-019 **The shelf is a picture wall.** Sheets taped to a wall with washi
   tape, each leaning at a small stable angle of its own, named underneath.
   The tape is one material everywhere (tinting it per picture went muddy,
@@ -371,3 +428,73 @@ the screenshots, all in the same session.
   under plus a Game is a normal combination and lands in the Families
   program. Supersedes the hedged "Educational or Puzzle" note in the
   submission guide.
+- D-024 **The child colors with their own hand.** A finger draws a crayon
+  mark that follows it; a tap no longer fills an area with a color. This
+  supersedes the tap-to-fill model that shipped in 0.1, which was wrong for
+  the one reason that matters: a coloring book does not color itself. What
+  the child sees on their sheet is now exactly what their hand did.
+  - A mark is a `Stroke` (`core/Progress.kt`): a color and the points the
+    finger traveled. `Strokes.extend` drops points closer than `MIN_STEP`
+    (0.4% of the page), so a thousand finger events make a short mark
+    rather than a save full of coordinates.
+  - Saving is the stroke list, coordinates and colors, capped at 900 points
+    a stroke and 600 strokes a page. A page whose areas are reordered in
+    code still reads an old save, because a stroke belongs to the paper and
+    not to an area.
+  - The first touch rule (D-011) survives intact: with no crayon in hand,
+    the app picks up the color the area under the finger asks for.
+  - Areas still exist: they draw the picture, they name themselves to a
+    screen reader, and they decide where the sparkle goes. They just are not
+    filled by the app any more, except for a screen reader's action, which
+    scribbles the area in the crayon in hand (`Strokes.scribble`), because a
+    child who cannot aim a finger cannot draw a mark either.
+- D-025 **The picture is finished when the crayon has been everywhere on
+  it**, whatever colors were chosen. The app counts the areas a mark has
+  touched and celebrates when no area is left untouched. It never judges
+  the colors: a child who colors the sky orange gets the same sparkle, the
+  same confetti and the same well done as a child who matches the sample
+  exactly. Hard constraint 7 says there is no fail state, and this is what
+  that means in code. A parent who wants a matching picture has the sample
+  in the bar and the child has the reason to reach for it; the app's job is
+  to celebrate the work, and a scold about the wrong blue would be the
+  first thing this app has ever refused.
+- D-026 **No sun, and the sky is not wallpaper.** Every outdoor page had a
+  sun in a corner, which is the oldest cliché in children's books and made
+  the pages read as one picture repeated. Weather is clouds now, placed
+  differently on every page, and the sun helper is gone from `core/Art.kt`
+  so it cannot drift back.
+- D-027 **The sample is a button in the bar**, one more round coin the same
+  size, shape and shadow as Home, the eraser and the sound switch, with the
+  finished picture inside it. It replaced a card that sat above the sheet
+  and stole the page's own height, which was the wrong trade on a phone and
+  looked like a panel that had been dropped into the layout. Supersedes the
+  layout half of D-009; the principle of D-009 survives, the sample is still
+  the thing the child copies, and one tap still holds it up large.
+- D-028 **The picked crayon casts a shadow and nothing else.** The white
+  plate that used to sit behind the crayon in hand is gone: a crayon lying
+  in a box casts a shadow, it does not sit on a white tile, and the plate
+  read as chrome. Selection is now the spring lift, a slightly larger
+  crayon, and the shadow it throws on the cardboard, plus the paper collar
+  a held crayon wears.
+- D-029 **The icon's crayon points down, and it is drawn from core.** Point
+  down is how a crayon is held and how a child recognizes one, and a crayon
+  standing on its point cannot be mistaken for anything else. The icon's
+  wax, wrapper and rules now come from the same geometry the tray draws
+  (`core/CrayonShape`), including the wax grain, so the launcher icon, the
+  store icon, the shelf header and the tray are literally one object.
+  `CrayonShapeTest` pins the proportions: three-ish to one, a blunt cone,
+  a squared base.
+- D-030 **The palette is real crayon colors.** The sixteen were rebuilt from
+  the Crayola standard list (Red #EE204D, Orange #FF7538, Yellow #FCE883,
+  Green #1CAC78, Blue Green #0D98BA, Sky Blue #76D7EA, Blue #1F75FE, Violet
+  #926EAE, Carnation Pink #FFAACC, Brown #B4674D, Gray #95918C) and softened
+  six percent toward paper, because wax sits on the tooth instead of soaking
+  in. The old palette was tuned toward earth and landed on mud: a yellow
+  crayon really is a bright yellow. Sand and forest are the two mixed ones
+  and each says so in `core/Crayons.kt`.
+- D-031 **Wax grain carries two scales.** The tile was one fine tooth at an
+  average alpha under 6, which is invisible at arm's length and reads as
+  faint dirt when it is not. It now carries a four pixel tooth and a sixteen
+  pixel mottle of coverage, at a mean alpha under 12, and the mark renderer
+  draws the grain through the mark rather than over it. That is what makes a
+  colored area read as wax pressed into paper instead of flat fill.

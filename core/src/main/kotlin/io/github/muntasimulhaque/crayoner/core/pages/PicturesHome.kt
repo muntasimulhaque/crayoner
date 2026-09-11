@@ -14,22 +14,21 @@ import io.github.muntasimulhaque.crayoner.core.point
 import io.github.muntasimulhaque.crayoner.core.poly
 import io.github.muntasimulhaque.crayoner.core.rect
 import io.github.muntasimulhaque.crayoner.core.round
-import io.github.muntasimulhaque.crayoner.core.sun
 import io.github.muntasimulhaque.crayoner.core.wavyEdge
 
 /**
  * A quiet garden street: a house, a tree, a mushroom and flowers. All
- * inanimate, all on one warm palette, and the sun of the book always in
- * the same corner so the pages feel like one world.
+ * inanimate, all on one warm palette, and no sun in any of these skies, so
+ * one page's weather never repeats the page before it.
  */
 
-/** House: sky, sun, cloud, grass, wall, roof, door, window. */
+/** House: sky, two clouds, grass, wall, roof, door, window. */
 fun housePage(): Page = Page(
     id = "house",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.84, 0.14, 0.075)),
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.18, 0.16, 0.85)),
+        areaOf("cloud_high", "cloud", Crayons.WHITE, cloud(0.82, 0.12, 0.6)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.78, 0.018, 3, 0))),
         area("wall", "wall", Crayons.WHITE, round(0.26, 0.44, 0.48, 0.34, 0.02)),
         area("roof", "roof", Crayons.RED, poly(0.20, 0.465, 0.50, 0.205, 0.80, 0.465)),
@@ -43,7 +42,7 @@ fun treePage(): Page = Page(
     id = "tree",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.15, 0.14, 0.07)),
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.16, 0.15, 0.8)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.78, 0.02, 3, 1))),
         area("trunk", "trunk", Crayons.BROWN, poly(0.462, 0.42, 0.538, 0.42, 0.548, 0.80, 0.452, 0.80)),
         area(
@@ -69,7 +68,7 @@ fun mushroomPage(): Page = Page(
     id = "mushroom",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.16, 0.14, 0.068)),
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.17, 0.15, 0.8)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.75, 0.02, 3, 0))),
         area("stem", "stem", Crayons.SAND, round(0.43, 0.50, 0.14, 0.27, 0.05)),
         area(

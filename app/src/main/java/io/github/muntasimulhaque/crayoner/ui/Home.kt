@@ -307,47 +307,15 @@ private fun tiltFor(id: String): Float {
 }
 
 /**
- * The strip of tape holding a picture to the wall.
- *
- * It is one material everywhere, the way real tape off a roll is: a warm
- * translucent paper with a faint fiber running through it, a little wider
- * than it is deep, and never quite straight. Tinting it per picture was the
- * first idea and it went muddy, because a tint of a picture's own colors is
- * a tint of the picture; a single honest material stays clean on all sixteen.
+ * The strip of tape holding a picture to the wall. It is the app's one roll
+ * of washi tape, drawn by the same hand as the tape on the coloring sheet:
+ * warm translucent paper with a faint fiber running through it, never quite
+ * straight, tinted never.
  */
 @Composable
 private fun WashiTape(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.width(46.dp).height(15.dp).rotate(-2.5f)) {
-        val w = size.width
-        val h = size.height
-        // The strip itself, with a shallow nick cut into each short edge, so
-        // it was cut by hand rather than stamped.
-        val strip = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w * 0.04f, h * 0.5f)
-            lineTo(0f, h)
-            lineTo(w, h)
-            lineTo(w * 0.96f, h * 0.5f)
-            lineTo(w, 0f)
-            close()
-        }
-        drawPath(strip, CrayonerColors.Tape)
-        // Its fibers: two fine lines along the roll's direction, a whisper
-        // darker, so the strip reads as paper rather than as a painted bar.
-        clipPath(strip) {
-            drawLine(
-                CrayonerColors.TapeFiber,
-                androidx.compose.ui.geometry.Offset(0f, h * 0.34f),
-                androidx.compose.ui.geometry.Offset(w, h * 0.28f),
-                strokeWidth = h * 0.07f,
-            )
-            drawLine(
-                CrayonerColors.TapeFiber,
-                androidx.compose.ui.geometry.Offset(0f, h * 0.72f),
-                androidx.compose.ui.geometry.Offset(w, h * 0.66f),
-                strokeWidth = h * 0.05f,
-            )
-        }
+    Canvas(modifier = modifier.width(46.dp).height(15.dp)) {
+        drawWallTape(size.width, size.height)
     }
 }
 

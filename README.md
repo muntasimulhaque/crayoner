@@ -15,7 +15,7 @@ the whole thing is in this repository.
 
 <p align="center">
   <img src="play-store/screenshots/phone/01_home.png" width="170" alt="The picture shelf">
-  <img src="play-store/screenshots/phone/03_blank.png" width="170" alt="A new page, the sample above it">
+  <img src="play-store/screenshots/phone/03_blank.png" width="170" alt="A new page, taped to the desk">
   <img src="play-store/screenshots/phone/05_coloring.png" width="170" alt="Half colored, one crayon in hand">
   <img src="play-store/screenshots/phone/08_done.png" width="170" alt="The finished picture">
 </p>
@@ -23,19 +23,19 @@ the whole thing is in this repository.
 ## What it is
 
 Sixteen pictures, all of them there from the first launch. Tap one and the
-page opens as bare outlines, with the finished picture directly above it and
-the crayons below. Look up, look down, color.
+page opens as bare outlines, with the crayons below and the finished picture
+in the top bar, a tap away.
 
 | | |
 |---|---|
 | **The picture wall** | Every picture hung like a child's drawing, taped to the wall with washi tape, each leaning at a small angle of its own. A finished one wears a honey star. |
-| **A page** | The picture to copy sits directly above the sheet, the way a coloring book prints it facing the page. One tap holds it up large, one tap puts it back. |
-| **The crayons** | Sixteen crayons in a real cardboard box, the same sixteen on every page, in the same places, because a real box does not change because of the page you open. |
-| **Coloring** | Touch an area and the color sweeps out from under your finger, with the grain of real wax on paper. A color the picture asks for earns a sparkle. A color it does not ask for still lands, quietly, because this app has no way to say wrong. |
+| **A page** | A real sheet of paper, taped to the desk at its own corners. The finished picture sits in the bar as one more round button: one tap holds it up large, one tap puts it back. |
+| **The crayons** | Sixteen crayons in a real cardboard box, the same sixteen on every page, in the same places, because a real box does not change because of the page you open. They are real crayon colors, softened the way wax on paper is. |
+| **Coloring** | Your finger draws the crayon. Nothing is filled in for you: a mark follows your hand, lays down wax with the grain of real paper, and covers the printed lines it is dragged over. A mark that used the color the picture asks for earns a sparkle. A mark in any other color still lands, quietly, because this app has no way to say wrong. |
 
-Every color is saved a moment after it lands, so a phone call, a rotation or
-a killed app costs nothing. There is no score, no timer, no fail state, and
-no picture is ever locked.
+Every mark is saved a moment after it is finished, so a phone call, a
+rotation or a killed app costs nothing. There is no score, no timer, no fail
+state, and no picture is ever locked.
 
 ## Why parents pick it
 
@@ -89,16 +89,17 @@ fill read as crayon rather than paint.
 
 ```
 core/     pure Kotlin, zero Android imports: shapes, geometry, the crayon
-          box, the sixteen pages, and every rule about coloring them
+          box, the sixteen pages, the crayon's own shape, wax grain, and
+          every rule about coloring
 :app      host/ (ViewModel, DataStore, SoundPool) and ui/ (Compose)
 :tools    offline generators: picture sheets, launcher icons, store art, sounds
 ```
 
 The organizing principle: **the rules are pure data and functions; Android
 is a player of those rules, not a participant.** A page is a list of areas,
-an area is a list of shapes, and progress is a map from area to color. That
-is why the whole coloring engine is playable in plain JVM tests, and why the
-store screenshots render straight from state.
+an area is a list of shapes, and progress is the list of crayon marks the
+child's hand has made. That is why the whole coloring engine is playable in
+plain JVM tests, and why the store screenshots render straight from state.
 
 See [AGENTS.md](AGENTS.md) for the working rules, the design decisions and
 the lessons behind them.

@@ -29,19 +29,47 @@ class WaxGrainTest {
 
     @Test
     fun theGrainIsAWhisperNotAStain() {
-        // Every pixel is either a faint dark speck or a fainter light one,
-        // and the average alpha is low enough that a colored area still
-        // reads as one calm color at arm's length.
+        // Every pixel is either a faint dark speck or a faint light one, and
+        // the average alpha is low enough that a colored area still reads as
+        // one calm color at arm's length. It carries two scales now, the
+        // paper's tooth and the mottle of a hand, so the budget is larger
+        // than a tooth alone would need, and still nowhere near a stain.
         val pixels = WaxGrain.pixels()
         var totalAlpha = 0L
         for (p in pixels) {
             val alpha = (p ushr 24) and 0xFF
-            assertTrue("a speck is too strong: $alpha", alpha <= 32)
+            assertTrue("a speck is too strong: $alpha", alpha <= 45)
             totalAlpha += alpha
         }
-        val average = totalAlpha.toDouble() / pixels.size
-        assertTrue("the grain is too strong on average: $average", average < 6.0)
-        assertTrue("the grain is invisible: $average", average > 0.5)
+        val average = WaxGrain.averageAlpha(pixels)
+        assertTrue("the grain is too strong on average: $average", average < 12.0)
+        assertTrue("the grain is invisible: $average", average > 3.0)
+    }
+
+    @Test
+    fun bothScalesAreInTheTile() {
+        // A tile with only the fine tooth reads as dirt; a tile with only
+        // the mottle reads as a stain. Both are present when neighboring
+        // pixels differ a little and distant ones differ a lot.
+        val pixels = WaxGrain.pixels()
+        fun alpha(x: Int, y: Int) = (pixels[y * WaxGrain.SIZE + x] ushr 24) and 0xFF
+        var neighbor = 0L
+        var distant = 0L
+        for (y in 0 until WaxGrain.SIZE) {
+            for (x in 0 until WaxGrain.SIZE) {
+                neighbor += kotlin.math.abs(
+                    alpha(x, y) - alpha((x + 1) % WaxGrain.SIZE, y),
+                )
+                distant += kotlin.math.abs(
+                    alpha(x, y) - alpha((x + WaxGrain.SIZE / 2) % WaxGrain.SIZE, y),
+                )
+            }
+        }
+        assertTrue("no tooth in the tile", neighbor > 0)
+        assertTrue(
+            "no mottle in the tile: $distant vs $neighbor",
+            distant > neighbor / 4,
+        )
     }
 
     @Test

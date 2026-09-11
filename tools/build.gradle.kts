@@ -69,3 +69,17 @@ tasks.register<JavaExec>("makeArt") {
     mainClass = "io.github.muntasimulhaque.crayoner.tools.MakeArtKt"
     args = listOf(rootDir.absolutePath)
 }
+
+// A review tool, not a generator: it writes nothing the app ships. Point it
+// at any PNG (a screenshot, a sheet) to crop and enlarge part of it, which
+// is how a capture is inspected at the scale an eye actually judges.
+// ./gradlew :tools:cropProbe "-PcropArgs=in.png out.png x y w h zoom"
+tasks.register<JavaExec>("cropProbe") {
+    group = "tools"
+    description = "Crop and enlarge part of a PNG, for reviewing a capture by eye."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass = "io.github.muntasimulhaque.crayoner.tools.CropProbeKt"
+    args = (project.findProperty("cropArgs") as String? ?: "")
+        .split(" ")
+        .filter { it.isNotBlank() }
+}

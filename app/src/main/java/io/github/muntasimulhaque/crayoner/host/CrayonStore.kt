@@ -5,7 +5,6 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
 import kotlinx.coroutines.flow.first
@@ -69,8 +68,7 @@ class CrayonStore(private val context: Context) {
     /**
      * Saves the page being colored. An empty page clears the draft instead,
      * so wiping a picture leaves nothing behind to restore.
-     */
-    suspend fun saveDraft(pageId: String, serialized: String) {
+     */    suspend fun saveDraft(pageId: String, serialized: String) {
         context.dataStore.edit { prefs ->
             if (serialized.isBlank()) {
                 prefs.remove(DRAFT_PAGE)
@@ -93,9 +91,9 @@ class CrayonStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[SOUND_ON] = on }
     }
 
-    /** Reads a draft back into a page's live progress, dropping bad colors. */
-    fun draftFor(page: Page, drafts: Map<String, String>): Progress =
-        Progress.parse(drafts[page.id], page)
+    /** Loads a page's saved marks back, dropping anything malformed. */
+    fun draftFor(pageId: String, drafts: Map<String, String>): Progress =
+        Progress.parse(drafts[pageId])
 
     private companion object {
         val FINISHED = stringPreferencesKey("finished")

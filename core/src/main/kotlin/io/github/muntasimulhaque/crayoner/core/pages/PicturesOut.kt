@@ -11,7 +11,6 @@ import io.github.muntasimulhaque.crayoner.core.ellipse
 import io.github.muntasimulhaque.crayoner.core.poly
 import io.github.muntasimulhaque.crayoner.core.rect
 import io.github.muntasimulhaque.crayoner.core.round
-import io.github.muntasimulhaque.crayoner.core.sun
 import io.github.muntasimulhaque.crayoner.core.wavyEdge
 
 /**
@@ -71,7 +70,7 @@ fun carPage(): Page = Page(
     id = "car",
     regions = listOf(
         area("sky", "sky", Crayons.SKY, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("sun", "sun", Crayons.YELLOW, sun(0.15, 0.14, 0.065)),
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.16, 0.15, 0.8)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.70, 0.02, 2, 0))),
         area("road", "road", Crayons.GRAY, band(wavyEdge(0.76, 0.008, 2, 0))),
         area(

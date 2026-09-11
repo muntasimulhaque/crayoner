@@ -69,27 +69,6 @@ fun cloud(cx: Double, cy: Double, s: Double = 1.0): List<Shape> = listOf(
     ellipse(cx + 0.010 * s, cy + 0.030 * s, 0.155 * s, 0.045 * s),
 )
 
-/** A sun: a disc with [rays] even triangular rays, read as one region. */
-fun sun(cx: Double, cy: Double, r: Double, rays: Int = 8): List<Shape> {
-    val parts = ArrayList<Shape>(rays + 1)
-    for (i in 0 until rays) {
-        val a = i * 360.0 / rays
-        val ar = a.toRadians()
-        val half = 0.20
-        val base = r * 0.90
-        val tip = r * 1.42
-        parts += Poly(
-            listOf(
-                Vec2(cx + tip * cos(ar), cy + tip * sin(ar)),
-                Vec2(cx + base * cos(ar - half), cy + base * sin(ar - half)),
-                Vec2(cx + base * cos(ar + half), cy + base * sin(ar + half)),
-            ),
-        )
-    }
-    parts += circle(cx, cy, r)
-    return parts
-}
-
 /** The petals of one flower: overlapping ovals around a center. */
 fun flowerPetals(cx: Double, cy: Double, r: Double, count: Int = 6): List<Shape> =
     (0 until count).map { i ->

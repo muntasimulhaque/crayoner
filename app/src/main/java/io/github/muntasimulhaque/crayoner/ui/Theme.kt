@@ -32,7 +32,7 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
  */
 object CrayonerColors {
     /** The desk the whole app sits on. Warm, a step under paper. */
-    val Desk = Color(0xFFEDE2CF)
+    val Desk = Color(0xFFF6EFE3)
     /** Paper, cards, plates: the brightest surface in the app. */
     val Card = Color(0xFFFFFDF8)
     /** Words and icons. The same ink the pictures are drawn in. */
@@ -42,15 +42,15 @@ object CrayonerColors {
     /** Celebration only, never chrome: the star a finished picture earns. */
     val Honey = Color(0xFFEFB53A)
     /** The crayon box: toasted cardboard. */
-    val Cardboard = Color(0xFFDCC69B)
-    /** The washi tape holding a picture to the wall: warm, translucent. */
+    val Cardboard = Color(0xFFEFE1C6)
+    /** The washi tape holding paper down: warm, translucent. */
     val Tape = Color(0x8CF6E7C4)
     /** The fiber running through the tape, a whisper darker. */
     val TapeFiber = Color(0x33A08B5E)
     /** One scrim for every layer that stands the world back. */
     val Scrim = Ink.copy(alpha = 0.62f)
     /** The whisper of a shadow under coins, cards and pages. */
-    val Shadow = Ink.copy(alpha = 0.18f)
+    val Shadow = Ink.copy(alpha = 0.22f)
 }
 
 // The display face: Baloo 2, bundled offline (OFL text lives in docs/).
