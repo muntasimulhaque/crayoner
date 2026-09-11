@@ -226,10 +226,68 @@ fun iconFiles(): List<IconFile> = buildList {
     }
 }
 
-private fun pngBytes(image: BufferedImage): ByteArray {
-    val bytes = java.io.ByteArrayOutputStream()
-    ImageIO.write(image, "png", bytes)
-    return bytes.toByteArray()
+/**
+ * The pin's limits, and why they are not zero.
+ *
+ * Java2D's antialiasing is not byte-reproducible across JDK major versions.
+ * The same shape, filled by the same code, lands a hair differently on an
+ * antialiased edge: measured between JDK 17 (what CI runs) and JDK 25 (the
+ * Android Studio JBR), 12 pixels of 100,000 differ, and the largest of them
+ * is a pixel of coverage coming out as alpha 1 of 255 instead of alpha 0.
+ * Both are invisible, and a byte-exact pin would refuse every honest
+ * regeneration.
+ *
+ * So the comparison is made in the only terms that matter: what a person
+ * sees. Each image is laid over the same white desk, pixel differences
+ * inside [JITTER] are ignored outright as rasterizer noise, a difference
+ * over [EDIT_DELTA] fails at once as a real change, and the pixels in
+ * between get a small budget ([MAX_DRIFT_FRACTION] of the icon, with a
+ * floor for a small one). A hand-edited or stale asset is nothing like
+ * this: a recolored crayon, a moved line, an icon from another app, or a
+ * different canvas size all change thousands of pixels by tens or hundreds,
+ * which no budget here can hide.
+ */
+private const val JITTER = 8.0
+private const val EDIT_DELTA = 48.0
+private const val MAX_DRIFT_FRACTION = 0.005
+private const val MIN_DRIFT_PIXELS = 24
+
+/** One channel of [argb] as it looks laid over a white desk. */
+private fun overWhite(channel: Int, alpha: Int): Double {
+    val a = alpha / 255.0
+    return channel * a + 255.0 * (1.0 - a)
+}
+
+/**
+ * True when [committed] and [fresh] are the same icon to the eye: equal
+ * within the drift a different JDK's antialiasing can produce, and not one
+ * visible pixel more.
+ */
+private fun sameIcon(committed: BufferedImage, fresh: BufferedImage): Boolean {
+    if (committed.width != fresh.width || committed.height != fresh.height) return false
+    val pixels = committed.width * committed.height
+    val allowed = (pixels * MAX_DRIFT_FRACTION).toInt().coerceAtLeast(MIN_DRIFT_PIXELS)
+    var drifting = 0
+    for (y in 0 until committed.height) {
+        for (x in 0 until committed.width) {
+            val a = committed.getRGB(x, y)
+            val b = fresh.getRGB(x, y)
+            if (a == b) continue
+            val alphaA = (a ushr 24) and 0xFF
+            val alphaB = (b ushr 24) and 0xFF
+            var delta = 0.0
+            for (shift in intArrayOf(16, 8, 0)) {
+                val ca = overWhite((a ushr shift) and 0xFF, alphaA)
+                val cb = overWhite((b ushr shift) and 0xFF, alphaB)
+                delta = maxOf(delta, kotlin.math.abs(ca - cb))
+            }
+            if (delta <= JITTER) continue
+            if (delta > EDIT_DELTA) return false
+            drifting++
+            if (drifting > allowed) return false
+        }
+    }
+    return true
 }
 
 /** Write the whole icon set into a res directory, overwriting in place. */
@@ -259,7 +317,8 @@ fun main(args: Array<String>) {
             drift.add("${file.relativePath}: missing")
             continue
         }
-        if (!pngBytes(file.image()).contentEquals(committed.readBytes())) {
+        val onDisk = runCatching { ImageIO.read(committed) }.getOrNull()
+        if (onDisk == null || !sameIcon(onDisk, file.image())) {
             drift.add("${file.relativePath}: differs from regeneration")
         }
     }

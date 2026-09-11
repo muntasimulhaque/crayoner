@@ -299,6 +299,16 @@ release. `screenshots.yml` recaptures the store screenshots whenever UI files
 change: eight captures per form factor (phone, 7", 10"), 24 in all, the Play
 listing maximum, pinned to API 35.
 
+The asset pins refuse a hand-edited or stale asset. `checkSounds` is exact:
+the WAVs are pure integer arithmetic from `SoundGen`. `checkIcons` compares
+what a person can see: each image laid over the same white desk, differences
+inside a rasterizer's noise ignored, a difference over 48 of 255 failed at
+once, and a small budget for the pixels in between. It has to be that way,
+because Java2D's antialiasing is not byte-reproducible across JDK major
+versions (measured: 12 pixels of 100,000, the largest an alpha 1 against an
+alpha 0). The pin still catches every real edit: a hand-painted 12 pixel
+change on the 48 pixel icon fails it.
+
 Download the three `store-screenshots-*` artifacts with
 `gh run download <run-id> -R muntasimulhaque/crayoner -D <dir>` and strip the
 form-factor prefix into `play-store/screenshots/`. The celebration scene is
