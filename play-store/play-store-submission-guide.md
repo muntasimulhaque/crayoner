@@ -177,25 +177,43 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 0.4 (versionCode 4) is the build to upload.** The session that made
-it removed the finished-picture seal whole (the button in the bar, the stamp
-on the sheet, the mark on the shelf card, the bell and the stored set of
-sealed ids), cut the crayon's rub loop so nothing plays while a child colors,
-laid the chosen crayon down among the others in the box (a little longer,
-with a heavier line, and no shadow), let the box close on a pull down as well
-as a tap outside, and fixed the rubber, which until now painted nothing back:
-the page image the eraser lays down now carries the paper as well as the
-print, so a rub really takes the wax off. The store captures are seven scenes
-per form factor now, 21 in all, because the scene that showed a stamped
-picture no longer exists.
+**Version 0.4 (versionCode 4) was submitted for Play review on 11 Sep
+2026.** It was built by CI from commit 241cd2e, signed with the Crayoner
+upload key, and read versionCode 4, versionName 0.4, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (verified in the bundle's own manifest). The
+AAB was sha256 e34a71f1 and has been DELETED from `play-store/aab/` now that
+it is submitted, so a stale build can never be uploaded twice. The next build
+to upload will be 0.5.
+
+0.4 is the quiet round. The seal is gone whole: the button in the bar, the
+stamp on the sheet, the mark on the shelf card, the bell, and the stored set
+of sealed ids, so nothing in the app or on the wall says a picture is done,
+and the shelf says nothing about what the child has played with. The crayon's
+rub loop is cut, so nothing plays while a child colors, and one effect
+remains: the rustle of a crayon or the rubber being picked up or put down.
+The chosen crayon lies in the box with the others now, a little longer and
+drawn with a heavier line, with no shadow, and the box closes on a pull down
+as well as a tap outside. The rubber was fixed: it painted with a page image
+whose ground was transparent, so a rub put nothing back; the image now
+carries the paper as well as the print, and a rub takes the wax off and
+leaves the printed line. The captures that go with it are 21, seven scenes
+per form factor, because the scene that showed a stamped picture no longer
+exists.
+
+Submitted with: Game / Educational, paid once, target audience 5 and under,
+Ads No, Advertising ID No, Data safety nothing collected, the privacy policy
+at https://muntasimulhaque.github.io/crayoner/privacy.html, and the three
+screenshot folders from the 21 CI captures. The screenshots in the repo are
+now those 21.
 
 **Version 0.3 (versionCode 3) was submitted for Play review.** It was built
 by CI from commit 75337d4, signed with the Crayoner upload key, and read
 versionCode 3, versionName 0.3, package io.github.muntasimulhaque.crayoner,
 target 37, with no permission beyond the androidx core private receiver. The
 AAB was sha256 6e817744 and has been DELETED from `play-store/aab/` now that
-it is submitted, so a stale build can never be uploaded twice. The next build
-to upload will be 0.4.
+it is submitted, so a stale build can never be uploaded twice. 0.4 has since
+superseded it.
 
 0.3 is the round where the crayons become a real box. One crayon and one
 rubber sit on the tray: the crayon opens all thirty two colors of a real box
@@ -206,8 +224,9 @@ click per mark, a colored area is wax generated as a material rather than a
 flat fill with speckle over it, and nothing counts the child's work any more:
 the progress line, the sparkles and the completion rule are gone, and a
 picture is finished only when the child presses the seal themselves. The
-launcher icon is the app's own crayon mirrored. The 24 screenshots that go
-with it are the captures from CI on 75337d4.
+launcher icon is the app's own crayon mirrored. The 24 screenshots that went
+with it were the captures from CI on 75337d4, since replaced in the repo by
+the 21 from 0.4.
 
 Submitted with: Game / Educational, paid once, target audience 5 and under,
 Ads No, Advertising ID No, Data safety nothing collected, the privacy policy
