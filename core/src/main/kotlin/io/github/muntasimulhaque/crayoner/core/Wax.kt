@@ -171,17 +171,27 @@ object Wax {
         val toothCells = if (fine) TOOTH_CELLS / 2 else TOOTH_CELLS
         val broadCells = if (fine) BROAD_CELLS / 2 else BROAD_CELLS
         val tooth = blur(noise(size, toothCells, toothCells, seed))
-        val drag = stretchedNoise(size, angleDeg, seed + 101, fine)
+        val drag = dragField(size, angleDeg, seed + 101, fine)
         val broad = noise(size, broadCells, broadCells, seed + 977)
         val cover = if (fine) MARK_COVERAGE else COVERAGE
         val swing = if (fine) MARK_COVERAGE_SWING else COVERAGE_SWING
+        // The drag leans harder on a mark than on a filled area. A hand
+        // drawing a line moves the whole arm and the streak is most of what
+        // the eye reads; a hand covering an area moves its wrist and the wax
+        // is more even. Either way the drag is the strongest of the three,
+        // because the streak is what says a hand went back and forth.
+        val dragWeight = if (fine) MARK_DRAG_WEIGHT else COVERAGE_DRAG_WEIGHT
+        val toothWeight = if (fine) MARK_TOOTH_WEIGHT else COVERAGE_TOOTH_WEIGHT
         val rgb = (argb and 0xFFFFFF).toInt()
         val out = IntArray(size * size)
         for (i in out.indices) {
+            // A mark's unevenness lives at the coarse scale; the tooth is a
+            // faint speckle either way, and up close it is visible as the
+            // paper's grain and not as noise.
             val s =
-                (tooth[i] - 0.5) * 1.00 +
-                    (drag[i] - 0.5) * 1.15 +
-                    (broad[i] - 0.5) * 0.55
+                ((tooth[i] - 0.5) * toothWeight +
+                    (drag[i] - 0.5) * dragWeight +
+                    (broad[i] - 0.5) * 0.55) * if (fine) 0.72 else 1.0
             // The middle of the range is held back and the extremes pushed:
             // wax is mostly down, with places it skipped and places it piled.
             val c = (cover + s * swing).coerceIn(0.0, 1.0).pow(COVERAGE_CURVE)
@@ -196,6 +206,10 @@ object Wax {
     private const val COVERAGE_SWING = 0.34
     private const val COVERAGE_CURVE = 0.80
 
+    /** How heavily each noise leans on a filled area. */
+    private const val COVERAGE_DRAG_WEIGHT = 1.60
+    private const val COVERAGE_TOOTH_WEIGHT = 0.60
+
     /**
      * The same two numbers for a mark. A hand drawing a line presses less
      * evenly than a hand filling an area, so a stroke is thinner and more
@@ -204,6 +218,10 @@ object Wax {
      */
     private const val MARK_COVERAGE = 0.68
     private const val MARK_COVERAGE_SWING = 0.60
+
+    /** How heavily each noise leans on a mark. */
+    private const val MARK_DRAG_WEIGHT = 2.00
+    private const val MARK_TOOTH_WEIGHT = 0.60
 
     private const val TOOTH_CELLS = 40
     private const val BROAD_CELLS = 7
@@ -240,34 +258,56 @@ object Wax {
     }
 
     /**
-     * Noise stretched along [angleDeg], on a lattice that wraps: many cells
-     * across the drag and few along it, so the patch runs the way the hand
-     * did. A round cell here reads as a stain.
+     * The drag of the hand: the material stretched along [angleDeg].
+     *
+     * Two scales go into it, and the split is why the streak reads as a hand
+     * rather than as noise. The base carries long wisps, smeared far along
+     * the direction of travel; over it rides a shorter smear, so the field
+     * has structure at the size of a wrist's movement as well as at the size
+     * of the whole pass. A single smear either reads as a stain (too short)
+     * or as a gradient (too long).
+     *
+     * Both are wraps of one base field, sampled with wraparound indexing, so
+     * the tile has no seam at any angle: a rotation does not commute with the
+     * wrap, which is what the older sampling got wrong, and a smear does.
+     * The offset along the drag leans a hair off the angle too, so the wisps
+     * are not all parallel to each other either.
      */
-    private fun stretchedNoise(size: Int, angleDeg: Double, seed: Int, fine: Boolean = false): DoubleArray {
-        val across = if (fine) 3 else 4
-        val along = if (fine) 22 else 13
-        // Rotating the sample point into the drag's own frame is what turns
-        // round cells into long ones, and the lattice still wraps because the
-        // sample is taken modulo the cell counts.
+    private fun dragField(size: Int, angleDeg: Double, seed: Int, fine: Boolean): DoubleArray {
+        val long = smear(size, angleDeg, seed, if (fine) 0.34 else 0.40, if (fine) 12 else 10)
+        val short = smear(size, angleDeg + 11.0, seed + 331, if (fine) 0.12 else 0.16, if (fine) 18 else 14)
+        return DoubleArray(size * size) { i -> long[i] * 0.62 + short[i] * 0.38 }
+    }
+
+    /**
+     * One smear: the base field sampled [taps] times along [angleDeg] and
+     * averaged, each sample taken with wraparound indexing.
+     */
+    private fun smear(
+        size: Int,
+        angleDeg: Double,
+        seed: Int,
+        reachFraction: Double,
+        cells: Int,
+    ): DoubleArray {
+        val base = blur(noise(size, cells, cells, seed))
         val a = Math.toRadians(angleDeg)
-        val ca = cos(a)
-        val sa = sin(a)
-        var state = seed
-        fun next(): Double {
-            state = state * 1103515245 + 12345
-            return ((state ushr 8) and 0xFFFF) / 65535.0
-        }
-        val lattice = DoubleArray(along * across) { next() }
+        val dx = cos(a)
+        val dy = sin(a)
+        val reach = size * reachFraction
+        val taps = 9
+        val half = (taps - 1) / 2.0
         val out = DoubleArray(size * size)
         for (y in 0 until size) {
             for (x in 0 until size) {
-                // Drag's own axes: u across the movement, v along it.
-                val u = x * ca + y * sa
-                val v = -x * sa + y * ca
-                val fu = u.toDouble() * across / size
-                val fv = v.toDouble() * along / size
-                out[y * size + x] = sample(lattice, along, across, fv, fu)
+                var sum = 0.0
+                for (i in 0 until taps) {
+                    val t = (i - half) / half * reach
+                    val sx = wrap(x + Math.round(t * dx).toInt(), size)
+                    val sy = wrap(y + Math.round(t * dy).toInt(), size)
+                    sum += base[sy * size + sx]
+                }
+                out[y * size + x] = sum / taps
             }
         }
         return out

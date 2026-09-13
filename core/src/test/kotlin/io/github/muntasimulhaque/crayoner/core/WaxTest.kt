@@ -122,4 +122,93 @@ class WaxTest {
             .map { Wax.surface(it.fillArgb, 24, Wax.angleDeg(it), 0, Wax.seed(it)).toList() }
         assertTrue("every area in the book shares one surface", patterns.toSet().size > 40)
     }
+
+    @Test
+    fun theSurfaceTileHasNoSeamAtAnyAngle() {
+        // A tile is repeated forever, so its left column has to continue from
+        // its right column and its top row from its bottom row. If they do
+        // not, every tile edge is a visible step, and a colored area or a
+        // child's mark comes out covered in a grid of faint rectangles: the
+        // bug this test exists because of, which no close reading of the code
+        // caught and a store capture did.
+        val size = 64
+        for (angle in listOf(-90.0, -38.0, -24.0, -5.0, 0.0, 2.0, 37.0, 64.0, 90.0, 140.0, 180.0)) {
+            for (fine in listOf(false, true)) {
+                val pixels = Wax.surface(Crayons.RED, size, angle, 0, 4242, fine = fine)
+                fun alpha(x: Int, y: Int) = (pixels[y * size + x] ushr 24) and 0xFF
+                // The step across the seam, against the biggest step inside
+                // the tile: a seam is a jump the material never makes on its
+                // own.
+                var seam = 0
+                var inside = 0
+                for (i in 0 until size) {
+                    seam = maxOf(seam, kotlin.math.abs(alpha(0, i) - alpha(size - 1, i)))
+                    seam = maxOf(seam, kotlin.math.abs(alpha(i, 0) - alpha(i, size - 1)))
+                    inside = maxOf(inside, kotlin.math.abs(alpha(1, i) - alpha(2, i)))
+                    inside = maxOf(inside, kotlin.math.abs(alpha(i, 1) - alpha(i, 2)))
+                }
+                assertTrue(
+                    "the wax tile at $angle (fine=$fine) has a seam: $seam across an edge, " +
+                        "against a typical step of $inside",
+                    seam <= inside * 4 + 12,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun aMarkIsStretchedAlongTheHandThatMadeIt() {
+        // The drag is what makes a mark read as wax rather than as a printed
+        // line. Measured on the wax that actually lands on the paper: shifted
+        // a little along the direction the hand moved, the material looks
+        // much more like itself than it does shifted the same distance across
+        // the movement. A tile of round cells would score the same both ways
+        // and read as a stain; this is a ratio, so it holds at every size and
+        // every color.
+        val size = 64
+        val step = size / 8
+        val report = StringBuilder()
+        for (angle in listOf(0.0, -38.0, 37.0, 90.0)) {
+            for (fine in listOf(false, true)) {
+                val pixels = Wax.surface(Crayons.BLUE, size, angle, 0, 99, fine = fine)
+                fun alpha(x: Int, y: Int) = (pixels[wrap(y, size) * size + wrap(x, size)] ushr 24) and 0xFF
+                val along = Math.cos(Math.toRadians(angle))
+                val across = Math.sin(Math.toRadians(angle))
+                var alongDrag = 0.0
+                var acrossDrag = 0.0
+                for (y in 0 until size) {
+                    for (x in 0 until size) {
+                        val here = alpha(x, y)
+                        alongDrag += kotlin.math.abs(
+                            here - alpha(
+                                (x + (along * step).toInt()),
+                                (y + (across * step).toInt()),
+                            ),
+                        )
+                        acrossDrag += kotlin.math.abs(
+                            here - alpha(
+                                (x + (-across * step).toInt()),
+                                (y + (along * step).toInt()),
+                            ),
+                        )
+                    }
+                }
+                report.append(
+                    "\n  angle $angle fine=$fine: ${(alongDrag / acrossDrag * 100).toInt()}% " +
+                        "of the across variation, along the drag",
+                )
+                assertTrue(
+                    "the wax at $angle (fine=$fine) is not stretched along the drag:" +
+                        " $alongDrag along it, $acrossDrag across it" + report,
+                    alongDrag < acrossDrag * (if (fine) 0.85 else 0.95),
+                )
+            }
+        }
+    }
+}
+
+/** Wraps [v] onto 0 until [n], the way a tile repeats. */
+private fun wrap(v: Int, n: Int): Int {
+    val m = v % n
+    return if (m < 0) m + n else m
 }

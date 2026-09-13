@@ -744,3 +744,20 @@ the screenshots, all in the same session.
   The same rule applies to the child's marks, where a wide faint pass had
   been standing in for the feather of wax: a pale edge is a border, and a
   border is a sticker. A mark is its own wax and nothing else.
+- D-048 **The wax tile has no seam, and the drag is a smear.** The noise that
+  makes a streak was built by sampling a lattice in the drag's own rotated
+  frame and wrapping the sample modulo the cell counts. That cannot wrap: a
+  rotation does not commute with a wrap except at a quarter turn, so every
+  angle but a right angle left a hard step down the tile's own edge, and the
+  step was big (measured: an alpha jump of 187 of 255 where the material's
+  own neighbors differ by 20). A tiled shader shows that as a grid of faint
+  rectangles over every colored area, and it dominated the picture. The drag
+  is now two smears of a wrapping base field, sampled with wraparound
+  indexing along the drag's direction: that is periodic by construction, so
+  the tile has no seam at any angle. Two scales are needed, and this is the
+  other half of the lesson: one smear short enough to stay local reads as a
+  stain, one long enough to read as a hand reads as a gradient, so a long
+  wisp and a shorter one ride together. `WaxTest` now measures the tile for
+  a seam at eleven angles, both tile kinds, and measures that the material
+  really is stretched along the hand that made it: both of these are bugs
+  that no close reading of the code caught and one store capture did.
