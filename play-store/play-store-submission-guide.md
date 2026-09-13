@@ -179,14 +179,35 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 0.5 (versionCode 5) is ready for Play review.** It was built by CI
+from commit da3814c, signed with the Crayoner upload key, and reads
+versionCode 5, versionName 0.5, package io.github.muntasimulhaque.crayoner,
+target 37, with no permission beyond the androidx core private receiver
+(checked in the built APK's own manifest, `aapt2 dump permissions`). The AAB
+is waiting in `play-store/aab/app-release.aab`, sha256 17fe2480, and must be
+deleted from that folder once it is submitted so a stale build can never be
+uploaded twice. The next build to upload will be 0.6.
+
+0.5 is the round where the paper answers the hand. Three things a hand
+reaches for now sit in one capsule: the crayon in hand, the rubber, and undo,
+which takes back the last mark the hand made, one mark and one press. The
+paper can be brought twice as close from the chip below the capsule, and one
+press puts it back whole, with no pinch and no double tap anywhere on the
+sheet. The crayon is wax and nothing is drawn around it any more, on the
+stick or on the child's own marks, where a pale wide pass had been painting a
+border around every stroke. The sound switch is off the shelf and lives on
+the page. The wax tile was rebuilt: it had a hard seam down its own edge at
+every angle but a right angle, which showed as a grid of faint rectangles
+over every colored area.
+
 **Version 0.4 (versionCode 4) was submitted for Play review on 11 Sep
 2026.** It was built by CI from commit 241cd2e, signed with the Crayoner
 upload key, and read versionCode 4, versionName 0.4, package
 io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
 androidx core private receiver (verified in the bundle's own manifest). The
 AAB was sha256 e34a71f1 and has been DELETED from `play-store/aab/` now that
-it is submitted, so a stale build can never be uploaded twice. The next build
-to upload will be 0.5.
+it is submitted, so a stale build can never be uploaded twice. 0.5 has since
+superseded it.
 
 0.4 is the quiet round. The seal is gone whole: the button in the bar, the
 stamp on the sheet, the mark on the shelf card, the bell, and the stored set
