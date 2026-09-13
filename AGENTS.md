@@ -2,7 +2,7 @@
 
 A coloring book for ages 3 to 5. A picture is shown in color, the same
 picture is shown as bare outlines beside it, and the child colors the
-outlines from a tray of crayons until it matches the picture. Native
+outlines from a box of crayons until it matches the picture. Native
 Android, paid once, fully offline: no ads, no trackers, no accounts, no
 network. Open source under MIT.
 
@@ -118,8 +118,9 @@ Sixteen pictures. Tap one and color it.
 - The shelf shows every picture as the finished sample, with its name. The
   whole card is one button, nothing on it is locked, and nothing on it
   carries a mark of what the child has or has not done.
-- A page opens as bare outlines on paper, with the two things a hand holds
-  below it and the finished picture in the bar as one more round button.
+- A page opens as bare outlines on paper, with the capsule of things a hand
+  holds below it, the chip that brings the paper closer under that, and the
+  finished picture in the bar as one more round button.
   Look at the sample, look at the page, color.
 - **The child colors with their own hand.** A finger on the paper draws a
   crayon mark that follows the finger; nothing is filled in for them. A
@@ -138,18 +139,35 @@ Sixteen pictures. Tap one and color it.
   the child's mark is in that color. From then on they are holding a crayon
   and every mark uses it. A three year old's first act must never end in
   nothing happening.
-- **The tray is two things: a crayon and a rubber.** A three year old does
-  not choose between thirty two crayons, they pick one up and draw. The
-  crayon in the tray always shows the color in hand, and pressing it opens
-  the box: thirty two real crayon colors, laid out the way the box lays them
-  out, with the color in hand lying among the others, a little longer and
-  drawn with a heavier line. That difference is the whole selection mark;
-  there is no ring, no plate, no tick and no shadow.
+- **The tray is one capsule with three seats: a crayon, a rubber, and a
+  step back.** A three year old does not choose between thirty two crayons,
+  they pick one up and draw. The crayon in the capsule always shows the color
+  in hand, and pressing it opens the box: thirty two real crayon colors, laid
+  out the way the box lays them out, with the color in hand lying among the
+  others, a little longer and drawn with a heavier line. That difference is
+  the whole selection mark; there is no ring, no plate, no tick and no
+  shadow.
 - **The rubber takes wax off the paper and leaves the print.** Press it and
   the next mark erases: the rubber is drawn with the printed page itself as
   its paint, so the wax goes and the printed line stays, which is what a
   rubber does on real paper, where the print is under the wax. There is no
   start over, no confirm, and nothing a child can lose.
+- **One press of undo takes back the last mark the hand made**, whatever end
+  of the box made it. One mark and one press, never a stack: a fresh page has
+  nothing to undo and the press simply lands. The rubber is what a child uses
+  to change their mind about a whole picture; undo is the one step a hand
+  that drew a mark it did not mean needs. See D-045.
+- **The paper can be brought closer, and never by accident.** A page always
+  opens whole. The chip on the desk below the capsule slides between the
+  whole sheet and a look twice as close, and its own left end puts the paper
+  back. There is no pinch and no double tap: a hand rests on the page while
+  it colors, and a two finger gesture on a page a three year old is drawing
+  on is exactly the mistake that ruins the mark under it. See D-046.
+- **The sheet is a sheet of paper, and it is not taped down.** Square
+  corners, a soft shadow, and the tape is gone from its four corners: a
+  sheet you can bring closer to your face is a sheet nobody taped to a desk.
+  The tape stays where it belongs, on the wall the pictures are hung from.
+  See D-046.
 - **No mark is ever answered.** There is no sparkle, no outline pulse, no
   ink ring, no count: the app has no opinion about where a color went. A
   color the picture does not ask for lands exactly like one it does.
@@ -206,11 +224,12 @@ them is a bug this project already shipped once.
 - The table is warm cream `#F6EFE3`; the paper and every card is `#FFFDF8`,
   one clear step brighter, so a page always stands off the desk it lies on.
   Ink `#38404F` is both the line the pictures are drawn in and the color of
-  every word. Coral `#EE204D`, the sailboat's red, is the brand. The tray is
-  `#EFE1C6`, deeper than the table so pale crayons read on it.
+  every word. Coral `#EE204D`, the sailboat's red, is the brand. The capsule
+  is card over the desk with the crayon's own color on its seats, and its
+  armed seat is `#EFE1C6`, deeper than the table so pale crayons read on it.
   The tape is cream `#EFD9A8`, lighter than the desk and deeper than the
-  paper, with its own edge drawn: a strip of tape you cannot see is not
-  holding the sheet down.
+  paper, with its own edge drawn: the shelf's pictures are taped to a wall,
+  and a strip of tape you cannot see is not holding anything up.
 - **The box is thirty two real crayon colors**, the ones in a real thirty
   two count box, in that box's own order, at their printed hexes and with
   nothing softened: the pigment a crayon lays down is the stick's own color,
@@ -226,20 +245,26 @@ them is a bug this project already shipped once.
   down because that is how a crayon is held and how a child recognizes it.
   A dark cone tip or a pale sleeve turns a crayon into a pencil, and this
   app must never show a pencil. The crayon's geometry lives once, in
-  `core/CrayonShape`, and its one drawing lives in `IconDesign.paintCrayon`
-  in `:tools`; it serves the launcher icon, the store icon, the shelf header
-  and the tray through `CrayonGlyph` on the device. **The launcher icon is
-  that same mark mirrored**, so on the home screen the crayon faces the other
-  way while being the same crayon, at the same lean and the same proportions.
+  `core/CrayonShape`, its four colors once, in `core/CrayonInk`, and its one
+  drawing lives in `IconDesign.paintCrayon` in `:tools`; it serves the
+  launcher icon, the store icon, the shelf header and the capsule through
+  `CrayonGlyph` on the device. **Nothing is drawn around the wax**: a real
+  crayon has no line around it, and at the size of a tray seat the line is
+  most of what the eye reads, which is what turns a drawing of a crayon into
+  a diagram of one. **The launcher icon is that same mark mirrored**, so on
+  the home screen the crayon faces the other way while being the same crayon,
+  at the same lean and the same proportions.
 - **The shelf is a wall of pictures, not a record.** Every card is the
   finished sample with the picture's name under it, and nothing on the wall
   says which picture was opened, colored or left alone. See D-041.
-- **The sheet is a sheet of paper.** Square corners, a soft shadow, and a
-  strip of tape over each corner reaching past the paper onto the desk. The
-  tape is what tells the eye this is a sheet lying on a table and not a
-  panel in a layout, and it is the same roll the pictures on the shelf are
-  hung with. Every plate in the app (the peek, the box of colors) is taped
-  the same way.
+- **The sheet is a sheet of paper.** Square corners and a soft shadow. It
+  is not taped down: the tape belongs to the wall the pictures hang on, and
+  a sheet a child can bring closer is a sheet nobody pinned to a desk. See
+  D-046.
+- **Every plate in the app is one sheet of paper** (the peek, the box of
+  colors), drawn with the same corners and the same shadow, so the picture
+  the child copies and the paper they copy it onto are visibly the same kind
+  of object.
 - The store banner is the brand coral, the sailboat halfway colored by the
   same wax the app lays down on the left and the name written in the app's
   own hand on the whole right side.
@@ -264,14 +289,16 @@ feature that may regress.
   but drawing nothing keeps it true no matter how a future theme changes.
 - Every button has a spoken name, every state change has a spoken label, and
   the color of a crayon is spoken as its name. The rubber says what it is
-  and, in the box, which color is in hand.
-- Touch targets are comfortably above the 48 dp minimum, and the crayon and
-  the rubber on a phone land at 62 dp or more.
+  and, in the box, which color is in hand. Undo says what it takes back, and
+  the chip that brings the paper closer says how much of the sheet is on
+  screen and that pressing it shows the whole page again.
+- Touch targets are comfortably above the 48 dp minimum, and the three seats
+  of the capsule on a phone land at 62 dp or more.
 
 ## The one renderer, in two languages
 
 `ui/Render.kt` (Compose) and `tools/RenderKit.kt` (Java2D) must produce the
-same picture, and they must agree on seven things:
+same picture, and they must agree on eight things:
 
 1. **Interleaved fills and strokes.** Fill an area, stroke its outline, then
    move to the next area. A later fill covers an earlier line, so hidden
@@ -286,9 +313,11 @@ same picture, and they must agree on seven things:
    a sixteen pixel mottle, because a tooth alone reads as dirt and a mottle
    alone reads as a stain.
 5. **The same crayon mark.** The child's marks are drawn by both renderers,
-   in the same order and with the same alphas: a soft halo, the wax body,
-   the grain through the mark, then a darker core. `CRAYON_TIP_FRACTION` in
-   both files, 0.030, and `ERASER_TIP_FRACTION`, 0.044. A mark the child
+   in the same order and with the same alphas: the wax body, then a narrower
+   second pass of the same wax. Nothing is drawn around a mark: a wide faint
+   pass reads as a border, and wax dragged over paper simply stops.
+   `CRAYON_TIP_FRACTION` in both files, 0.030, and
+   `ERASER_TIP_FRACTION`, 0.044. A mark the child
    made on the device and the same mark in the store art are the same mark.
    An eraser mark is not painted in a color at all: it lays the printed page
    back down, paper and print together, so the wax goes and the line stays.
@@ -301,6 +330,12 @@ same picture, and they must agree on seven things:
 7. **The same words.** Every word is drawn in Chewy, the bundled hand, and
    painted with the wax ink tile from `core/WaxGrain`, so a word covers the
    way a colored area covers and no text anywhere is flat type.
+
+8. **The same window on the paper.** A closer look is not a second renderer:
+   `core/PageView` holds the piece of the sheet that is on screen, and both
+   renderers draw the page through it, at the frame's own resolution rather
+   than by enlarging a picture. A mark is a line of page coordinates at any
+   closeness, and `PageViewTest` holds the window to the paper.
 
 `Curves`: path bounds are control-point bounds, not curve bounds, so a
 sparkle is placed from the region's own `centroid`.
@@ -324,7 +359,8 @@ plays one effect and the raw folder holds one file.
 CI is the loop: `build.yml` gates every push to `main` on tests, lint, asset
 pins, then signs and publishes the AAB and APK to the `latest-build` GitHub
 release. `screenshots.yml` recaptures the store screenshots whenever UI files
-change: seven captures per form factor (phone, 7", 10"), 21 in all, pinned to
+change: seven captures per form factor (phone, 7", 10"), 21 in all, plus a
+phone capture of a page looked at closely, pinned to
 API 35.
 
 The asset pins refuse a hand-edited or stale asset. `checkSounds` is exact:
@@ -660,3 +696,51 @@ the screenshots, all in the same session.
   as a rubber behaves on paper, where the print is under the wax. That is
   why the page image carries the sheet's own paper and is opaque: an image
   with a transparent ground puts nothing back.
+- D-045 **Undo takes back the last mark, and the shelf has no switches.** Two
+  changes that belong together, because both are about what a press means.
+  The page's capsule now carries a third seat: the crayon, the rubber, and
+  the step back, which takes the mark the hand finished last off the paper.
+  One mark and one press, never a stack, because a three year old's hand
+  wanders and the mark just made is the one they are thinking about; an empty
+  sheet has no step to undo and the press simply lands. It is `Draft.undo` in
+  :core, tested there, and it is deliberately not an edit mode: a mark taken
+  back is a mark taken back, and the child draws straight on. The rubber
+  stays what it was, the way to change your mind about a whole picture, and
+  nothing anywhere confirms anything. The other half: the sound switch is off
+  the shelf and lives only on the page, where a child hears a crayon being
+  picked up and can turn it off then and there without leaving the picture
+  they are coloring. A wall of pictures does not need a switch on it.
+- D-046 **The paper is brought closer with a chip, not with fingers, and the
+  sheet is no longer taped down.** A page opens whole, and the child can
+  bring it twice as close: a chip on the desk under the capsule, with the
+  whole sheet drawn at one end of it and a closer look at the other, and one
+  press anywhere on the chip puts the paper back down whole. There is no
+  pinch and no double tap anywhere on the sheet. A pinch is two fingers on a
+  page a small hand is coloring, which is exactly the mistake that ruins the
+  mark under it, and a double tap is what two dots in the same place looks
+  like when a three year old makes them; neither may move the paper. What
+  moves it is a deliberate act on a thing that is not the picture. The tape
+  on the sheet's four corners is gone with it: a sheet a child can bring
+  closer to their face is a sheet nobody taped to a desk, and tape that
+  stayed one size while the paper grew would be the one thing on screen that
+  gave the illusion away. The tape stays on the shelf, where pictures really
+  are taped to a wall. `core/PageView` is the window, `PageViewTest` holds it
+  to the paper, and both renderers draw the page through it at the frame's
+  own resolution, so a closer look is a sharper look and never a magnified
+  bitmap. Zooming changes nothing about the work: every mark is a line of
+  page coordinates, and a mark is exactly as wide on the paper at any
+  closeness.
+- D-047 **The crayon is wax, and nothing is drawn around it.** A real crayon
+  has no line around it: the wrapper's edge is where the paper wound over the
+  wax ends, and the wax beside it is the stick's own color laid on thick. The
+  ink outline was there to say crayon and did the opposite, because at the
+  size of a tray seat a line is most of what the eye reads and a drawn crayon
+  became a diagram of one. What is left is wax: the body in the crayon's own
+  color, the cone a hair deeper where the light leaves the tip, the wrapper
+  the same wax taken deeper, its two printed rules deeper again, and the
+  grain over the whole stick. All four colors come from one recipe in
+  `core/CrayonInk`, derived from the wax itself, so the tray, the box, the
+  shelf's own crayon and the launcher icon are the same object at every size.
+  The same rule applies to the child's marks, where a wide faint pass had
+  been standing in for the feather of wax: a pale edge is a border, and a
+  border is a sticker. A mark is its own wax and nothing else.

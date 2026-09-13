@@ -205,16 +205,19 @@ object RenderKit {
                 path.lineTo(stroke.points[i].x * side, stroke.points[i].y * side)
             }
             if (stroke.points.size == 1) {
-                val r = tip * 0.52
-                g.color = Color(color.red, color.green, color.blue, (0.70 * 255).toInt())
+                // The dot a pressed-and-lifted crayon leaves: one round of
+                // wax, the width of the tip, the same mark the device draws.
+                val r = tip * 0.5
+                g.paint = texture(markWax(stroke.color, 0))
                 g.fill(Ellipse2D.Double(first.x * side - r, first.y * side - r, r * 2, r * 2))
                 continue
             }
-            // The mark is wax, the same wax an area is colored with: the
-            // feather where it ran into the tooth, then two passes of wax,
-            // the second narrower, which is the hand going back over its own
-            // line. Nothing here is gray: a crayon never lays a film of gray
-            // over its own color.
+            // The mark is wax, the same wax an area is colored with: two
+            // passes of it, the second narrower, which is the hand going
+            // back over its own line. Nothing is drawn around the mark: a
+            // paler wide pass was tried and it read as a sticker's border,
+            // and wax dragged over paper does not lay a halo of itself
+            // beside the stroke, it simply stops.
             val waxSurface = markWax(stroke.color, 0)
             val waxAgain = markWax(stroke.color, 1)
             fun pass(width: Double, paint: java.awt.Paint) {
@@ -226,17 +229,16 @@ object RenderKit {
                 )
                 g.draw(path)
             }
-            val p = { image: BufferedImage ->
-                TexturePaint(
-                    image,
-                    Rectangle2D.Double(0.0, 0.0, image.width.toDouble(), image.height.toDouble()),
-                )
-            }
-            pass(tip * 1.34, Color(color.red, color.green, color.blue, (0.20 * 255).toInt()))
-            pass(tip, p(waxSurface))
-            pass(tip * 0.74, p(waxAgain))
+            pass(tip, texture(waxSurface))
+            pass(tip * 0.74, texture(waxAgain))
         }
     }
+
+    /** One wax tile, ready to be laid down as paint. */
+    private fun texture(image: BufferedImage): TexturePaint = TexturePaint(
+        image,
+        Rectangle2D.Double(0.0, 0.0, image.width.toDouble(), image.height.toDouble()),
+    )
 
     private fun drawEraser(
         g: Graphics2D,

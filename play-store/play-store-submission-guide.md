@@ -71,10 +71,10 @@ block.
 Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a box of crayons. Color the outlines until they match the picture.
 
 How it plays
-Tap a picture on the wall and the page opens as clean black lines on a sheet of paper taped to the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does.
+Tap a picture on the wall and the page opens as clean black lines on a sheet of paper lying on the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does. A little chip below the crayon brings the paper twice as close for the small parts, and one press puts it back whole.
 
 A real box of crayons
-One crayon and one rubber, the two things a hand actually holds. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, with the color in hand a little longer and drawn with a heavier line so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. The picture is never wiped and there is nothing to confirm.
+One capsule holds the three things a hand reaches for: the crayon, the rubber, and one step back. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, with the color in hand a little longer and drawn with a heavier line so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. Press undo and the last mark comes off the paper, one mark at a time, so a hand that drew something it did not mean has one gentle way to take it back. The picture is never wiped and there is nothing to confirm.
 
 Made for small hands
 Sixteen pictures, all of them available from the very first launch: a sailboat, a tree, a balloon, an ice cream, a mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an umbrella, a rocket, a train, a lighthouse and a castle. Big areas, huge targets, and nothing that needs reading. There is no score, no timer, no fail state, and no picture is ever locked. Marks are saved as they are made, so a phone call or a restart never loses a picture. Every screen fits any size of phone or tablet, held either way.
@@ -124,17 +124,19 @@ declaration it makes, no data collected, is exactly true of the app.)
 All three sets live under `play-store/screenshots/`, one subfolder per form
 factor (`phone/`, `tablet7/`, `tablet10/`), captured by CI whenever UI files
 change and refreshed into those same subfolders in the same session. Seven
-captures per form factor, 21 in all. Upload each subfolder's PNGs to its Play
+captures per form factor, 21 in all, plus a phone capture of a page looked
+at closely. Upload each subfolder's PNGs to its Play
 Console slot, in filename order:
 
 ```
 01_home          the picture wall, every picture finished
-02_blank         a brand new page, the sheet taped to the desk
+02_blank         a brand new page, the sheet lying on the desk
 03_box           the box of thirty two colors, opened over the page
-04_coloring      the picture colored by hand, a crayon and a rubber in the tray
+04_coloring      the picture colored by hand, the crayon in the capsule
 05_rubbed        the rubber in hand, wax rubbed away and the printed line kept
-06_peek          the sample held up large, taped to the desk like the page
+06_peek          the sample held up large, a sheet of paper like the page
 07_whole         a picture colored all the way, in the child's own colors
+08_closer        the paper brought twice as close on the chip below
 ```
 
 To look at every picture before a content change, run `:tools:makeSheets`,
@@ -268,6 +270,12 @@ versionCode 1 is 0.1, versionCode 2 is 0.2, versionCode 10 is 1.0,
 versionCode 11 is 1.1, and so on. Never reuse a versionCode.
 
 ## Release notes
+
+### Version 0.5 (versionCode 5)
+
+```
+Three things a hand reaches for now sit in one capsule: the crayon, the rubber, and undo, which takes back the last mark you made, one at a time. The paper can be brought twice as close with the little chip below, for the small parts, and one press puts it back whole. No pinch to zoom: a hand resting on the page should never move it. The crayons are wax with their wrapper now, nothing drawn round them, and the sound switch lives on the page instead of the wall.
+```
 
 ### Version 0.4 (versionCode 4)
 

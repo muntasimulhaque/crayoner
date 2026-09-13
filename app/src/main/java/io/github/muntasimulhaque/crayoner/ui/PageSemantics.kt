@@ -13,6 +13,8 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import io.github.muntasimulhaque.crayoner.core.Page
+import io.github.muntasimulhaque.crayoner.core.PageView
+import io.github.muntasimulhaque.crayoner.core.Vec2
 
 /**
  * The page, described to a screen reader.
@@ -31,6 +33,12 @@ import io.github.muntasimulhaque.crayoner.core.Page
  * Nothing here says done, because the app does not know what done means. It
  * says what the area is and what color the book prints it in, which is
  * everything a child needs to color it.
+ *
+ * A target is the area's own piece of paper, placed through the same window
+ * the picture is drawn through: when the paper has been brought closer, the
+ * target a reader lands on is still the part of the picture a finger would
+ * touch, and a part of the page that is off the window is off the overlay
+ * too, because it is not on the paper the child is looking at.
  */
 @Composable
 fun PageSemantics(
@@ -38,27 +46,34 @@ fun PageSemantics(
     crayon: Long?,
     onColor: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    view: PageView = PageView.Whole,
 ) {
     BoxWithConstraints(modifier) {
-        val sidePx = with(LocalDensity.current) { maxWidth.toPx() }
-        if (sidePx <= 0f) return@BoxWithConstraints
-        val scale = sidePx.toFloat()
+        val framePx = with(LocalDensity.current) { maxWidth.toPx() }
+        if (framePx <= 0f) return@BoxWithConstraints
         // Reverse order, so the last painted area, which is the one on top
         // and the one a finger would hit, is the first the reader meets.
         for (index in page.regions.indices.reversed()) {
             val region = page.regions[index]
+            val bounds = region.bounds
+            val placed = view.inWindow(Vec2(bounds.x, bounds.y))
+            val across = (bounds.w.coerceAtLeast(0.05) / view.span).coerceAtMost(1.0)
+            // Anything at all off the paper's own edge is dropped: a target
+            // over the desk would be a control for a part of the picture that
+            // is not on screen.
+            if (placed.x >= 1.0 || placed.y >= 1.0) continue
+            if (placed.x + across <= 0.0 || placed.y + across <= 0.0) continue
             val label = areaLabel(
                 kind = stringResource(areaNameRes(region.kind)),
                 wanted = stringResource(crayonNameRes(region.fillArgb)).lowercase(),
                 ready = crayon == region.fillArgb,
             )
-            val b = region.bounds
             PageAreaTarget(
                 label = label,
                 onColor = { onColor(index) },
-                x = (b.x * scale).toFloat(),
-                y = (b.y * scale).toFloat(),
-                size = (b.w.coerceAtLeast(0.05) * scale).toFloat(),
+                x = (placed.x * framePx).toFloat(),
+                y = (placed.y * framePx).toFloat(),
+                size = (across * framePx).toFloat(),
             )
         }
     }

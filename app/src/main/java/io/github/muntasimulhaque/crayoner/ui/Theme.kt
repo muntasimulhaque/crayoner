@@ -23,8 +23,9 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
  * The three grounds are one steps-apart family. The desk is warm and a
  * little deeper than paper, so a sheet always stands off it; paper and every
  * card are the brightest thing on screen, because paper is what a coloring
- * book is; cardboard is the crayon box, warm and slightly toasted, which is
- * the one surface in the app that is neither desk nor paper.
+ * book is; cardboard is the crayon box and the capsule's armed seat, warm and
+ * slightly toasted, the one surface in the app that is neither desk nor
+ * paper.
  *
  * The crayon colors themselves live in core/Crayons.kt, beside the pictures
  * that use them, and every colored area on a page carries the wax grain from
@@ -39,7 +40,8 @@ object CrayonerColors {
     val Ink = Color(Crayons.INK)
     /** The brand: the crayon red of the sailboat, the book's first page. */
     val Coral = Color(Crayons.RED)
-    /** The crayon box: toasted cardboard. */
+    /** The crayon box, and the one seat of the capsule that is in hand:
+     *  toasted cardboard, the one surface that is neither desk nor paper. */
     val Cardboard = Color(0xFFEFE1C6)
     /**
      * The tape holding paper down. It is cream, lighter than the desk and

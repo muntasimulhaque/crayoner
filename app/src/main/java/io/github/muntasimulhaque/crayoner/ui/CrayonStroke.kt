@@ -1,63 +1,130 @@
 package io.github.muntasimulhaque.crayoner.ui
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import io.github.muntasimulhaque.crayoner.core.smoothPoints
+import io.github.muntasimulhaque.crayoner.core.PageView
+import io.github.muntasimulhaque.crayoner.core.Stroke as WaxStroke
 import io.github.muntasimulhaque.crayoner.core.Vec2
 
 /**
- * A crayon-drawn rule: one stroke, no ruler, with the small wobble a hand
- * gives it. It is the app's own way of underlining a word, and the only
- * decoration on the shelf header.
+ * The child's own marks, in wax, on top of the printed picture.
+ *
+ * A crayon is not a brush, and a mark is not a painted line: it is wax, the
+ * same wax every colored area in the book is made of. So the body of a mark
+ * is drawn with the wax surface itself ([waxStroke]), which leaves the
+ * paper's tooth breaking through it, and a narrower pass of the same wax
+ * down the middle where the hand pressed hardest.
+ *
+ * Nothing is drawn around a mark. A paler edge was tried and it was wrong:
+ * wax dragged over paper does not lay a light halo of itself beside the
+ * stroke, it simply stops, sometimes with the tooth of the paper left bare.
+ * A wide faint pass reads as a border, and a border reads as a sticker, so
+ * the mark's edge is the wax's own broken edge and nothing else.
+ *
+ * An eraser mark is drawn with the printed page itself as its paint, paper
+ * and print together: the rubber takes the wax off and leaves the paper with
+ * the line that was printed on it, which is what happens on real paper,
+ * where the print is under the wax and never made of it.
+ *
+ * [side] is the size of the frame the marks are drawn in, and [view] is the
+ * piece of the paper that frame is showing, so a mark is exactly as wide and
+ * exactly as far apart at any closeness: the same wax, looked at from
+ * further away or nearer.
  */
-@Composable
-fun CrayonUnderline(modifier: Modifier = Modifier, color: Color = CrayonerColors.Coral) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        if (w <= 0f || h <= 0f) return@Canvas
-        // Control points along the width, each nudged up or down a little,
-        // then smoothed: a real stroke, not a stutter.
-        val control = listOf(
-            Vec2(0.0, 0.55),
-            Vec2(0.18, 0.30),
-            Vec2(0.40, 0.68),
-            Vec2(0.62, 0.34),
-            Vec2(0.84, 0.66),
-            Vec2(1.0, 0.44),
-        )
-        val points = smoothPoints(control, samples = 18)
-        val path = Path().apply {
-            moveTo(points[0].x.toFloat() * w, points[0].y.toFloat() * h)
-            for (i in 1 until points.size) {
-                lineTo(points[i].x.toFloat() * w, points[i].y.toFloat() * h)
-            }
+fun DrawScope.drawStrokes(
+    strokes: List<WaxStroke>,
+    side: Float,
+    view: PageView = PageView.Whole,
+    print: Brush? = null,
+) {
+    if (strokes.isEmpty()) return
+    val zoom = view.scale.toFloat()
+    val tip = side * CRAYON_TIP_FRACTION * zoom
+    val eraser = side * ERASER_TIP_FRACTION * zoom
+    for (stroke in strokes) {
+        if (stroke.points.isEmpty()) continue
+        if (stroke.erase) {
+            if (print != null) drawEraser(stroke, side, view, eraser, print)
+            continue
         }
-        drawPath(
-            path,
-            color,
-            style = Stroke(
-                width = h * 0.55f,
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round,
-            ),
-        )
-        // A faint second pass, so the stroke has the uneven edge of wax.
-        val echo = Path().apply {
-            val pts = smoothPoints(control.map { Vec2(it.x, it.y + 0.22) }, samples = 14)
-            moveTo(pts[0].x.toFloat() * w, pts[0].y.toFloat() * h)
-            for (i in 1 until pts.size) lineTo(pts[i].x.toFloat() * w, pts[i].y.toFloat() * h)
+        val color = Color(stroke.color)
+        // The wax itself, and a second tile of the same wax for the pass the
+        // hand went back over: two tiles, so the strokes of the two passes
+        // cross instead of lining up into one glossier band.
+        val wax: Brush = waxStroke(stroke.color, 0) ?: SolidColor(color)
+        val waxAgain: Brush = waxStroke(stroke.color, 1) ?: SolidColor(color)
+        if (stroke.points.size == 1) {
+            val c = at(stroke.points[0], view, side)
+            drawCircle(wax, radius = tip * 0.60f, center = c)
+            drawCircle(waxAgain, radius = tip * 0.34f, center = c)
+            continue
         }
-        drawPath(
-            echo,
-            color.copy(alpha = 0.45f),
-            style = Stroke(width = h * 0.30f, cap = StrokeCap.Round),
+        val path = inView(stroke.points, view, side)
+        drawPath(path, wax, style = tipStroke(tip))
+        drawPath(path, waxAgain, style = tipStroke(tip * 0.74f))
+    }
+}
+
+/** One eraser mark: the printed page, laid back down along the rubber. */
+private fun DrawScope.drawEraser(
+    stroke: WaxStroke,
+    side: Float,
+    view: PageView,
+    width: Float,
+    print: Brush,
+) {
+    if (stroke.points.size == 1) {
+        drawCircle(
+            print,
+            radius = width * 0.5f,
+            center = at(stroke.points[0], view, side),
         )
+        return
+    }
+    drawPath(inView(stroke.points, view, side), print, style = tipStroke(width))
+}
+
+internal fun tipStroke(width: Float) = Stroke(
+    width = width.coerceAtLeast(1f),
+    cap = StrokeCap.Round,
+    join = StrokeJoin.Round,
+)
+
+/** One point of page units, in the frame the child is looking at. */
+internal fun at(p: Vec2, view: PageView, side: Float): Offset {
+    val w = view.inWindow(p)
+    return Offset((w.x * side).toFloat(), (w.y * side).toFloat())
+}
+
+/** One point of page units, in the page's own space. */
+internal fun pagePoint(p: Vec2, side: Float): Offset =
+    Offset((p.x * side).toFloat(), (p.y * side).toFloat())
+
+/** One polyline of page units, in the frame the child is looking at. */
+internal fun inView(points: List<Vec2>, view: PageView, side: Float): Path = Path().apply {
+    if (points.isEmpty()) return@apply
+    val first = at(points[0], view, side)
+    moveTo(first.x, first.y)
+    for (i in 1 until points.size) {
+        val o = at(points[i], view, side)
+        lineTo(o.x, o.y)
+    }
+}
+
+/** One polyline of page units, in the page's own space. */
+internal fun pathOfPoints(points: List<Vec2>, side: Float): Path = Path().apply {
+    if (points.isEmpty()) return@apply
+    val first = pagePoint(points[0], side)
+    moveTo(first.x, first.y)
+    for (i in 1 until points.size) {
+        val o = pagePoint(points[i], side)
+        lineTo(o.x, o.y)
     }
 }

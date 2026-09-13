@@ -1,5 +1,6 @@
 package io.github.muntasimulhaque.crayoner.tools
 
+import io.github.muntasimulhaque.crayoner.core.CrayonInk
 import io.github.muntasimulhaque.crayoner.core.CrayonShape
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.WaxGrain
@@ -21,9 +22,18 @@ import javax.imageio.ImageIO
  * The mark: one crayon, the tool the whole app is about, held the way the
  * app's own tray draws it, with its point down and its body leaning, as if
  * it had just come off a page. It is drawn in a crayon's real material: the
- * wax color of the tip, a paper wrapper in the wax's own hue, the two dark
- * rules a real wrapper wears, the same wax grain every colored area in the
- * book carries, and the ink line the app draws everything in.
+ * wax color of the tip, the cone a shade deeper where the light leaves it,
+ * a wrapper in the wax's own hue, the two dark rules a real wrapper wears,
+ * the same wax grain every colored area in the book carries, and no ink
+ * line around the wax at all.
+ *
+ * Nothing is drawn around the stick, and that is deliberate. A real crayon
+ * has no line around it: the wrapper's edge is where the paper wound over
+ * the wax ends, and the wax beside it is the stick's own color laid on
+ * thick. A line there is ink the object does not have, and at the size of an
+ * icon the line is most of what the eye reads, which is what turns a drawing
+ * of a crayon into a diagram of one. The two printed rules stay, because
+ * they are the one line a real wrapper really wears.
  *
  * The point is down for two reasons. A crayon is used point down, so that is
  * the way it looks in a hand and the way a child recognizes it; and a crayon
@@ -48,11 +58,16 @@ object IconDesign {
     val WAX: Int = Crayons.RED.toInt()
     /** The white the monochrome layer is drawn in. */
     const val WHITE: Int = -0x1 // 0xFFFFFFFF, how Kotlin spells opaque white
-    /** The wrapper: the wax's own color, a whisper lightened, like paper. */
-    val WRAPPER: Int = 0xFFF25C7F.toInt()
-    /** The two rules and the shadow the wrapper wears. */
-    val WAX_SHADE: Int = 0xFFA62841.toInt()
-    val INK: Int = Crayons.INK.toInt()
+
+    /**
+     * The wrapper, the cone, the rules and the base end, all derived from
+     * the wax by core's one recipe, so the launcher icon's crayon is made of
+     * exactly the colors the device's tray draws, at every density.
+     */
+    val WRAPPER: Int = CrayonInk.wrapper(Crayons.RED).toInt()
+    val WAX_CONE: Int = CrayonInk.cone(Crayons.RED).toInt()
+    val WAX_SHADE: Int = CrayonInk.rule(Crayons.RED).toInt()
+    val WAX_BASE: Int = CrayonInk.base(Crayons.RED).toInt()
 
     val DENSITY_DIRS = arrayOf("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
     val DENSITY_SCALES = doubleArrayOf(1.0, 1.5, 2.0, 3.0, 4.0)
@@ -96,83 +111,120 @@ internal fun paintCrayon(g: Graphics2D, size: Int, mono: Boolean, inset: Double 
     g.rotate(Math.toRadians(180.0), size / 2.0, size / 2.0)
     g.rotate(Math.toRadians(lean), size / 2.0, size / 2.0)
 
+    // One mapping for the whole drawing: a point in the shape's own unit
+    // box to a point in the icon, in the icon's own scale. It is the same
+    // mapping the device uses (see ui/CrayonGlyph.drawCrayonShape), so the
+    // pieces land in the same proportions and the icon cannot drift from
+    // the crayon the tray draws.
+    val unit = size.toDouble() * inset * 0.86
+    val left = (size - unit) / 2.0
+    fun pxX(v: Double) = left + v * unit
+    fun pxY(v: Double) = left + v * unit
+    fun path(points: List<Pair<Double, Double>>): Path2D.Double = Path2D.Double().apply {
+        val first = points.first()
+        moveTo(pxX(first.first), pxY(first.second))
+        for (i in 1 until points.size) lineTo(pxX(points[i].first), pxY(points[i].second))
+        closePath()
+    }
+    val outline = CrayonShape.outline().map { it.x to it.y }
+    val body = path(outline)
+    val band = CrayonShape.wrapperBand()
+    val wrap = path(
+        listOf(
+            band.x to band.y,
+            band.right to band.y,
+            band.right to band.bottom,
+            band.x to band.bottom,
+        ),
+    )
+    val coneBreaks = CrayonShape.TIP_LENGTH * 0.72
+    val cone = path(
+        outline.takeWhile { it.second <= CrayonShape.TIP_LENGTH + 1e-9 } +
+            listOf(1.0 to CrayonShape.TIP_LENGTH, 0.0 to CrayonShape.TIP_LENGTH),
+    )
+    val base = CrayonShape.baseBand()
+    val end = path(
+        listOf(
+            base.x to base.y,
+            base.right to base.y,
+            base.right to base.bottom,
+            base.x to base.bottom,
+        ),
+    )
+    val coneSplit = coneBreaks
+
+    val wax = Color(if (mono) IconDesign.WHITE else IconDesign.WAX, true)
+    val wrapper = Color(if (mono) IconDesign.WHITE else IconDesign.WRAPPER, true)
+    val rule = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_SHADE, true)
+    val tip = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_CONE, true)
+    val baseShade = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_BASE, true)
+
+    g.color = wax
+    g.fill(body)
+
+    // The cone, a shade deeper than the body: a drawn crayon's tip is where
+    // the light leaves it, and that is the only shading a stick gets. Then
+    // the wrapper's band, from the same geometry the tray uses, and the
+    // base's own sliver at the far end, so the stick reads as round and not
+    // as a block. No line is drawn around any of it (see the class comment).
+    if (!mono) {
+        g.color = tip
+        g.fill(cone)
+
+        g.color = wrapper
+        g.fill(wrap)
+        // The two dark rules a real wrapper wears. They are drawn as floats:
+        // rounding them to whole pixels would make the mark a hair different
+        // on the two sides of the mirror that turns it the other way round.
+        g.color = rule
+        g.stroke = BasicStroke(
+            (unit * CrayonShape.RULE_WEIGHT).toFloat().coerceAtLeast(1f),
+            BasicStroke.CAP_ROUND,
+            BasicStroke.JOIN_ROUND,
+        )
+        val ruleInset = CrayonShape.RULE_INSET
+        g.draw(
+            java.awt.geom.Line2D.Double(
+                pxX(band.x), pxY(band.y + ruleInset),
+                pxX(band.right), pxY(band.y + ruleInset),
+            ),
+        )
+        g.draw(
+            java.awt.geom.Line2D.Double(
+                pxX(band.x), pxY(band.bottom - ruleInset),
+                pxX(band.right), pxY(band.bottom - ruleInset),
+            ),
+        )
+        g.color = baseShade
+        g.fill(end)
+    }
+    // The wax grain goes down last, over the whole stick: the same tile every
+    // colored area in the book carries, so the crayon is made of the same
+    // material as the pictures it draws. It is a whisper over the wax, the
+    // wrapper and the rules alike, exactly as it lies on a page.
+    paintGrain(g, body)
+}
+
+/**
+ * The crayon's own silhouette, in the icon's own pixels, so the same shape
+ * can be filled, grained and (for the monochrome layer) drawn as a flat
+ * white mark. It is the one crayon in the project, scaled into the canvas,
+ * and it is the shape the tray draws.
+ */
+internal fun crayonSilhouette(size: Int, inset: Double): Path2D.Double {
     val s = size.toDouble()
-    // The crayon's length, and the thickness that follows from it.
     val h = s * inset * 0.86
     val thickness = h * CrayonShape.THICKNESS
     val cx = s / 2.0
     val top = (s - h) / 2.0
-
-    val wax = Color(if (mono) IconDesign.WHITE else IconDesign.WAX, true)
-    val wrapper = Color(if (mono) IconDesign.WHITE else IconDesign.WRAPPER, true)
-    val shade = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_SHADE, true)
-    val ink = Color(if (mono) IconDesign.WHITE else IconDesign.INK, true)
-
-    // The one crayon in the project (core/CrayonShape), scaled into the
-    // canvas: the same outline the tray draws, so the icon on the home
-    // screen and the crayon in the box are the same object. The shape is
-    // measured in the crayon's own thicknesses, so one unit is the
-    // thickness on both axes and the crayon cannot be stretched.
-    fun pxX(v: Double) = cx + (v - 0.5) * thickness
-    fun pxY(v: Double) = top + v * thickness
-    val body = Path2D.Double().apply {
-        val points = CrayonShape.outline()
-        moveTo(pxX(points[0].x), pxY(points[0].y))
-        for (i in 1 until points.size) lineTo(pxX(points[i].x), pxY(points[i].y))
+    val points = CrayonShape.outline()
+    return Path2D.Double().apply {
+        moveTo(cx + (points[0].x - 0.5) * thickness, top + points[0].y * thickness)
+        for (i in 1 until points.size) {
+            lineTo(cx + (points[i].x - 0.5) * thickness, top + points[i].y * thickness)
+        }
         closePath()
     }
-    g.color = wax
-    g.fill(body)
-
-    // The wrapper's band, shared with the tray. The wrapper is the crayon's
-    // own wax, barely lightened, so it reads as paper over wax and not as a
-    // pale sleeve, which would be a pencil; the grain is the same tile the
-    // pages carry, so the mark is made of the same material as the pictures
-    // it draws; and the two dark rules are the ones a real wrapper wears.
-    if (!mono) {
-        val band = CrayonShape.wrapperBand()
-        val wrap = Path2D.Double().apply {
-            moveTo(pxX(band.x), pxY(band.y))
-            lineTo(pxX(band.right), pxY(band.y))
-            lineTo(pxX(band.right), pxY(band.bottom))
-            lineTo(pxX(band.x), pxY(band.bottom))
-            closePath()
-        }
-        g.color = wrapper
-        g.fill(wrap)
-        // The wax grain, the same tile the pages carry, so the mark is made
-        // of the same material as the pictures it draws.
-        paintGrain(g, body)
-        // The two dark rules a real wrapper wears. They are drawn as floats:
-        // rounding them to whole pixels would make the mark a hair different
-        // on the two sides of the mirror that turns it the other way round.
-        g.color = shade
-        g.stroke = BasicStroke(
-            (thickness * 0.077).toFloat().coerceAtLeast(1f),
-            BasicStroke.CAP_ROUND,
-            BasicStroke.JOIN_ROUND,
-        )
-        g.draw(
-            java.awt.geom.Line2D.Double(
-                pxX(band.x), pxY(band.y + 0.012),
-                pxX(band.right), pxY(band.y + 0.012),
-            ),
-        )
-        g.draw(
-            java.awt.geom.Line2D.Double(
-                pxX(band.x), pxY(band.bottom - 0.012),
-                pxX(band.right), pxY(band.bottom - 0.012),
-            ),
-        )
-    }
-
-    g.color = ink
-    g.stroke = BasicStroke(
-        (thickness * CrayonShape.LINE).toFloat().coerceAtLeast(1f),
-        BasicStroke.CAP_ROUND,
-        BasicStroke.JOIN_ROUND,
-    )
-    g.draw(body)
 }
 
 /** Lays the app's wax grain over [shape], clipped to it by the paint itself. */

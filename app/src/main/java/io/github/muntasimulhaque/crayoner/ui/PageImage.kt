@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import io.github.muntasimulhaque.crayoner.core.Page
+import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Stroke
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,8 +33,19 @@ import kotlinx.coroutines.withContext
  * at each size once, and then drawing one image, is what makes it feel like
  * paper. The same picture is used by the shelf cards, the sample held up
  * close, and the sheet being colored, so all of them show the same print.
+ *
+ * Every picture is drawn at the frame's own resolution. That is the whole
+ * reason a closer look is sharp: the paper is rendered at the size it is
+ * being looked at, never drawn small and then blown up, and the wax grain a
+ * child can see up close is the grain the page really has, not a magnified
+ * dot of it.
+ *
+ * A window is part of a picture's identity, so the shelf's plain look at a
+ * page and a closer look at it are two different pictures and each is built
+ * once. The one the child is coloring is rebuilt only when a mark is
+ * finished, and never while the finger is down.
  */
-private class Key(val pageId: String, val sample: Boolean, val sidePx: Int)
+private class Key(val pageId: String, val sample: Boolean, val sidePx: Int, val window: Int)
 
 private class Cache {
     /** Newest first: read order is access order, so the wall's own order wins. */
@@ -66,10 +78,13 @@ private class Cache {
 
 private val pageImages = Cache()
 
+/** The whole sheet: the window a shelf card and a sample look through. */
+private val wholeWindow = PageView.Whole
+
 /**
- * The page as printed, rendered once for this page, this size and this kind
- * of picture (the bare lines the child colors, or the finished sample), and
- * reused from then on.
+ * The page as printed, rendered once for this page, this size, this window
+ * and this kind of picture (the bare lines the child colors, or the finished
+ * sample), and reused from then on.
  *
  * When [blocking] is true the picture is rendered during composition if it is
  * not there yet, which is what the sheet the child is coloring wants: one
@@ -83,23 +98,24 @@ fun rememberPageImage(
     page: Page,
     fills: Map<Int, Long>,
     sidePx: Int,
+    view: PageView = wholeWindow,
     blocking: Boolean = true,
 ): ImageBitmap? {
     if (sidePx <= 0) return null
     val sample = fills.isNotEmpty()
-    val key = Key(page.id, sample, sidePx)
-    val cached = remember(page, sample, sidePx) { pageImages.get(key) }
+    val key = Key(page.id, sample, sidePx, view.key)
+    val cached = remember(page, sample, sidePx, view.key) { pageImages.get(key) }
     if (blocking) {
-        return cached ?: remember(page, sample, sidePx) {
-            renderPageImage(page, fills, sidePx)?.also { pageImages.put(key, it) }
+        return cached ?: remember(page, sample, sidePx, view.key) {
+            renderPageImage(page, fills, sidePx, view)?.also { pageImages.put(key, it) }
         }
     }
-    var image by remember(page, sample, sidePx) { mutableStateOf(cached) }
-    LaunchedEffect(page, sample, sidePx) {
+    var image by remember(page, sample, sidePx, view.key) { mutableStateOf(cached) }
+    LaunchedEffect(page, sample, sidePx, view.key) {
         if (image != null) return@LaunchedEffect
         val rendered = withContext(Dispatchers.Default) {
             pageImages.get(key)?.also { return@withContext it }
-            renderPageImage(page, fills, sidePx)?.also { pageImages.put(key, it) }
+            renderPageImage(page, fills, sidePx, view)?.also { pageImages.put(key, it) }
         }
         image = rendered
     }
@@ -118,37 +134,47 @@ fun rememberPageImage(
 fun prewarmPageImages(pages: List<Page>, fills: (Page) -> Map<Int, Long>, sidePx: Int) {
     if (sidePx <= 0) return
     for (page in pages) {
-        val key = Key(page.id, sample = true, sidePx = sidePx)
+        val key = Key(page.id, sample = true, sidePx, wholeWindow.key)
         if (pageImages.get(key) != null) continue
-        val image = renderPageImage(page, fills(page), sidePx) ?: continue
+        val image = renderPageImage(page, fills(page), sidePx, wholeWindow) ?: continue
         pageImages.put(key, image)
     }
 }
 
 /**
- * Renders the printed page into a bitmap. Anything that goes wrong in here
- * (a device out of memory for one more square of pixels) answers null, and
- * the caller draws the page directly instead: a slower frame is a much
- * better outcome than a crash.
+ * Renders the printed page, through one window, at the frame's own size.
+ * Anything that goes wrong in here (a device out of memory for one more
+ * square of pixels) answers null, and the caller draws the page directly
+ * instead: a slower frame is a much better outcome than a crash.
  *
- * The paper goes down first, and it is opaque. The rubber is drawn by
- * laying this image back over the wax, so it has to carry the sheet itself
- * and not only the lines printed on it: an image with a transparent ground
- * would put nothing back and the wax would stay.
+ * The paper goes down first, and it is opaque. The rubber is drawn by laying
+ * this image back over the wax, so it has to carry the sheet itself and not
+ * only the lines printed on it: an image with a transparent ground would put
+ * nothing back and the wax would stay.
  */
-private fun renderPageImage(page: Page, fills: Map<Int, Long>, sidePx: Int): ImageBitmap? = runCatching {
+private fun renderPageImage(
+    page: Page,
+    fills: Map<Int, Long>,
+    sidePx: Int,
+    view: PageView,
+): ImageBitmap? = runCatching {
     val bitmap = Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888)
     val image = bitmap.asImageBitmap()
-    val side = sidePx.toFloat()
-    val geometry = PageGeometry(page, side)
     CanvasDrawScope().draw(
         density = Density(1f),
         layoutDirection = LayoutDirection.Ltr,
         canvas = Canvas(image),
-        size = Size(side, side),
+        size = Size(sidePx.toFloat(), sidePx.toFloat()),
     ) {
         drawRect(CrayonerColors.Card)
-        drawPage(page, geometry, fills)
+        // The page's own units, seen through the window: the lines, the wax
+        // and the grain are all drawn from the same geometry and land in the
+        // same place whether the sheet is whole or twice as big.
+        val frame = sidePx.toFloat()
+        val side = frame / view.span.toFloat()
+        inWindow(view, frame) {
+            drawPage(page, PageGeometry(page, side), fills)
+        }
     }
     image
 }.getOrNull()
@@ -167,28 +193,35 @@ fun rememberMarkImage(
     strokes: List<Stroke>,
     sidePx: Int,
     generation: Long,
+    view: PageView = wholeWindow,
 ): ImageBitmap? {
     if (print == null || sidePx <= 0 || strokes.isEmpty()) return null
-    return remember(print, generation, sidePx) {
-        renderMarkImage(print, strokes, sidePx)
+    return remember(print, generation, sidePx, view.key) {
+        renderMarkImage(print, strokes, sidePx, view)
     }
 }
 
-private fun renderMarkImage(print: ImageBitmap, strokes: List<Stroke>, sidePx: Int): ImageBitmap? =
-    runCatching {
-        val bitmap = Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888)
-        val image = bitmap.asImageBitmap()
-        val side = sidePx.toFloat()
-        CanvasDrawScope().draw(
-            density = Density(1f),
-            layoutDirection = LayoutDirection.Ltr,
-            canvas = Canvas(image),
-            size = Size(side, side),
-        ) {
-            drawStrokes(strokes, side, printBrush(print))
-        }
-        image
-    }.getOrNull()
+private fun renderMarkImage(
+    print: ImageBitmap,
+    strokes: List<Stroke>,
+    sidePx: Int,
+    view: PageView,
+): ImageBitmap? = runCatching {
+    val bitmap = Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888)
+    val image = bitmap.asImageBitmap()
+    val side = sidePx.toFloat()
+    CanvasDrawScope().draw(
+        density = Density(1f),
+        layoutDirection = LayoutDirection.Ltr,
+        canvas = Canvas(image),
+        size = Size(side, side),
+    ) {
+        // The print image is already the window at the frame's own size, so
+        // the rubber paints back exactly the paper the child is looking at.
+        drawStrokes(strokes, side, view, printBrush(print))
+    }
+    image
+}.getOrNull()
 
 /**
  * The page itself as a paint, paper and print together, so the eraser can
@@ -198,3 +231,4 @@ private fun renderMarkImage(print: ImageBitmap, strokes: List<Stroke>, sidePx: I
 fun printBrush(image: ImageBitmap): Brush = ShaderBrush(
     ImageShader(image, TileMode.Clamp, TileMode.Clamp),
 )
+

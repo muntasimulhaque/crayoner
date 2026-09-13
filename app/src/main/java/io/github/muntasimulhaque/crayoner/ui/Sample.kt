@@ -133,18 +133,17 @@ fun sampleFills(page: Page): Map<Int, Long> =
  * The sample held up big: one tap anywhere puts it back down. The page
  * underneath is dimmed but never hidden, so the child keeps their place.
  *
- * The plate is a sheet too, taped at its corners like the page it explains:
- * the picture the child is copying and the paper they are copying it onto
- * are visibly the same kind of object.
+ * The plate is a sheet of paper on the desk like the one it explains, with
+ * the same soft shadow and the same name along its bottom. It carries no
+ * tape, because the sheet the child is coloring no longer does: a sheet that
+ * can be brought closer is a sheet that is being held in the hand, and tape
+ * would be the one thing on it the hand cannot explain.
  */
 @Composable
 fun SamplePeek(page: Page, onDismiss: () -> Unit) {
     val name = stringResource(pageNameRes(page.id))
     val hint = stringResource(R.string.hide_sample)
     val density = LocalDensity.current
-    val tapeReach = with(density) { SHEET_TAPE_REACH.roundToPx() }
-    val tapeWidth = with(density) { SHEET_TAPE_WIDTH.roundToPx() }.toFloat()
-    val tapeHeight = with(density) { SHEET_TAPE_HEIGHT.roundToPx() }.toFloat()
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -166,7 +165,7 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
         val total = side + platePadding * 2 + nameBlock
         val sidePx = with(density) { side.roundToPx() }
         Box(
-            modifier = Modifier.size(total + SHEET_TAPE_REACH * 2),
+            modifier = Modifier.size(total),
             contentAlignment = Alignment.Center,
         ) {
             Box(
@@ -201,18 +200,6 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
                             textAlign = TextAlign.Center,
                         )
                     }
-                }
-            }
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val o = tapeReach.toFloat()
-                val spots = listOf(
-                    Offset(o, o) to -45f,
-                    Offset(size.width - o, o) to 45f,
-                    Offset(o, size.height - o) to 45f,
-                    Offset(size.width - o, size.height - o) to -45f,
-                )
-                for ((center, angle) in spots) {
-                    drawTape(center, tapeWidth, tapeHeight, angle)
                 }
             }
         }

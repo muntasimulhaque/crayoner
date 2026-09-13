@@ -1,42 +1,11 @@
 package io.github.muntasimulhaque.crayoner.ui
 
-import android.graphics.Bitmap
-import androidx.compose.foundation.Canvas
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageShader
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
-import io.github.muntasimulhaque.crayoner.core.ArcBand
-import io.github.muntasimulhaque.crayoner.core.Circ
 import io.github.muntasimulhaque.crayoner.core.Crayons
-import io.github.muntasimulhaque.crayoner.core.Ell
 import io.github.muntasimulhaque.crayoner.core.Page
-import io.github.muntasimulhaque.crayoner.core.Poly
-import io.github.muntasimulhaque.crayoner.core.RRect
 import io.github.muntasimulhaque.crayoner.core.Region
-import io.github.muntasimulhaque.crayoner.core.Shape
-import io.github.muntasimulhaque.crayoner.core.Stroke as WaxStroke
-import io.github.muntasimulhaque.crayoner.core.Vec2
-import io.github.muntasimulhaque.crayoner.core.Wax
 
 /**
  * The device half of the one renderer. A picture is printed the way a real
@@ -44,11 +13,11 @@ import io.github.muntasimulhaque.crayoner.core.Wax
  * drawn on top, so a later area's color covers an earlier area's line and
  * hidden edges vanish.
  *
- * The paths for one page at one size are built once and kept, because a page
- * is otherwise rebuilt on every touch of a crayon, and the whole printed
- * picture is kept as pixels (see [rememberPageImage]); a finger crossing the
- * paper then costs one image and a handful of marks, however rich the wax
- * underneath is.
+ * The paths for one page at one size are built once and kept (see
+ * [PageCanvas]), because a page is otherwise rebuilt on every touch of a
+ * crayon, and the whole printed picture is kept as pixels (see [PageImage]);
+ * a finger crossing the paper then costs one image and a handful of marks,
+ * however rich the wax underneath is.
  */
 class PageGeometry(private val page: Page, private val side: Float) {
 

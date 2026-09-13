@@ -24,6 +24,11 @@ import kotlin.math.sin
  *   rules, the way a real wrapper is printed. A pale sleeve would be a
  *   pencil; a plain wax body would be a marker.
  *
+ * Nothing here draws a line around the wax: a real crayon has no line around
+ * it, and [outline] is only ever used to fill. The rules on the wrapper and
+ * the shade on the tip and the base are the whole of a drawn crayon's
+ * shading, and they come from [CrayonInk].
+ *
  * ## The unit
  *
  * Every number here is in units of the crayon's own thickness, which is the
@@ -57,13 +62,18 @@ object CrayonShape {
     /** The base of the body, a hair above the crayon's own end. */
     const val BASE = LENGTH * 0.97
 
+    /** Where the base's own shade starts, along the stick. */
+    const val BASE_SHADE_TOP = LENGTH * 0.955
+
     /** Where the printed wrapper starts and ends, along the length. The
      *  wrapper starts below the cone, because a wrapper never wraps a tip. */
     const val WRAPPER_TOP = LENGTH * 0.40
     const val WRAPPER_BOTTOM = LENGTH * 0.90
 
-    /** The ink line, in units of the thickness. */
-    const val LINE = 0.11
+    /** The wrapper's two printed rules: how far in from the band's own ends
+     *  they run, in units of the thickness, and how heavy the line is. */
+    const val RULE_INSET = 0.15
+    const val RULE_WEIGHT = 0.05
 
     /** The paper collar a held crayon wears: its top and its height. */
     const val COLLAR_TOP = LENGTH * 0.48
@@ -112,6 +122,14 @@ object CrayonShape {
 
     /** The wrapper's band, in the same unit. */
     fun wrapperBand(): Area = Area(0.0, WRAPPER_TOP, 1.0, WRAPPER_BOTTOM - WRAPPER_TOP)
+
+    /**
+     * The last sliver of the stick, at the squared base end: where a crayon
+     * is a hair deeper, because the mold it came out of left the end a
+     * little denser. It is why a drawn crayon reads as round rather than as
+     * a block, and it is the only shading the stick gets.
+     */
+    fun baseBand(): Area = Area(0.0, BASE_SHADE_TOP, 1.0, LENGTH - BASE_SHADE_TOP)
 
     /** The collar a held crayon wears, in the same unit. */
     fun collarBand(): Area = Area(

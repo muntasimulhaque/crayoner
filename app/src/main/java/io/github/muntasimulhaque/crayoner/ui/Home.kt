@@ -70,7 +70,6 @@ import kotlinx.coroutines.withContext
 fun HomeScreen(
     shelf: ShelfState,
     onOpen: (String) -> Unit,
-    onSound: (Boolean) -> Unit,
 ) {
     // The saved shelf arrives in a few milliseconds. Until it does, the desk
     // holds the screen rather than cards that would flip over as soon as the
@@ -84,13 +83,21 @@ fun HomeScreen(
             .fillMaxSize()
             .background(CrayonerColors.Desk),
     ) {
-        ShelfHeader(soundOn = shelf.soundOn, onSound = onSound)
+        ShelfHeader()
         ShelfGrid(shelf = shelf, onOpen = onOpen)
     }
 }
 
+/**
+ * The wall's own nameplate: the brand's mark, the name, and a rule under it.
+ *
+ * There is no switch up here. The one thing the shelf used to carry was the
+ * sound switch, and it belongs on the page, where a child hears a crayon
+ * being picked up and can turn it off then and there without leaving the
+ * picture they are coloring. Here it was a control on a wall of pictures.
+ */
 @Composable
-private fun ShelfHeader(soundOn: Boolean, onSound: (Boolean) -> Unit) {
+private fun ShelfHeader() {
     Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)) {
         Row(
             modifier = Modifier
@@ -117,14 +124,6 @@ private fun ShelfHeader(soundOn: Boolean, onSound: (Boolean) -> Unit) {
                 style = MaterialTheme.typography.displaySmall,
                 color = CrayonerColors.Ink,
             )
-            Spacer(Modifier.weight(1f))
-            CircleButton(
-                onClick = { onSound(!soundOn) },
-                background = CrayonerColors.Card,
-                label = stringResource(if (soundOn) R.string.sound_on else R.string.sound_off),
-            ) {
-                SoundIcon(on = soundOn, color = CrayonerColors.Ink, size = 26.dp)
-            }
         }
         // A crayon-drawn rule under the name: one wavering stroke, the way a
         // ruler-less line actually comes out, in the brand coral.

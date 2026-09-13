@@ -1,28 +1,28 @@
 package io.github.muntasimulhaque.crayoner.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
 import io.github.muntasimulhaque.crayoner.core.Area
+import io.github.muntasimulhaque.crayoner.core.CrayonInk
 import io.github.muntasimulhaque.crayoner.core.CrayonShape
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Vec2
 
-/**
- * One crayon, drawn once. The tray, the box of colors, the shelf header and
- * the store's own art all draw through here, so a crayon is the same object
- * wherever it appears, and a rubber is the same rubber.
- */
 /**
  * The name of each crayon. Every crayon in the box has its own word, held to
  * that by a test, because a crayon the screen reader cannot name is a crayon
@@ -68,10 +68,21 @@ internal fun crayonNameRes(argb: Long): Int = when (argb) {
  * A crayon drawn in the book's own hand. Both the tray and the box draw
  * through here, so a crayon is the same object wherever it appears.
  *
- * [lineBoost] thickens the ink line. It exists for the one crayon in hand in
- * the box, which lies a little longer than its neighbors and wears a heavier
- * outline: that is its whole selection mark, and there is no ring, plate or
- * shadow behind it.
+ * Nothing is drawn around the wax. A real crayon has no line around it: the
+ * wrapper's edge is where the paper it is wound in ends, and the wax beside
+ * it is the stick's own color, laid on thick. An outline here would be ink
+ * the object does not have, and at this size the outline is most of what the
+ * eye reads, which is what makes a drawn crayon look like a diagram of one.
+ *
+ * So the stick is made only of wax: the body's own color (which the caller
+ * passes, because the color is the crayon), the cone a hair deeper where the
+ * light leaves the tip, the wrapper the same wax taken deeper again, and the
+ * wrapper's two rules deeper still. All four come out of [CrayonInk], so a
+ * crayon is the same color at every size and in every place, and the rules
+ * that keep it from being a pencil live in one file in :core.
+ *
+ * [contact] draws the paper collar a held crayon wears, and is reserved for
+ * the crayon that is actually in the hand.
  */
 @Composable
 fun CrayonGlyph(
@@ -81,20 +92,12 @@ fun CrayonGlyph(
     lying: Boolean = false,
     lineBoost: Float = 1f,
 ) {
-    val ink = CrayonerColors.Ink
-    // The wrapper is the crayon's own wax, barely lightened: a pale sleeve
-    // on a colored body is a pencil, and this app draws crayons. The rules
-    // that band the wrapper are the same wax taken deeper, the way print on
-    // paper reads.
-    val shade = remember(color) { mix(color, ink, 0.32f) }
-    val wrapper = remember(color) { mix(color, CrayonerColors.Card, 0.12f) }
+    val inks = remember(color) { CrayonPaints.of(color) }
     Canvas(modifier = modifier) {
         val length = if (lying) size.width else size.height
         drawCrayonShape(
-            color = color,
-            shade = shade,
-            wrapper = wrapper,
-            ink = ink,
+            wax = color,
+            inks = inks,
             contact = contact,
             left = 0f,
             top = 0f,
@@ -102,6 +105,32 @@ fun CrayonGlyph(
             lying = lying,
             lineBoost = lineBoost,
         )
+    }
+}
+
+/** The four colors a drawn crayon is made of, from one wax. */
+internal class CrayonPaints(
+    val wrapper: Color,
+    val cone: Color,
+    val rule: Color,
+    val base: Color,
+) {
+    companion object {
+        fun of(wax: Color): CrayonPaints {
+            val argb = argbOf(wax)
+            return CrayonPaints(
+                wrapper = Color(CrayonInk.wrapper(argb)),
+                cone = Color(CrayonInk.cone(argb)),
+                rule = Color(CrayonInk.rule(argb)),
+                base = Color(CrayonInk.base(argb)),
+            )
+        }
+
+        private fun argbOf(color: Color): Long =
+            ((color.alpha * 255).toLong() shl 24) or
+                ((color.red * 255).toLong() shl 16) or
+                ((color.green * 255).toLong() shl 8) or
+                (color.blue * 255).toLong()
     }
 }
 
@@ -116,15 +145,12 @@ fun CrayonGlyph(
  * crayon and not of the box it happens to be drawn in.
  *
  * The shape itself is core's one crayon: the body, the blunt cone, the
- * squared base, the wrapper in the wax's own color with its two dark rules,
- * and the paper collar a held crayon wears. This function only decides the
- * colors and the place it lands.
+ * squared base. This function only decides where the pieces land and which
+ * of the four waxes paints each one.
  */
 internal fun DrawScope.drawCrayonShape(
-    color: Color,
-    shade: Color,
-    wrapper: Color,
-    ink: Color,
+    wax: Color,
+    inks: CrayonPaints,
     contact: Boolean,
     left: Float,
     top: Float,
@@ -135,11 +161,6 @@ internal fun DrawScope.drawCrayonShape(
     // The shape is measured in the crayon's own thicknesses, so one unit is
     // the thickness on both axes and the crayon cannot be stretched.
     val unit = length / CrayonShape.LENGTH.toFloat()
-    val line = Stroke(
-        (unit * CrayonShape.LINE.toFloat() * lineBoost).coerceAtLeast(1f),
-        cap = StrokeCap.Round,
-        join = StrokeJoin.Round,
-    )
     // One mapping for the whole drawing: a point in the shape's own unit box
     // to a point on the canvas, in whichever way the crayon is turned.
     fun px(p: Vec2): Offset = if (lying) {
@@ -148,23 +169,20 @@ internal fun DrawScope.drawCrayonShape(
         Offset(left + p.x.toFloat() * unit, top + p.y.toFloat() * unit)
     }
     val silhouette = outlinePath(::px)
-    drawPath(silhouette, color)
-
-    // The wrapper: the crayon's own color, a whisper lighter, the way paper
-    // takes wax. Never a pale sleeve, which would make it a pencil.
+    drawPath(silhouette, wax)
+    drawPath(conePath(::px), inks.cone)
     val band = CrayonShape.wrapperBand()
-    drawPath(rectPath(::px, band.x, band.y, band.right, band.bottom), wrapper)
-    drawWrapperRules(::px, band, shade, line)
+    drawPath(rectPath(::px, band.x, band.y, band.right, band.bottom), inks.wrapper)
+    drawWrapperRules(::px, band, inks.rule, unit * lineBoost)
+    val base = CrayonShape.baseBand()
+    drawPath(rectPath(::px, base.x, base.y, base.right, base.bottom), inks.base.copy(alpha = 0.72f))
     if (contact) {
         // The picked crayon wears a paper collar, the way a held crayon is
         // banded by a hand, so the choice reads at a glance even when two
         // colors are hard to tell apart.
         val collar = CrayonShape.collarBand()
-        val path = rectPath(::px, collar.x, collar.y, collar.right, collar.bottom)
-        drawPath(path, CrayonerColors.Card)
-        drawPath(path, ink, style = Stroke(line.width * 0.5f, cap = StrokeCap.Round))
+        drawPath(rectPath(::px, collar.x, collar.y, collar.right, collar.bottom), CrayonerColors.Card)
     }
-    drawPath(silhouette, ink, style = line)
 }
 
 /** The crayon's own silhouette, mapped onto the canvas by [px]. */
@@ -176,6 +194,23 @@ private fun outlinePath(px: (Vec2) -> Offset): Path = Path().apply {
         val o = px(points[i])
         lineTo(o.x, o.y)
     }
+    close()
+}
+
+/** The cone alone, so it can be a shade deeper than the body. */
+private fun conePath(px: (Vec2) -> Offset): Path = Path().apply {
+    val points = CrayonShape.outline()
+    moveTo(px(points[0]).x, px(points[0]).y)
+    for (point in points) {
+        if (point.y > CrayonShape.TIP_LENGTH + 1e-9) break
+        val o = px(point)
+        lineTo(o.x, o.y)
+    }
+    // Back across the shoulders, so the cone's own band closes on itself.
+    val left = px(Vec2(0.0, CrayonShape.TIP_LENGTH))
+    val right = px(Vec2(1.0, CrayonShape.TIP_LENGTH))
+    lineTo(right.x, right.y)
+    lineTo(left.x, left.y)
     close()
 }
 
@@ -196,18 +231,24 @@ private fun rectPath(px: (Vec2) -> Offset, x: Double, y: Double, right: Double, 
 }
 
 /**
- * The two dark rules every real wrapper wears, one above the label and one
- * below it. They follow the crayon's own turn, so a lying crayon's rules run
- * across it and a standing one's run down it.
+ * The two rules every real wrapper wears, one above the label and one below
+ * it. They follow the crayon's own turn, so a lying crayon's rules run across
+ * it and a standing one's run down it.
+ *
+ * They are drawn with round caps at a width that follows the crayon, so a
+ * crayon twenty pixels wide wears two fine lines and a crayon two hundred
+ * pixels wide wears two lines in proportion: the wrapper is printed the same
+ * way at every size.
  */
 private fun DrawScope.drawWrapperRules(
     px: (Vec2) -> Offset,
     band: Area,
-    shade: Color,
-    line: Stroke,
+    rule: Color,
+    unit: Float,
 ) {
-    val rule = Stroke(line.width * 0.40f, cap = StrokeCap.Round)
-    for (y in listOf(band.y + 0.012, band.bottom - 0.012)) {
+    val line = Stroke((unit * 0.055f).coerceAtLeast(0.7f), cap = StrokeCap.Round)
+    val near = unit * 0.070f
+    for (y in listOf(band.y + near, band.bottom - near)) {
         val a = px(Vec2(band.x, y))
         val b = px(Vec2(band.right, y))
         drawPath(
@@ -215,8 +256,8 @@ private fun DrawScope.drawWrapperRules(
                 moveTo(a.x, a.y)
                 lineTo(b.x, b.y)
             },
-            shade,
-            style = rule,
+            rule,
+            style = line,
         )
     }
 }
@@ -275,13 +316,40 @@ fun EraserGlyph(
     }
 }
 
-/** Mixes two colors in sRGB; [amount] is how much of [other] lands. */
-internal fun mix(base: Color, other: Color, amount: Float): Color {
-    val t = amount.coerceIn(0f, 1f)
-    return Color(
-        red = base.red + (other.red - base.red) * t,
-        green = base.green + (other.green - base.green) * t,
-        blue = base.blue + (other.blue - base.blue) * t,
-        alpha = base.alpha + (other.alpha - base.alpha) * t,
-    )
+/**
+ * The undo mark, drawn on the thing that takes the last mark back: one turn
+ * of a hand's own stroke running back on itself, with a chunky head where
+ * the arrow is leaving from.
+ *
+ * It is deliberately not a line of type and not a stock glyph: it is one
+ * stroke of wax in the same coral the brand is, with the small wobble of a
+ * hand. The head is a solid triangle rather than two bristles, because at
+ * the size of a seat a pair of thin strokes beside a thin arc reads as a
+ * broken circle and says nothing about direction; a solid head reads as an
+ * arrow from across the room.
+ */
+@Composable
+fun UndoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
+    val side = size
+    Canvas(modifier = modifier.size(side)) {
+        val w = side.toPx()
+        // The arc: over the top, down the right, and back along the bottom,
+        // leaving the head its own room at the left.
+        val stroke = Stroke(w * 0.13f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val sweep = Path().apply {
+            moveTo(w * 0.26f, w * 0.32f)
+            cubicTo(w * 0.46f, w * 0.04f, w * 0.88f, w * 0.16f, w * 0.84f, w * 0.54f)
+            cubicTo(w * 0.80f, w * 0.86f, w * 0.48f, w * 0.94f, w * 0.30f, w * 0.82f)
+        }
+        drawPath(sweep, color, style = stroke)
+        // The head: one solid wedge, point outward at the left, so the mark
+        // says which way the step goes.
+        val head = Path().apply {
+            moveTo(w * 0.05f, w * 0.22f)
+            lineTo(w * 0.37f, w * 0.10f)
+            lineTo(w * 0.30f, w * 0.46f)
+            close()
+        }
+        drawPath(head, color)
+    }
 }

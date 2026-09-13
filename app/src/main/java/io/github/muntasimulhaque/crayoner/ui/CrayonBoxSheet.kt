@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -158,13 +160,13 @@ fun CrayonBoxSheet(
 
 /**
  * One crayon's place in the box: the crayon, lying the way crayons lie in a
- * box. The one in the child's hand lies with the rest, a little longer and
- * drawn with a heavier line, and that is its whole selection mark.
+ * box.
  *
- * There is no ring, no plate, no tick and no shadow behind it, because a
- * crayon a size up from its neighbors, with a heavier outline, is already
- * unmistakable, and a mark drawn around it would be chrome on a box of
- * crayons.
+ * The one in the child's hand lies with the rest, a little longer and drawn
+ * with a heavier line, and that is its whole selection mark: no ring, no
+ * plate, no tick and no shadow behind it, because a mark drawn around a
+ * crayon is chrome on a box of crayons. Nothing is drawn around any crayon
+ * in the box (see [CrayonGlyph]): the wax is the wax.
  */
 @Composable
 private fun ColorSeat(
@@ -184,7 +186,7 @@ private fun ColorSeat(
     ).value
     // The one in hand grows a little out of the row it lies in, and never
     // past the cell it belongs to.
-    val lying = cell * (0.88f + 0.10f * lift)
+    val lying = cell * (0.90f + 0.08f * lift)
     val thickness = lying * CrayonShape.THICKNESS.toFloat()
     val cellHeight = cell * 0.62f
     Box(

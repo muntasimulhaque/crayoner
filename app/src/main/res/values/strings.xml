@@ -10,6 +10,9 @@
     <string name="eraser_off">Pick up the rubber</string>
     <string name="pick_color">Pick a color</string>
     <string name="close_box">Put the crayons away</string>
+    <string name="undo">Take back the last mark</string>
+    <string name="zoom_whole">The whole page is on screen. Press for the whole page</string>
+    <string name="zoom_close">Part of the page is on screen, drawn bigger. Press for the whole page</string>
 
     <string name="crayon_red">Red</string>
     <string name="crayon_scarlet">Scarlet</string>

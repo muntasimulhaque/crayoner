@@ -9,21 +9,21 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
 
 /**
- * The one strip of tape in the app.
+ * The one strip of tape in the app, and there is now exactly one place it is
+ * used: the shelf, where pictures really are taped to a wall.
  *
- * It is a single material everywhere, the way real tape off a roll is: a
- * cream paper strip with a faint fiber running through it, a little wider
- * than it is deep, never quite square, with a soft shadow along its lower
- * edge so it sits on the paper instead of being printed on it. The shelf
- * uses it to hold pictures to the wall; the coloring sheet uses it to hold
- * paper to the desk. One drawing, so the same roll was used on every page of
- * the book.
+ * It is one material, the way real tape off a roll is: a cream paper strip
+ * with a faint fiber running through it, a little wider than it is deep,
+ * never quite square, with a soft shadow along its lower edge so it sits on
+ * the paper instead of being printed on it. The shelf uses it to hold
+ * pictures to the wall, and that is all: the page a child colors and the
+ * sample held up over it are sheets lying on a desk, and a sheet you can
+ * bring closer to your face is a sheet nobody taped down.
  *
  * Its color is chosen against both grounds it lands on: lighter than the
  * desk and deeper than the paper, so a strip crossing the corner of a sheet
  * is visible on the sheet and on the table at the same time. Tape you cannot
- * see is not holding anything, and the whole reason the strip is there is to
- * say that this paper is lying on a table.
+ * see is not holding anything.
  */
 internal fun DrawScope.drawTape(
     center: Offset,
@@ -102,10 +102,3 @@ internal fun DrawScope.drawWallTape(width: Float, height: Float) {
         angleDeg = -2.5f,
     )
 }
-
-/** How wide the strip of tape on the coloring sheet is. */
-internal val SHEET_TAPE_WIDTH = 62.dp
-internal val SHEET_TAPE_HEIGHT = 19.dp
-
-/** How far the tape reaches beyond the paper's own corner, onto the desk. */
-internal val SHEET_TAPE_REACH = 22.dp

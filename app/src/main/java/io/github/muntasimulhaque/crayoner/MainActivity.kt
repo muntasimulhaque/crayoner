@@ -60,15 +60,16 @@ class MainActivity : ComponentActivity() {
                         Screen.Home -> HomeScreen(
                             shelf = shelf,
                             onOpen = host::open,
-                            onSound = host::setSound,
                         )
                         is Screen.Coloring -> {
                             // Back is always the gentle answer: it puts down
-                            // what is open rather than leaving the app.
+                            // what is open rather than leaving the app, and a
+                            // closer look is one of the things that is open.
                             BackHandler(enabled = true) {
                                 when {
                                     s.boxOpen -> host.setBoxOpen(false)
                                     s.peeking -> host.setPeek(false)
+                                    !s.view.isWhole -> host.setZoom(s.view.scale)
                                     else -> host.home()
                                 }
                             }
@@ -81,6 +82,9 @@ class MainActivity : ComponentActivity() {
                                 onPick = host::pickCrayon,
                                 onErase = host::setErasing,
                                 onOpenBox = host::setBoxOpen,
+                                onUndo = host::undo,
+                                onZoom = host::setZoom,
+
                                 onHome = host::home,
                                 onSound = host::setSound,
                                 onPeek = host::setPeek,

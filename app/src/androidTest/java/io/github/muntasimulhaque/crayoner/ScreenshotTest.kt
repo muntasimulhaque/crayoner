@@ -16,7 +16,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.muntasimulhaque.crayoner.core.Crayons
+import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
+import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
@@ -119,7 +121,7 @@ class ScreenshotTest {
         val outDir = resolveOutDir()
         val scenario = launch()
         shot(scenario, outDir, "01_home") {
-            HomeScreen(shelf = ShelfState(), onOpen = {}, onSound = {})
+            HomeScreen(shelf = ShelfState(), onOpen = {})
         }
         shot(scenario, outDir, "02_blank") {
             play(blankState("sail"))
@@ -139,6 +141,13 @@ class ScreenshotTest {
         shot(scenario, outDir, "07_whole") {
             play(wholeState("icecream", crayon = Crayons.CARNATION_PINK))
         }
+        shot(scenario, outDir, "08_closer") {
+            play(
+                wholeState("flowers", crayon = Crayons.YELLOW).copy(
+                    view = PageView.closeOn(Vec2(0.5, 0.5)),
+                ),
+            )
+        }
         scenario.close()
     }
 
@@ -154,6 +163,9 @@ class ScreenshotTest {
             onPick = {},
             onErase = {},
             onOpenBox = {},
+            onUndo = {},
+            onZoom = {},
+
             onHome = {},
             onSound = {},
             onPeek = {},
@@ -164,7 +176,7 @@ class ScreenshotTest {
 
     private fun page(id: String): Page = Pages.byId(id) ?: error("no page $id")
 
-    private fun blankState(id: String) = Screen.Coloring(page = page(id), progress = Progress.Empty)
+    private fun blankState(id: String) = Screen.Coloring(page = page(id), draft = Draft.Empty)
 
     /**
      * A page a child has been working on: real marks, made the way a hand
@@ -183,7 +195,7 @@ class ScreenshotTest {
             .flatMap { index -> sweeps(page.regions[index]) }
         return Screen.Coloring(
             page = page,
-            progress = Progress(strokes),
+            draft = Draft.of(Progress(strokes)),
             crayon = crayon,
             erasing = erasing,
         )
@@ -195,7 +207,7 @@ class ScreenshotTest {
         val strokes = page.regions.indices.flatMap { index -> sweeps(page.regions[index]) }
         return Screen.Coloring(
             page = page,
-            progress = Progress(strokes),
+            draft = Draft.of(Progress(strokes)),
             crayon = crayon,
         )
     }
@@ -258,7 +270,7 @@ class ScreenshotTest {
         )
         return Screen.Coloring(
             page = page,
-            progress = Progress(colored + rubbed),
+            draft = Draft.of(Progress(colored + rubbed)),
             crayon = page.regions.last().fillArgb,
             erasing = true,
         )

@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.muntasimulhaque.crayoner.core.Crayons
+import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
+import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
@@ -24,8 +26,8 @@ sealed interface Screen {
 
     data class Coloring(
         val page: Page,
-        /** Every mark the child has made, in the order they made them. */
-        val progress: Progress,
+        /** The paper: every mark on it, and the one step back. */
+        val draft: Draft,
         /** The crayon in hand; null until the child picks one up. */
         val crayon: Long? = null,
         /**
@@ -45,13 +47,26 @@ sealed interface Screen {
         /** The sample held up big, while the child looks closely. */
         val peeking: Boolean = false,
         /**
-         * Counts finished marks. The write-only half of the state: it is
-         * what the one-shot answers (the haptic) read, so a mark that lands
-         * over paper already colored still answers like a mark, and what
-         * tells the page its flattened layer of marks is stale.
+         * Which piece of the paper is on screen. A page opens whole, and a
+         * closer look is a window on the same sheet, never a different one:
+         * every mark is a line of page coordinates.
+         */
+        val view: PageView = PageView.Whole,
+        /**
+         * Counts the marks the hand has finished. It is what the one-shot
+         * answers (the haptic, and the flattened layer of marks) read, so a
+         * mark that lands over paper already colored still answers like a
+         * mark. Looking closer does not finish anything and does not bump
+         * it.
          */
         val marks: Long = 0L,
-    ) : Screen
+    ) : Screen {
+        /** The marks on the paper, for anything that only draws them. */
+        val progress: Progress get() = draft.progress
+
+        /** True while there is a mark the child can take back. */
+        val canUndo: Boolean get() = draft.last != null
+    }
 }
 
 /** What the shelf needs to draw itself. */
@@ -71,7 +86,8 @@ data class ShelfState(
 /**
  * The host performs what the domain decides. It owns which screen is up,
  * which crayon is in hand, and what the page shows. The rules themselves
- * (geometry, wax, saving) live in :core and are tested there.
+ * (geometry, wax, strokes, the window, saving) live in :core and are tested
+ * there.
  *
  * A finger draws. Down starts a mark, moving draws it, up finishes it, and
  * every finished mark is saved a fraction of a second later, so a phone
@@ -94,9 +110,9 @@ class ColoringHost(app: Application) : ViewModel() {
     val shelf: StateFlow<ShelfState> = _shelf.asStateFlow()
 
     /** Draft writes are conflated and slightly delayed, never per mark. */
-    private val drafts = MutableSharedFlow<Draft>(extraBufferCapacity = 1)
+    private val drafts = MutableSharedFlow<DraftWrite>(extraBufferCapacity = 1)
 
-    private class Draft(val pageId: String, val text: String)
+    private class DraftWrite(val pageId: String, val text: String)
 
     init {
         viewModelScope.launch {
@@ -130,7 +146,7 @@ class ColoringHost(app: Application) : ViewModel() {
             .getOrDefault(Progress.Empty)
         _screen.value = Screen.Coloring(
             page = page,
-            progress = saved,
+            draft = Draft.of(saved),
             crayon = null,
         )
     }
@@ -166,7 +182,28 @@ class ColoringHost(app: Application) : ViewModel() {
     }
 
     /**
-     * A finger touching the paper at [p], in page units.
+     * One step back: the mark the hand finished last comes off the paper.
+     *
+     * An empty sheet has no step to undo and the press simply lands, and a
+     * page read back from last time has nothing to step back to, so there is
+     * nothing here a child can break by pressing it. Nothing is confirmed
+     * and nothing is offered twice: the rubber is what a child uses to
+     * change their mind about a whole picture, and this is the one step a
+     * hand that drew a mark it did not mean needs.
+     */
+    fun undo() {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        if (s.live != null) return
+        val next = s.draft.undo()
+        if (next === s.draft) return
+        commit(s, next)
+    }
+
+    /**
+     * A finger touching the paper at [p], in window units: 0 at the window's
+     * own top left corner and 1 at its bottom right, whatever part of the
+     * paper the window is showing.
      *
      * The first touch on a fresh page always works: with no crayon in hand
      * yet, the app picks up the color the area under the finger is asking
@@ -179,7 +216,7 @@ class ColoringHost(app: Application) : ViewModel() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
         if (s.peeking || s.boxOpen) return
-        val at = clamp(p)
+        val at = clamp(s.view.onPage(p))
         if (s.erasing) {
             _screen.value = s.copy(live = Strokes.eraseDot(at))
             return
@@ -194,7 +231,7 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s !is Screen.Coloring) return
         val live = s.live ?: return
         if (s.peeking || s.boxOpen) return
-        val grown = Strokes.extend(live, clamp(p))
+        val grown = Strokes.extend(live, clamp(s.view.onPage(p)))
         if (grown !== live) _screen.value = s.copy(live = grown)
     }
 
@@ -207,8 +244,10 @@ class ColoringHost(app: Application) : ViewModel() {
             _screen.value = s.copy(live = null)
             return
         }
-        commit(s, live)
+        val draft = if (live.erase) s.draft.erase(live.points) else s.draft.color(live.color, live.points)
+        commit(s, draft)
     }
+
     /**
      * Colors one whole area. It is how a screen reader colors, because a
      * child who cannot aim a finger cannot draw a mark either: the app
@@ -223,20 +262,56 @@ class ColoringHost(app: Application) : ViewModel() {
         val hand = s.crayon ?: region.fillArgb
         val scribble = Strokes.scribble(region, hand)
         if (scribble.isEmpty) return
-        commit(s.copy(crayon = hand, erasing = false), scribble)
+        commit(s.copy(crayon = hand, erasing = false), s.draft.color(hand, scribble.points))
     }
 
-    /** The one place a mark is finished, answered, and saved. */
-    private fun commit(s: Screen.Coloring, live: Stroke) {
-        val progress = s.progress.with(live)
+    /**
+     * How much of the paper is shown, as a zoom the child chose from the
+     * strip along the bottom. The window is held to the sheet (see
+     * [PageView]) and the focus is carried over, so stepping from whole to
+     * close holds the middle of what they were looking at.
+     *
+     * Stepping across the whole/closer line is a sheet being moved on the
+     * desk, so it rustles once. Sliding the knob within one look is not a
+     * new object being picked up, and it stays quiet, because a noise per
+     * pixel of a slider is a machine and not a crayon.
+     */
+    fun setZoom(zoom: Double) {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        val wanted = PageView(zoom, s.view.focus)
+        setView(wanted)
+        if (wanted.isWhole != s.view.isWhole) play(Sfx.RUSTLE)
+    }
+
+    /**
+     * The one place the window changes. Looking closer is not a different
+     * page: every mark is a line of page coordinates, so nothing about the
+     * child's work moves, changes or is lost. The window is only what the
+     * renderer is looking at.
+     */
+    private fun setView(view: PageView) {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        val wanted = if (view.isWhole) PageView.Whole else view
+        if (wanted == s.view) return
+        _screen.value = s.copy(view = wanted)
+    }
+
+    /**
+     * The one place a finished mark is answered, and saved. Whatever put
+     * marks on the paper (the hand, a screen reader, or a press of undo)
+     * comes through here, so a mark is saved once and only once.
+     */
+    private fun commit(s: Screen.Coloring, draft: Draft) {
         _screen.value = s.copy(
-            progress = progress,
+            draft = draft,
             live = null,
-            marks = s.marks + 1,
+            marks = if (draft === s.draft) s.marks else s.marks + 1,
         )
         // The mark itself makes no sound. Nothing plays while a finger is on
         // the paper: the wax does not answer, because the mark is the thing.
-        rememberDraft(s.page, progress)
+        rememberDraft(s.page, draft)
     }
 
     /** Which color the area under [p] asks for, if the point is on paper. */
@@ -257,7 +332,7 @@ class ColoringHost(app: Application) : ViewModel() {
     /** Back to the shelf. Nothing is lost: the marks are already saved. */
     fun home() {
         val s = _screen.value
-        if (s is Screen.Coloring) rememberDraft(s.page, s.progress)
+        if (s is Screen.Coloring) rememberDraft(s.page, s.draft)
         _screen.value = Screen.Home
     }
 
@@ -266,9 +341,9 @@ class ColoringHost(app: Application) : ViewModel() {
         viewModelScope.launch { runCatching { store.setSound(on) } }
     }
 
-    private fun rememberDraft(page: Page, progress: Progress) {
-        val text = progress.serialize()
-        drafts.tryEmit(Draft(page.id, if (progress.isEmpty) "" else text))
+    private fun rememberDraft(page: Page, draft: Draft) {
+        val progress = draft.progress
+        drafts.tryEmit(DraftWrite(page.id, if (progress.isEmpty) "" else progress.serialize()))
     }
 
     /** The effects, unless the sound switch is off. */
