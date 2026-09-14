@@ -71,10 +71,10 @@ block.
 Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a box of crayons. Color the outlines until they match the picture.
 
 How it plays
-Tap a picture on the wall and the page opens as clean black lines on a sheet of paper lying on the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does. A little chip below the crayon brings the paper twice as close for the small parts, and one press puts it back whole.
+Tap a picture on the wall and the page opens as clean black lines on a sheet of paper lying on the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does. The page is always whole on the screen, and a hand resting on it can never move it.
 
 A real box of crayons
-One capsule holds the three things a hand reaches for: the crayon, the rubber, and one step back. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, with the color in hand a little longer and drawn with a heavier line so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. Press undo and the last mark comes off the paper, one mark at a time, so a hand that drew something it did not mean has one gentle way to take it back. The picture is never wiped and there is nothing to confirm.
+One capsule holds the things a hand reaches for: a step back, a step forward, the crayon in hand and the rubber. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, with the color in hand a little longer and drawn with a heavier line so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. Press undo and the last mark comes off the paper, and press redo beside it to put that mark back, one at a time, so a hand that drew something it did not mean can walk it back without ever losing the work around it. The picture is never wiped and there is nothing to confirm.
 
 Made for small hands
 Sixteen pictures, all of them available from the very first launch: a sailboat, a tree, a balloon, an ice cream, a mushroom, a kite, flowers, a rainbow, a cupcake, a house, a car, an umbrella, a rocket, a train, a lighthouse and a castle. Big areas, huge targets, and nothing that needs reading. There is no score, no timer, no fail state, and no picture is ever locked. Marks are saved as they are made, so a phone call or a restart never loses a picture. Every screen fits any size of phone or tablet, held either way.
@@ -124,8 +124,7 @@ declaration it makes, no data collected, is exactly true of the app.)
 All three sets live under `play-store/screenshots/`, one subfolder per form
 factor (`phone/`, `tablet7/`, `tablet10/`), captured by CI whenever UI files
 change and refreshed into those same subfolders in the same session. Seven
-captures per form factor, 21 in all, plus a phone capture of a page looked
-at closely. Upload each subfolder's PNGs to its Play
+captures per form factor, 21 in all. Upload each subfolder's PNGs to its Play
 Console slot, in filename order:
 
 ```
@@ -136,14 +135,12 @@ Console slot, in filename order:
 05_rubbed        the rubber in hand, wax rubbed away and the printed line kept
 06_peek          the sample held up large, a sheet of paper like the page
 07_whole         a picture colored all the way, in the child's own colors
-08_closer        the paper brought twice as close on the chip below
 ```
 
 To look at every picture before a content change, run `:tools:makeSheets`,
 which writes `samples.png`, `outlines.png` and `pairs.png` into
-`build/sheets` (never committed). The celebration scene is mid-animation by
-design, so its pixels wobble a little between refreshes; every other scene
-should come back byte-identical.
+`build/sheets` (never committed). Every scene is a still state, so the same
+capture should come back effectively identical between refreshes.
 
 ## Console questionnaires: answers
 
