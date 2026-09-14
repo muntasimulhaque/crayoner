@@ -176,6 +176,71 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 0.9 (versionCode 9) was submitted for Play review on 14 Sep
+2026.** It was built by CI from commit 246bed6, signed with the Crayoner
+upload key, and reads versionCode 9, versionName 0.9, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked in the built APK's own manifest,
+`aapt2 dump permissions`). The AAB was sha256 da9770b7 and has been DELETED
+from `play-store/aab/` now that it is submitted, so a stale build can never
+be uploaded twice. The next build to upload will be 1.0.
+
+0.9 is the round where the wax lands under the finger. The mark's own
+geometry was wrong and had been for three releases: page units are
+isotropic, so a finger's place on the glass is divided by the sheet's width
+on both axes, and one line still divided the finger's y by the frame's
+height. Because the sheet is 1.2 times taller than it is wide, every mark on
+a phone landed a fifth of the sheet above the hand that drew it, which is
+exactly the gap between a crayon and the wax it just laid down. The eraser
+was placed the same wrong way and is fixed by the same line, and the
+conversion now lives once, in `core/pagePointOf`, held by a JVM test that
+walks the frame at five scales and by an instrumented probe that drags a
+real finger across a real screen at two rows far apart. The tray gained a
+second step beside the first, `Draft.redo`, the exact mirror of the walk
+back and bounded the same way; the capsule and the top bar now draw one coin
+and one icon, with the rail measured from the coins it holds; and the launcher
+icon's crayon is the app's own mark at the app's own lean, no longer
+mirrored, with a thinner band of wax under it. The nameplate's crayon is
+that same mark at that same angle, and the submission text and the landing
+page no longer describe the zoom chip the app stopped having in 0.7.
+
+**Version 0.8 (versionCode 8) was submitted for Play review on 14 Sep
+2026.** It was built by CI from commit 9c8f8a4 and signed with the Crayoner
+upload key. The 0.7 build had shipped two regressions, both found by
+looking at the captures rather than by reading the code: the uniform fit
+onto the taller sheet sliced the edge clouds of five pages flat, so every
+region that is not already a full-bleed band is now slid back by the few
+hundredths it takes to sit wholly on the sheet, held by a new
+`noPartOfAPictureIsCutOffByTheSheet` test; and the tablet had been given the
+phone's rail, which dragged the home button into the middle of the desk, so
+the top bar is full width again on a tablet and the rail is the stacked
+phone layout's alone.
+
+**Version 0.7 (versionCode 7) was submitted for Play review on 14 Sep
+2026.** It was built by CI from commit edb439b and signed with the Crayoner
+upload key. The page became a sheet of paper taller than it is wide
+(`Page.ASPECT`, 1.2), with every picture composed in a square fitted onto it
+once and uniformly, so nothing is stretched and everything on a phone is a
+fifth bigger. The zoom was removed whole: a window at twice the scale hid
+three quarters of every picture and the only way back was a small map a
+three year old would not find, so a page is always whole and a hand on it
+can never move it. The icon's crayon was stood up so it survives a
+launcher's smallest size, and the child's marks were retuned from sign pen
+to wax.
+
+**Version 0.6 (versionCode 6) was submitted for Play review on 14 Sep
+2026.** It was built by CI from commit 108a898 and signed with the Crayoner
+upload key. The capsule's order became the way a hand works (step back,
+crayon, rubber), every seat wore the same plate in the capsule's own
+cardboard, every outline mark in the app came out of one `iconStroke`, and
+the launcher icon became the whole app in one glance: a crayon standing on
+its point with the band of wax it has just laid down beside it. Two real bugs
+went with it: the wrapper's rules were being inset by a pixel count inside a
+band measured in the crayon's own thicknesses, which drew two floating hairs
+beside every crayon in the app, and a mark was made of two translucent
+passes of one color, which multiplied instead of averaging and pushed the
+grain out of the middle of every stroke.
+
 **Version 0.5 (versionCode 5) was submitted for Play review on 14 Sep
 2026.** It was built by CI from commit da3814c, signed with the Crayoner
 upload key, and reads versionCode 5, versionName 0.5, package
@@ -183,7 +248,8 @@ io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
 androidx core private receiver (checked in the built APK's own manifest,
 `aapt2 dump permissions`). The AAB was sha256 17fe2480 and has been DELETED
 from `play-store/aab/` now that it is submitted, so a stale build can never
-be uploaded twice. The next build to upload will be 0.6.
+be uploaded twice. The next build to upload will be 0.6. 0.6 through 0.9
+have since superseded it.
 
 0.5 is the round where the paper answers the hand. Three things a hand
 reaches for now sit in one capsule: the crayon in hand, the rubber, and undo,
@@ -267,16 +333,25 @@ submitted, and 0.2 superseded it.
 
 - The review email from Play (usually a few days for a paid app in the
   Families program).
-- 0.4 lands on top of 0.3 on the same closed track. Anyone already testing
+- 0.9 lands on top of 0.8 on the same closed track. Anyone already testing
   gets the update; no new invitations are needed.
 - If Play asks anything, the answers are all in this file: category, the
   questionnaire, the data safety declaration, and the target audience.
 - Nothing in the app needs to change for review; it is complete and tested.
-- One thing to know when testing by hand after updating from 0.3: the
-  pictures that had been stamped as finished keep their colored marks, but
-  the stamp itself and every other mark on the wall are gone, because the
-  app has no finished state any more. The stored record of finished
-  pictures is deleted the first time the shelf is read.
+- The one thing worth looking at after updating from 0.8 is the mark under
+  the finger, because that is what this release is: coloring on a phone puts
+  the wax exactly where the fingertip is, where it had been landing a fifth
+  of the sheet high since 0.7 made the sheet taller than it is wide. The
+  tray's new second step sits between the step back and the crayon, and a
+  mark taken back can be put back again with one press of it. Both are worth
+  a slow press by hand, and neither has anything to confirm.
+- The saved marks of a picture already colored are untouched and read back
+  whole: the mapping fix moves where new wax lands, and no existing mark is
+  rewritten. A picture whose marks were drawn with the old, high placement
+  is still the picture the child left.
+- The launcher icon changed: the crayon now faces the way the app draws it
+  and its band of wax is thinner. A home screen still showing the old icon
+  is a cached launcher icon, not a stale build.
 - A tester who had a picture open when they update should not be surprised
   by a save written against an older box: the older colors are all still in
   the thirty two color box, so those marks still read back whole.
@@ -288,6 +363,13 @@ versionCode 1 is 0.1, versionCode 2 is 0.2, versionCode 10 is 1.0,
 versionCode 11 is 1.1, and so on. Never reuse a versionCode.
 
 ## Release notes
+
+The notes below are the ones handed to the owner to paste into Play
+Console, kept verbatim so a later release can see what the last one said.
+The notes for 0.6, 0.7 and 0.8 were handed over in their own sessions and
+are not recorded here; what each of those builds changed is in the Status
+section above, and the version walk below is what keeps the numbering
+right. The 0.9 notes are the ones submitted on 14 Sep 2026.
 
 ### Version 0.9 (versionCode 9)
 
