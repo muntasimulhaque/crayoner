@@ -55,6 +55,10 @@ object RenderKit {
      *
      * The ground (region zero) is never outlined: it is the paper's own
      * edge, and a coloring page has no border around the sheet.
+     *
+     * [side] is the sheet's width in pixels. The sheet is taller than it is
+     * wide by [Page.ASPECT], and page units are isotropic, so one pixel scale
+     * serves both axes and the paper's height follows from its width.
      */
     fun renderPage(
         g: Graphics2D,
@@ -67,12 +71,15 @@ object RenderKit {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
         g.color = Color(Crayons.PAPER.toInt(), true)
-        g.fillRect(0, 0, side.toInt() + 1, side.toInt() + 1)
+        g.fillRect(0, 0, side.toInt() + 1, (side * Page.ASPECT).toInt() + 1)
         val stroke = BasicStroke(
             (side * STROKE_FRACTION).toFloat().coerceAtLeast(1.0f),
             BasicStroke.CAP_ROUND,
             BasicStroke.JOIN_ROUND,
         )
+        // A picture is authored in a square and fitted onto the taller sheet
+        // (see core/Pages.kt), so a live render walks the same shapes the
+        // baked ones did rather than re-composing anything.
         for ((index, region) in page.regions.withIndex()) {
             val argb = fills[index]
             if (argb != null) drawWaxFill(g, region, unionArea(region, side), side, argb, grain)

@@ -222,6 +222,39 @@ data class Poly(val points: List<Vec2>) : Shape {
 /** True when [p] lies inside any part of this list. */
 fun List<Shape>.contains(p: Vec2): Boolean = any { it.contains(p) }
 
+/**
+ * One shape fitted from the authored unit square into the page's own sheet.
+ *
+ * Every picture in the book is composed in a square of page units, x and y
+ * each 0 to 1, because that is the simplest box to draw in. The sheet a
+ * child actually colors on is taller than it is wide, so the square is
+ * scaled about its own center by [Page.ASPECT] and moved down onto the
+ * sheet: the authored square lands exactly on the paper, corner to corner,
+ * and the subject inside it comes out a fifth bigger than it would be if the
+ * picture were merely centered in a square sheet.
+ *
+ * The scale is uniform, one factor on both axes, so nothing is stretched: a
+ * circle stays a circle and a crayon mark is the same width whichever way
+ * the hand dragged it. A full-bleed background grows a little past the
+ * paper's own left and right edges, which the canvas clips for free.
+ */
+internal fun Shape.fitted(scale: Double): Shape = when (this) {
+    is Circ -> Circ(fit(c, scale), r * scale)
+    is Ell -> Ell(fit(c, scale), rx * scale, ry * scale, angleDeg)
+    is RRect -> {
+        val c = fit(Vec2(x + w / 2.0, y + h / 2.0), scale)
+        RRect(c.x - w * scale / 2.0, c.y - h * scale / 2.0, w * scale, h * scale, radius * scale, angleDeg)
+    }
+    is ArcBand -> ArcBand(fit(c, scale), rInner * scale, rOuter * scale, startDeg, endDeg)
+    is Poly -> Poly(points.map { fit(it, scale) })
+}
+
+/** One authored point, in the sheet's own units. */
+private fun fit(p: Vec2, scale: Double): Vec2 = Vec2(
+    (p.x - 0.5) * scale + 0.5,
+    (p.y - 0.5) * scale + Page.ASPECT / 2.0,
+)
+
 /** The union of every part's bounds. */
 fun List<Shape>.boundsOrNull(): Area? = fold<Shape, Area?>(null) { acc, s ->
     acc?.union(s.bounds()) ?: s.bounds()

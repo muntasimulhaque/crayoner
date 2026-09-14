@@ -18,7 +18,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
-import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
@@ -141,13 +140,6 @@ class ScreenshotTest {
         shot(scenario, outDir, "07_whole") {
             play(wholeState("icecream", crayon = Crayons.CARNATION_PINK))
         }
-        shot(scenario, outDir, "08_closer") {
-            play(
-                wholeState("flowers", crayon = Crayons.YELLOW).copy(
-                    view = PageView.closeOn(Vec2(0.5, 0.5)),
-                ),
-            )
-        }
         scenario.close()
     }
 
@@ -164,9 +156,6 @@ class ScreenshotTest {
             onErase = {},
             onOpenBox = {},
             onUndo = {},
-            onZoom = {},
-            onPan = {},
-
             onHome = {},
             onSound = {},
             onPeek = {},

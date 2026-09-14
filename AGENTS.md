@@ -119,9 +119,8 @@ Sixteen pictures. Tap one and color it.
   whole card is one button, nothing on it is locked, and nothing on it
   carries a mark of what the child has or has not done.
 - A page opens as bare outlines on paper, with the capsule of things a hand
-  holds below it, the chip that brings the paper closer under that, and the
-  finished picture in the bar as one more round button.
-  Look at the sample, look at the page, color.
+  holds below it, and the finished picture in the bar as one more round
+  button. Look at the sample, look at the page, color.
 - **The child colors with their own hand.** A finger on the paper draws a
   crayon mark that follows the finger; nothing is filled in for them. A
   touch starts a mark, moving grows it, lifting finishes it, and every
@@ -150,7 +149,9 @@ Sixteen pictures. Tap one and color it.
   out the way the box lays them out, with the color in hand lying among the
   others, a little longer and drawn with a heavier line. That difference is
   the whole selection mark; there is no ring, no plate, no tick and no
-  shadow. See D-050.
+  shadow. See D-050. The capsule and the top bar are laid on one shared
+  rail, so the two rows of round controls line up at both ends and the
+  phone reads as one object. See D-058.
 - **A seat that is picked up wears the capsule's own cardboard.** One
   selection language for every seat, the same plate, the same color, the
   same lift: a plate under the thing in hand and nothing else. Nothing on
@@ -164,30 +165,33 @@ Sixteen pictures. Tap one and color it.
   the next mark erases: the rubber is drawn with the printed page itself as
   its paint, so the wax goes and the printed line stays, which is what a
   rubber does on real paper, where the print is under the wax. There is no
-  start over, no confirm, and nothing a child can lose.
-- **One press of undo takes back the last mark the hand made**, whatever end
-  of the box made it. One mark and one press, never a stack: a fresh page has
-  nothing to undo and the press simply lands. The rubber is what a child uses
-  to change their mind about a whole picture; undo is the one step a hand
-  that drew a mark it did not mean needs. See D-045.
-- **The paper can be brought closer, never by accident, and everything on
-  it stays reachable.** A page always opens whole. The chip on the desk
-  below the capsule slides between the whole sheet and a look twice as
-  close, and its own left end puts the paper back. Once it is close, the
-  same chip's little map of the sheet is how the child moves about it: a
-  press or a drag anywhere on the map puts that part of the page in the
-  middle of the screen, with the window marked on the map as the darker
-  square inside the sheet. Without that map a closer look would put the
-  corners of every picture out of reach, which is worse than not zooming.
-  There is no pinch and no double tap anywhere on the paper: a hand rests on
-  the page while it colors, and a two finger gesture on a page a three year
-  old is drawing on is exactly the mistake that ruins the mark under it.
-  See D-046 and D-049.
+  start over, no confirm, and nothing a child can lose. The rubber itself
+  looks the same whether it is in the hand or lying on the desk: the seat's
+  own plate is the whole selection mark, so the sleeve is never repainted a
+  second time. See D-059.
+- **Undo is not one step, it is a walk back.** One press takes back the
+  last mark the hand made, and pressing again takes back the one before it,
+  one finished mark a press, so a hand that drew three marks it did not mean
+  gets all three back. The history is bounded (sixteen marks), because a
+  page worked on for an hour must not grow a copy of itself, and because a
+  step that reaches past the last dozen marks is not a step any more: the
+  rubber is what changes a whole picture. A fresh page has nothing to undo
+  and the press simply lands. See D-056.
+- **The paper is always whole, and it never moves under the hand.** A page
+  opens showing the entire sheet and stays that way. There is no zoom, no
+  pan, no pinch and no double tap anywhere in the app. A closer look was
+  tried and it was wrong: a window at twice the scale put three quarters of
+  the picture out of reach, a small map was the only way back to it, and a
+  three year old will not find or aim at a map. A page that is only ever
+  whole cannot hide a corner of the picture, and a hand resting on the paper
+  can never move it. See D-060.
 - **The sheet is a sheet of paper, and it is not taped down.** Square
   corners, a soft shadow, and the tape is gone from its four corners: a
-  sheet you can bring closer to your face is a sheet nobody taped to a desk.
-  The tape stays where it belongs, on the wall the pictures are hung from.
-  See D-046.
+  sheet on a desk is a sheet nobody taped to a desk. It is taller than it
+  is wide ([Page.ASPECT], 1.2), the way a page in a coloring pad is, so the
+  picture gets the whole of a phone's screen instead of a square with two
+  bands of empty desk above and below it. The tape stays where it belongs,
+  on the wall the pictures are hung from. See D-046 and D-060.
 - **No mark is ever answered.** There is no sparkle, no outline pulse, no
   ink ring, no count: the app has no opinion about where a color went. A
   color the picture does not ask for lands exactly like one it does.
@@ -218,7 +222,10 @@ together; a `Progress` is the list of `Stroke`s the child's hand has made,
 each of them a line with a color on it or a line made with the rubber. Hit
 testing, wax, scribbling, saving and parsing all live in `core` and are
 tested there without a device. A `Region` is a piece of the print, never a
-slot to be filled: nothing in the app counts them.
+slot to be filled: nothing in the app counts them. A `Page` is authored in a
+square and fitted once onto the taller sheet it is printed on, in
+`core/Pages.kt`, so the renderers and the geometry follow one definition and
+no picture can be stretched.
 
 The renderer's five rules live in their own section below, and every one of
 them is a bug this project already shipped once.
@@ -284,9 +291,9 @@ them is a bug this project already shipped once.
   finished sample with the picture's name under it, and nothing on the wall
   says which picture was opened, colored or left alone. See D-041.
 - **The sheet is a sheet of paper.** Square corners and a soft shadow. It
-  is not taped down: the tape belongs to the wall the pictures hang on, and
-  a sheet a child can bring closer is a sheet nobody pinned to a desk. See
-  D-046.
+  is taller than it is wide, the way a page in a coloring pad is, and it is
+  always whole on screen. It is not taped down: the tape belongs to the wall
+  the pictures hang on. See D-060.
 - **Every plate in the app is one sheet of paper** (the peek, the box of
   colors), drawn with the same corners and the same shadow, so the picture
   the child copies and the paper they copy it onto are visibly the same kind
@@ -316,8 +323,7 @@ feature that may regress.
 - Every button has a spoken name, every state change has a spoken label, and
   the color of a crayon is spoken as its name. The rubber says what it is
   and, in the box, which color is in hand. Undo says what it takes back, and
-  the chip that brings the paper closer says how much of the sheet is on
-  screen and that pressing it shows the whole page again.
+  pressing it again keeps taking marks back one at a time.
 - Touch targets are comfortably above the 48 dp minimum, and the three seats
   of the capsule on a phone land at 62 dp or more.
 
@@ -325,7 +331,6 @@ feature that may regress.
 
 `ui/Render.kt` (Compose) and `tools/RenderKit.kt` (Java2D) must produce the
 same picture, and they must agree on eight things:
-
 1. **Interleaved fills and strokes.** Fill an area, stroke its outline, then
    move to the next area. A later fill covers an earlier line, so hidden
    edges disappear. All fills first, all lines after, prints the skeleton
@@ -356,16 +361,24 @@ same picture, and they must agree on eight things:
    own color carrying the paper's tooth and the drag of the hand, with the
    passes of the back and forth over it. One generator for both renderers,
    so an area colored in the store art and the same area on the screen are
-   made of the same wax.
+   made of the same wax. The material is coverage at about 0.88 with a wide
+   swing and a heavy tooth, on a mark as much as on an area: at high cover
+   with a narrow swing it came out at a mean alpha of 233 with a standard
+   deviation of 11, four percent variation, which reads as flat ink from a
+   sign pen rather than as crayon on paper. `WaxTest` holds the mean high,
+   the variation wide, and the drag stronger than the tooth so a mark is
+   still stretched along the hand that made it. See D-056.
 7. **The same words.** Every word is drawn in Chewy, the bundled hand, and
    painted with the wax ink tile from `core/WaxGrain`, so a word covers the
    way a colored area covers and no text anywhere is flat type.
 
-8. **The same window on the paper.** A closer look is not a second renderer:
-   `core/PageView` holds the piece of the sheet that is on screen, and both
-   renderers draw the page through it, at the frame's own resolution rather
-   than by enlarging a picture. A mark is a line of page coordinates at any
-   closeness, and `PageViewTest` holds the window to the paper.
+8. **The same sheet.** A page is a sheet of paper taller than it is wide
+   (`Page.ASPECT`, 1.2), and page units are isotropic: x runs 0 to 1 and y
+   runs 0 to `Page.ASPECT`, and one pixel scale serves both axes. Every
+   picture is composed in a square and fitted onto the sheet once, in
+   `core/Pages.kt`, so neither renderer re-composes anything and no shape
+   can be stretched. A mark is a line of page coordinates like any other
+   part of the picture.
 
 `Curves`: path bounds are control-point bounds, not curve bounds, so a
 sparkle is placed from the region's own `centroid`.
@@ -739,7 +752,9 @@ the screenshots, all in the same session.
   nothing anywhere confirms anything. The other half: the sound switch is off
   the shelf and lives only on the page, where a child hears a crayon being
   picked up and can turn it off then and there without leaving the picture
-  they are coloring. A wall of pictures does not need a switch on it.
+  they are coloring. A wall of pictures does not need a switch on it. The
+  seat layout and the sound switch stand; the one-mark rule is superseded by
+  D-056, which lets undo walk back one mark a press.
 - D-046 **The paper is brought closer with a chip, not with fingers, and the
   sheet is no longer taped down.** A page opens whole, and the child can
   bring it twice as close: a chip on the desk under the capsule, with the
@@ -759,7 +774,8 @@ the screenshots, all in the same session.
   own resolution, so a closer look is a sharper look and never a magnified
   bitmap. Zooming changes nothing about the work: every mark is a line of
   page coordinates, and a mark is exactly as wide on the paper at any
-  closeness.
+  closeness. Superseded whole by D-060: the sheet is now always whole and
+  there is no zoom at all.
 - D-047 **The crayon is wax, and nothing is drawn around it.** A real crayon
   has no line around it: the wrapper's edge is where the paper wound over the
   wax ends, and the wax beside it is the stick's own color laid on thick. The
@@ -806,7 +822,8 @@ the screenshots, all in the same session.
   looking at. The map is a second control on the chip, which is a thing on
   the desk and not the picture, so the one rule that matters survives: no
   gesture on the paper itself may ever move it, because a hand rests on the
-  page while it colors. See D-046.
+  page while it colors. See D-046. Superseded by D-060, along with D-046 and
+  the whole zoom feature.
 - D-050 **The capsule runs the way the hand works: step back, crayon,
   rubber.** The order was crayon, rubber, undo, which put the one control
   that undoes work at the far end of the row, where a wandering thumb lands
@@ -826,7 +843,9 @@ the screenshots, all in the same session.
   two kinds of control rather than one row of three. Every seat now wears the
   same round plate, in the same `Cardboard`, lifted the same way; which tool
   is in hand reads at a glance and no seat means anything different from any
-  other. Amends D-028 and D-034's selection language.
+  other. Amends D-028 and D-034's selection language. Amended again by
+  D-059: the plate is the *whole* selection mark, and the rubber's sleeve no
+  longer repaints itself when the tool is picked up.
 - D-052 **One line weight for every outline mark in the app.** The house and
   the speaker were drawn at a hairline and the tray's rubber and step back at
   a marker, so the top bar and the floating capsule looked like two different
@@ -847,6 +866,9 @@ the screenshots, all in the same session.
   `:tools`, measured from its own geometry and fitted by its furthest point
   from its own center, so no launcher mask can clip a tip at any density.
   Supersedes D-040's "the icon is the crayon alone" while keeping its mirror.
+  Superseded in part by D-057: the sentence and the mirror stand, the low
+  leaned crayon in a swath is replaced by an upright one, because the low
+  mark merged into a single red hook at a launcher's smallest size.
 - D-054 **The crayon rules were drawn off the end of the crayon, and every
   screen showed the two hairs.** `drawWrapperRules` was handed a pixel
   measure and used it as an inset into a band measured in the crayon's own
@@ -874,3 +896,69 @@ the screenshots, all in the same session.
   alpha of 0.95 of the crayon's own hex, against 0.75 before. Both renderers
   changed together, because this is exactly the agreement the renderer
   section exists to hold. Amends D-036 and D-047.
+
+- D-056 **The wax is crayon, not ink, and undo is a walk back.** Two things
+  the child feels at once. A mark's wax ran at a mean alpha of 233 with a
+  standard deviation of 11, four percent variation: high coverage with a
+  narrow swing is not wax on paper, it is flat ink with a faint texture,
+  which is exactly what a sign pen leaves and not what a crayon does. The
+  coverage stays high but the swing and the tooth grow, on a mark and on a
+  filled area alike, so the stick's own color still lands and the paper's
+  grain is what the eye reads as crayon. `WaxTest` now holds the variation
+  wide as well as the mean high, and still holds the drag stronger than the
+  tooth, so a mark stays stretched along the hand that made it. Undo, the
+  other half: one press took back exactly one mark and the button then went
+  dead, which is no use to a hand that drew three marks it did not mean. The
+  page now carries the paper as it was before each finished mark, up to
+  sixteen of them, and each press walks back one. The stack is bounded, and
+  drawing after a step back starts a fresh stack from the paper now on the
+  desk, so a press always returns to a paper the hand really made. Amends
+  D-036, D-047, D-055 and supersedes the one-step rule of D-045.
+- D-057 **The launcher icon is legible at twenty four pixels.** The mark was
+  a low, heavily leaned crayon lying in a wide swath, and at the size a
+  launcher really draws it the two elements merged into one red hook: the
+  crayon became unreadable exactly where it is seen most, on the home
+  screen. The crayon now stands almost upright, is the biggest thing in the
+  tile, and leans only twenty degrees; its blunt tip reaches down into a
+  swath that runs out to the right from just under it, so the two read as a
+  crayon and the wax it has just laid down even in a 24 pixel tile. The mark
+  is still the app's own crayon from `core/CrayonShape`, still mirrored so
+  the home screen faces the other way, and still fitted by its furthest
+  point from its own center so no launcher mask clips a tip. Supersedes
+  D-053's poster (the low, leaned crayon in a swath) while keeping its
+  sentence and its mirror.
+- D-058 **The bar and the capsule sit on one rail.** The top bar (home, the
+  sample, the sound switch) and the capsule (the step back, the crayon, the
+  rubber) are both rows of the same round controls, but they were each
+  centered at their own natural width, so the two rows did not line up and
+  the phone read as two objects that happened to be stacked. Both are now
+  laid on one shared rail, a single width the two rows fill, and the rail
+  stops growing on a very wide screen so a tablet never gets a fence of
+  controls. The capsule's own padding came in with it; its seats keep their
+  comfortable floor. See D-050.
+- D-059 **The rubber's own color never changes.** Selecting the rubber
+  repainted its sleeve in solid ink as well as lifting the seat, so the same
+  selection was drawn twice and the rubber appeared to change color when it
+  was picked up. A real rubber is one object whatever its owner is doing
+  with it, and the seat's own cardboard plate already says which tool is in
+  hand: the sleeve is the printed paper wound around the block, always, and
+  the plate is the whole selection mark. Amends D-051.
+- D-060 **The page is whole, always, and it is taller than it is wide.**
+  Bringing the paper closer was tried and it was wrong, and this is the
+  decision to take it out rather than patch it again. A window at twice the
+  scale showed a quarter of the sheet, so most of every picture went out of
+  reach, and the only way back was a small map of the sheet on a chip under
+  the capsule: a three year old will not find that map and cannot aim at it,
+  which makes the zoom a trap rather than a tool. The sheet is now always
+  whole; there is no zoom, no pan, no pinch and no double tap anywhere in
+  the app, no `core/PageView`, and no chip. The screen the work sat in was
+  also wrong: the sheet was forced square and centered, leaving two bands of
+  empty desk above and below it on a phone, and making the small things a
+  child is learning to aim at (a window frame, a sprinkle, a flower's
+  center) too small to hit. A page is now a sheet taller than it is wide by
+  `Page.ASPECT` (1.2), and every picture, composed in a square, is fitted
+  onto it once in `core/Pages.kt`. Page units are isotropic, so nothing is
+  stretched: a circle stays a circle and a mark is as wide whichever way the
+  hand dragged it. The taller sheet alone makes every element a fifth bigger
+  on a phone, and it is what lets the picture take the whole screen.
+  Supersedes D-046 and D-049, and with them the whole zoom feature.

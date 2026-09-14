@@ -175,7 +175,7 @@ object Wax {
         // would read as gloss on a stroke, and they are laid at the scale of
         // the hand that drew the line instead.
         val tooth = blur(noise(size, TOOTH_CELLS, TOOTH_CELLS, seed))
-        val drag = dragField(size, angleDeg, seed + 101, fine)
+        val drag = dragField(size, angleDeg, seed + 101)
         val broad = noise(
             size,
             if (fine) MARK_BROAD_CELLS else BROAD_CELLS,
@@ -216,40 +216,54 @@ object Wax {
      * coverage is high and the variation is what makes it wax. The old
      * model ran at under eighty percent and read as a marker: too pale to be
      * the stick the child picked up, and too flat to be pressed into paper.
+     *
+     * The second half of that lesson is what the coverage is *not* allowed
+     * to do: at ninety percent with a quarter of a swing it came out at a
+     * mean alpha of 233 with a standard deviation of 11, which is four
+     * percent variation. A mark at that coverage is not wax on paper, it is
+     * flat ink with a faint texture, which is exactly what a sign pen
+     * leaves. The mean stays high and the swing and the tooth grow instead,
+     * so the stick's own color still lands, and the paper's tooth is what
+     * the eye reads as crayon. See D-056.
      */
-    private const val COVERAGE = 0.90
-    private const val COVERAGE_SWING = 0.28
-    private const val COVERAGE_CURVE = 0.80
+    private const val COVERAGE = 0.88
+    private const val COVERAGE_SWING = 0.70
+    private const val COVERAGE_CURVE = 0.85
 
     /** How heavily each noise leans on a filled area. */
-    private const val COVERAGE_DRAG_WEIGHT = 1.60
-    private const val COVERAGE_TOOTH_WEIGHT = 0.60
-    private const val COVERAGE_BROAD_WEIGHT = 0.45
+    private const val COVERAGE_DRAG_WEIGHT = 3.20
+    private const val COVERAGE_TOOTH_WEIGHT = 1.20
+    private const val COVERAGE_BROAD_WEIGHT = 0.20
 
     /**
-     * The same numbers for a mark. A hand drawing a line presses a hair more
-     * evenly than a hand filling an area, but the grain is the paper's, and
-     * a mark is as opaque as the stick that made it for the same reason an
-     * area is: the color on the paper is the crayon's own.
+     * The same numbers for a mark, and here the tooth carries the texture.
+     *
+     * A mark is one narrow band of wax about a thirtieth of the page across,
+     * looked at from a reading distance: the paper's own tooth is a large
+     * part of what the child sees, so the tooth weight is high and the
+     * coverage swing is wide, while the drag stays the heaviest term so a
+     * mark is still stretched along the direction the hand moved (see
+     * `WaxTest.aMarkIsStretchedAlongTheHandThatMadeIt`).
      */
-    private const val MARK_COVERAGE = 0.90
-    private const val MARK_COVERAGE_SWING = 0.30
+    private const val MARK_COVERAGE = 0.88
+    private const val MARK_COVERAGE_SWING = 0.70
 
     /**
      * How heavily each noise leans on a mark. The drag is heavier here than
      * on an area, because a mark is a single line rather than a field of
      * passes: with nothing over it to carry the streak, the smear itself has
-     * to be what says a hand went along it.
+     * to be what says a hand went along it. The tooth is nearly as heavy, so
+     * the paper breaks the line the way it breaks a real one.
      */
-    private const val MARK_DRAG_WEIGHT = 2.40
-    private const val MARK_TOOTH_WEIGHT = 0.60
-    private const val MARK_BROAD_WEIGHT = 0.30
+    private const val MARK_DRAG_WEIGHT = 3.20
+    private const val MARK_TOOTH_WEIGHT = 1.20
+    private const val MARK_BROAD_WEIGHT = 0.20
 
     private const val TOOTH_CELLS = 40
     private const val BROAD_CELLS = 7
 
     /** A mark's own mottle, at the scale of a line rather than an area. */
-    private const val MARK_BROAD_CELLS = 16
+    private const val MARK_BROAD_CELLS = 20
 
     /** Noise on a lattice that wraps, at [cx] by [cy] cells over the tile. */
     private fun noise(size: Int, cx: Int, cy: Int, seed: Int): DoubleArray {
@@ -298,12 +312,13 @@ object Wax {
      * The offset along the drag leans a hair off the angle too, so the wisps
      * are not all parallel to each other either.
      */
-    private fun dragField(size: Int, angleDeg: Double, seed: Int, fine: Boolean): DoubleArray {
-        // A mark is looked at from close up, so its wisps are short against
-        // its own width: the same reach on a stroke a thirtieth of the page
-        // across would run off both ends of it.
-        val long = smear(size, angleDeg, seed, if (fine) 0.40 else 0.40, if (fine) 12 else 10)
-        val short = smear(size, angleDeg + 11.0, seed + 331, if (fine) 0.12 else 0.16, if (fine) 17 else 14)
+    private fun dragField(size: Int, angleDeg: Double, seed: Int): DoubleArray {
+        // One reach and one cell count for both kinds of surface: the drag is
+        // the hand, and the hand is the same whether it is filling a sky or
+        // drawing a line. The tile's own scale is what differs (a mark's
+        // tooth and mottle are finer), not the shape of the smear.
+        val long = smear(size, angleDeg, seed, 0.40, 12)
+        val short = smear(size, angleDeg + 11.0, seed + 331, 0.14, 18)
         return DoubleArray(size * size) { i -> long[i] * 0.62 + short[i] * 0.38 }
     }
 

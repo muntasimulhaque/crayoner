@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Stroke as WaxStroke
 import io.github.muntasimulhaque.crayoner.core.Vec2
 
@@ -42,25 +41,23 @@ import io.github.muntasimulhaque.crayoner.core.Vec2
  * the line that was printed on it, which is what happens on real paper,
  * where the print is under the wax and never made of it.
  *
- * [side] is the size of the frame the marks are drawn in, and [view] is the
- * piece of the paper that frame is showing, so a mark is exactly as wide and
- * exactly as far apart at any closeness: the same wax, looked at from
- * further away or nearer.
+ * [width] is the sheet's width in pixels, and page units are isotropic, so
+ * the tip and every point of a mark are placed by the same scale on both
+ * axes: a mark is exactly as wide, and exactly as far apart, whatever shape
+ * the sheet has.
  */
 fun DrawScope.drawStrokes(
     strokes: List<WaxStroke>,
-    side: Float,
-    view: PageView = PageView.Whole,
+    width: Float,
     print: Brush? = null,
 ) {
     if (strokes.isEmpty()) return
-    val zoom = view.scale.toFloat()
-    val tip = side * CRAYON_TIP_FRACTION * zoom
-    val eraser = side * ERASER_TIP_FRACTION * zoom
+    val tip = width * CRAYON_TIP_FRACTION
+    val eraser = width * ERASER_TIP_FRACTION
     for (stroke in strokes) {
         if (stroke.points.isEmpty()) continue
         if (stroke.erase) {
-            if (print != null) drawEraser(stroke, side, view, eraser, print)
+            if (print != null) drawEraser(stroke, width, eraser, print)
             continue
         }
         // The wax itself, and nothing over it: one drag of one crayon, of
@@ -70,30 +67,29 @@ fun DrawScope.drawStrokes(
         if (stroke.points.size == 1) {
             // The dot a pressed and lifted crayon leaves: one round of wax,
             // the width of the tip.
-            drawCircle(wax, radius = tip * 0.5f, center = at(stroke.points[0], view, side))
+            drawCircle(wax, radius = tip * 0.5f, center = pagePoint(stroke.points[0], width))
             continue
         }
-        drawPath(inView(stroke.points, view, side), wax, style = tipStroke(tip))
+        drawPath(pathOfPoints(stroke.points, width), wax, style = tipStroke(tip))
     }
 }
 
 /** One eraser mark: the printed page, laid back down along the rubber. */
 private fun DrawScope.drawEraser(
     stroke: WaxStroke,
-    side: Float,
-    view: PageView,
     width: Float,
+    eraser: Float,
     print: Brush,
 ) {
     if (stroke.points.size == 1) {
         drawCircle(
             print,
-            radius = width * 0.5f,
-            center = at(stroke.points[0], view, side),
+            radius = eraser * 0.5f,
+            center = pagePoint(stroke.points[0], width),
         )
         return
     }
-    drawPath(inView(stroke.points, view, side), print, style = tipStroke(width))
+    drawPath(pathOfPoints(stroke.points, width), print, style = tipStroke(eraser))
 }
 
 internal fun tipStroke(width: Float) = Stroke(
@@ -103,33 +99,16 @@ internal fun tipStroke(width: Float) = Stroke(
 )
 
 /** One point of page units, in the frame the child is looking at. */
-internal fun at(p: Vec2, view: PageView, side: Float): Offset {
-    val w = view.inWindow(p)
-    return Offset((w.x * side).toFloat(), (w.y * side).toFloat())
-}
-
-/** One point of page units, in the page's own space. */
-internal fun pagePoint(p: Vec2, side: Float): Offset =
-    Offset((p.x * side).toFloat(), (p.y * side).toFloat())
+internal fun pagePoint(p: Vec2, width: Float): Offset =
+    Offset((p.x * width).toFloat(), (p.y * width).toFloat())
 
 /** One polyline of page units, in the frame the child is looking at. */
-internal fun inView(points: List<Vec2>, view: PageView, side: Float): Path = Path().apply {
+internal fun pathOfPoints(points: List<Vec2>, width: Float): Path = Path().apply {
     if (points.isEmpty()) return@apply
-    val first = at(points[0], view, side)
+    val first = pagePoint(points[0], width)
     moveTo(first.x, first.y)
     for (i in 1 until points.size) {
-        val o = at(points[i], view, side)
-        lineTo(o.x, o.y)
-    }
-}
-
-/** One polyline of page units, in the page's own space. */
-internal fun pathOfPoints(points: List<Vec2>, side: Float): Path = Path().apply {
-    if (points.isEmpty()) return@apply
-    val first = pagePoint(points[0], side)
-    moveTo(first.x, first.y)
-    for (i in 1 until points.size) {
-        val o = pagePoint(points[i], side)
+        val o = pagePoint(points[i], width)
         lineTo(o.x, o.y)
     }
 }

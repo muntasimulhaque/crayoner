@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,30 +19,28 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.github.muntasimulhaque.crayoner.core.PageView
+import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
 
-/** The shape of a real sheet of paper: square, with only the least
- *  softening so the corners do not alias. */
+/** The shape of a real sheet of paper: only the least softening so the
+ *  corners do not alias. */
 val PaperShape = RoundedCornerShape(2.dp)
 
 /**
- * The sheet: one square of paper, sized to the room it is given, with the
+ * The sheet: one sheet of paper, sized to the room it is given, with the
  * child's own picture printed on it.
  *
- * It is paper, not a card: real corners, square, the way a sheet torn from a
- * pad has them, and the soft shadow of one lying on a desk.
+ * It is paper, not a card: real corners, the way a sheet torn from a pad has
+ * them, and the soft shadow of one lying on a desk. It is taller than it is
+ * wide ([Page.ASPECT]), the way a page of a coloring pad is, so the picture
+ * gets the whole of a phone's screen instead of a square with two bands of
+ * empty desk above and below it.
  *
- * A finger on the paper draws, always, whether the sheet is whole or brought
- * close. Dragging on the paper is how a child colors, and no gesture on the
- * picture may ever take that away: a pinch is two fingers on a page a small
- * hand is drawing on, which is the mistake that ruins the mark under it, and
- * a double tap is what two dots in the same place looks like when a three
- * year old makes them. What moves the paper is a thing that is not the
- * picture: the chip on the desk below, which brings it closer and puts it
- * back, or the two small coins that slide the window across it once it is
- * close (see [ZoomStrip]).
+ * A finger on the paper draws, always. Dragging on the paper is how a child
+ * colors, and no gesture on the picture may ever take that away: there is no
+ * pinch and no double tap anywhere on the sheet, because a hand rests on the
+ * page while it colors. A page opens whole and stays whole.
  */
 @Composable
 internal fun SheetOf(
@@ -50,36 +49,30 @@ internal fun SheetOf(
     onStrokeMove: (Vec2) -> Unit,
     onStrokeEnd: () -> Unit,
     onColorArea: (Int) -> Unit,
-    side: Dp,
+    width: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val sidePx = with(LocalDensity.current) { side.roundToPx() }
-    // The finished marks are handed to the canvas as one flattened layer,
-    // and the mark still under the finger is the only thing drawn live, so
-    // the finger's own frame costs the same whether the page carries three
-    // marks or three hundred.
-    val view = state.view
+    val height = width * Page.ASPECT.toFloat()
+    val widthPx = with(LocalDensity.current) { width.roundToPx() }
+    val heightPx = with(LocalDensity.current) { height.roundToPx() }
     Box(
-        modifier = modifier.size(side),
+        modifier = modifier.size(width = width, height = height),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .size(side)
+                .size(width = width, height = height)
                 .buttonShadow(PaperShape, elevation = 8.dp)
                 .clip(PaperShape)
                 .background(CrayonerColors.Card)
-                // A closer look is the paper drawn bigger, so only the picture
-                // grows: the sheet's own frame never moves and the paper is
-                // clipped to it, which is what makes a closer look a window on
-                // the sheet rather than a bigger sheet on a smaller desk.
                 .clipToBounds()
-                .pointerInput(state.page.id, sidePx) {
-                    if (sidePx <= 0) return@pointerInput
-                    val s = sidePx.toFloat()
+                .pointerInput(state.page.id, widthPx, heightPx) {
+                    if (widthPx <= 0 || heightPx <= 0) return@pointerInput
+                    val w = widthPx.toFloat()
+                    val h = heightPx.toFloat()
                     fun at(offset: Offset) = Vec2(
-                        (offset.x / s).toDouble().coerceIn(0.0, 1.0),
-                        (offset.y / s).toDouble().coerceIn(0.0, 1.0),
+                        (offset.x / w).toDouble().coerceIn(0.0, 1.0),
+                        (offset.y / h).toDouble().coerceIn(0.0, Page.ASPECT),
                     )
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
@@ -105,28 +98,21 @@ internal fun SheetOf(
                     }
                 },
         ) {
-            // The window is not a transform applied to a finished picture:
-            // PageCanvas draws the page itself through [view], at this frame's
-            // own resolution, so a closer look is a sharper look and the paper
-            // is never enlarged from a smaller drawing.
             PageCanvas(
                 page = state.page,
                 fills = emptyMap(),
                 strokes = state.progress.strokes,
                 generation = state.marks,
                 live = state.live,
-                view = view,
-                sidePx = sidePx,
+                widthPx = widthPx,
+                heightPx = heightPx,
                 modifier = Modifier.fillMaxSize(),
             )
             // The screen reader's view of the page: one focusable target per
-            // area, named for what it is. Area targets are placed in page
-            // units and scaled by the window, so the target a reader lands on
-            // is the part of the picture the child would touch.
+            // area, named for what it is and what color the book prints it in.
             PageSemantics(
                 page = state.page,
                 crayon = state.crayon,
-                view = view,
                 onColor = { index -> onColorArea(index) },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -134,7 +120,12 @@ internal fun SheetOf(
     }
 }
 
-/** The sheet, sized to the space its parent gives it. */
+/**
+ * The sheet, sized to the space its parent gives it: as wide as it can be,
+ * and as tall as the page's own proportion needs, whichever runs out first.
+ * Nothing is ever squeezed: the paper keeps its own shape and the desk takes
+ * the leftover.
+ */
 @Composable
 internal fun Sheet(
     state: Screen.Coloring,
@@ -145,14 +136,19 @@ internal fun Sheet(
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        val side: Dp = minOf(maxWidth, maxHeight).coerceAtLeast(SHEET_MIN)
+        // The paper's own proportion, in both directions: a sheet as wide as
+        // the room and as tall as its shape needs, capped so it still fits
+        // when the room is the short side.
+        val byWidth = maxWidth
+        val byHeight = maxHeight / Page.ASPECT.toFloat()
+        val width = minOf(byWidth, byHeight).coerceAtLeast(SHEET_MIN)
         SheetOf(
             state = state,
             onStrokeStart = onStrokeStart,
             onStrokeMove = onStrokeMove,
             onStrokeEnd = onStrokeEnd,
             onColorArea = onColorArea,
-            side = side,
+            width = width,
         )
     }
 }

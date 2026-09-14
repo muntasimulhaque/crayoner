@@ -1,14 +1,15 @@
 package io.github.muntasimulhaque.crayoner.core
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The one step back a child gets. It is a rule about the work, not about the
- * screen, so it is held here with no device anywhere near it: one press of
- * undo, and a page that is never surprised by a press.
+ * The steps back a child gets. They are a rule about the work, not about the
+ * screen, so they are held here with no device anywhere near it: one press
+ * takes back one finished mark, pressing again keeps walking back, and a
+ * page is never surprised by a press.
  */
 class DraftTest {
 
@@ -19,6 +20,7 @@ class DraftTest {
     fun aFreshSheetHasNothingToUndo() {
         val draft = Draft.Empty
         assertTrue(draft.isEmpty)
+        assertFalse(draft.canUndo)
         assertEquals(0, draft.progress.strokes.size)
         // The press lands on nothing and the page does not move: there is no
         // way for a child to tell undo apart from a mark that did not happen.
@@ -26,18 +28,81 @@ class DraftTest {
     }
 
     @Test
-    fun undoTakesBackOnlyTheMarkTheHandJustFinished() {
+    fun onePressTakesBackOneMarkAndPressingAgainKeepsWalkingBack() {
+        // A child who drew three marks they did not mean gets all three
+        // back, one press each, rather than a single mark and a dead button.
         val draft = Draft.Empty
             .color(Crayons.RED, line(Crayons.RED, 0.2).points)
             .color(Crayons.BLUE, line(Crayons.BLUE, 0.4).points)
             .color(Crayons.GREEN, line(Crayons.GREEN, 0.6).points)
         assertEquals(3, draft.progress.strokes.size)
-        val after = draft.undo()
-        assertEquals(2, after.progress.strokes.size)
-        assertEquals(Crayons.BLUE, after.progress.strokes.last().color)
-        // And only that: there is no stack of steps behind it.
-        assertNull(after.last)
-        assertEquals(2, after.undo().progress.strokes.size)
+
+        val first = draft.undo()
+        assertEquals(2, first.progress.strokes.size)
+        assertEquals(Crayons.BLUE, first.progress.strokes.last().color)
+
+        val second = first.undo()
+        assertEquals(1, second.progress.strokes.size)
+        assertEquals(Crayons.RED, second.progress.strokes.last().color)
+
+        val third = second.undo()
+        assertTrue(third.isEmpty)
+        assertFalse(third.canUndo)
+        // And a press on the empty page is a press that simply lands.
+        assertEquals(third, third.undo())
+    }
+
+    @Test
+    fun everyStepBackIsAPaperTheHandReallyMade() {
+        // The page a press returns to is never invented: it is exactly the
+        // paper that was on the desk before that mark was drawn.
+        val one = line(Crayons.RED, 0.2)
+        val two = line(Crayons.BLUE, 0.4)
+        val three = line(Crayons.GREEN, 0.6)
+        val draft = Draft.Empty.add(one).add(two).add(three)
+        val afterTwo = draft.undo()
+        assertEquals(Progress.Empty.with(one).with(two), afterTwo.progress)
+        val afterOne = afterTwo.undo()
+        assertEquals(Progress.Empty.with(one), afterOne.progress)
+        val afterNone = afterOne.undo()
+        assertEquals(Progress.Empty, afterNone.progress)
+    }
+
+    @Test
+    fun drawingAgainAfterAStepBackLeavesNoPhantomFuture() {
+        // The stack holds papers, not a redo queue. Drawing after a step back
+        // starts afresh from the paper now on the desk, and no press can
+        // bring a mark back that the child has drawn over.
+        val draft = Draft.Empty
+            .color(Crayons.RED, line(Crayons.RED, 0.2).points)
+            .color(Crayons.BLUE, line(Crayons.BLUE, 0.4).points)
+            .undo()
+        assertEquals(1, draft.progress.strokes.size)
+        val redrawn = draft.color(Crayons.GREEN, line(Crayons.GREEN, 0.6).points)
+        assertEquals(2, redrawn.progress.strokes.size)
+        assertEquals(Crayons.GREEN, redrawn.progress.strokes.last().color)
+        // One press takes back the green mark, then the red one, and stops.
+        assertEquals(1, redrawn.undo().progress.strokes.size)
+        assertFalse(redrawn.undo().undo().canUndo)
+    }
+
+    @Test
+    fun theStepsBackAreBounded() {
+        // A page worked on for an hour must not grow a copy of itself, so the
+        // history is a fixed depth. The paper is still whole; only the walk
+        // back is finite.
+        var draft = Draft.Empty
+        for (i in 0 until Draft.UNDO_DEPTH + 6) {
+            draft = draft.color(Crayons.RED, line(Crayons.RED, (i % 100) / 100.0).points)
+        }
+        assertEquals(Draft.UNDO_DEPTH, draft.past.size)
+        var steps = 0
+        while (draft.canUndo) {
+            draft = draft.undo()
+            steps++
+            assertTrue("the walk back never ended", steps <= Draft.UNDO_DEPTH)
+        }
+        assertEquals(Draft.UNDO_DEPTH, steps)
     }
 
     @Test
@@ -56,6 +121,7 @@ class DraftTest {
         val draft = Draft.Empty.color(Crayons.RED, emptyList())
         assertTrue("an empty mark landed on the paper", draft.isEmpty)
         assertTrue(draft.undo() === draft)
+        assertTrue(draft.past.isEmpty())
     }
 
     @Test
@@ -91,7 +157,7 @@ class DraftTest {
         // Nothing happened in front of the child, so there is nothing for
         // the hand to take back: opening a saved picture and pressing undo
         // does nothing at all.
-        assertNull(draft.last)
+        assertFalse(draft.canUndo)
         assertTrue(draft.undo() === draft)
     }
 }

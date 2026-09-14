@@ -23,6 +23,14 @@ import io.github.muntasimulhaque.crayoner.core.pages.umbrellaPage
  * ever locked. Every page's areas are colored in crayons from the one box
  * ([Crayons]), so whatever the child holds, every area of every picture can
  * be matched exactly.
+ *
+ * Every picture is composed in a square by its own builder, because a square
+ * is the simplest box to draw in, and then fitted onto the taller sheet a
+ * child really colors on ([Page.ASPECT]): the authored square is scaled
+ * about its own center so it lands exactly on the paper, corner to corner,
+ * which makes every subject a fifth bigger without stretching anything. A
+ * full-bleed background grows a little past the paper's own left and right
+ * edges and is clipped to the sheet, so no picture ever shows bare desk.
  */
 object Pages {
 
@@ -43,7 +51,26 @@ object Pages {
         trainPage(),
         lighthousePage(),
         castlePage(),
-    )
+    ).map { it.laidOut() }
 
     fun byId(id: String): Page? = all.firstOrNull { it.id == id }
+}
+
+/**
+ * One authored square composition, fitted onto the taller sheet.
+ *
+ * This is the one place the two coordinate spaces meet, so a picture builder
+ * never has to know about the page's proportions and no page can come out
+ * stretched. The ground is the whole paper by definition, and every other
+ * shape is scaled uniformly onto it.
+ */
+private fun Page.laidOut(): Page {
+    val laid = regions.mapIndexed { index, region ->
+        if (isGround(index)) {
+            Region(region.id, region.kind, region.fillArgb, listOf(rect(0.0, 0.0, 1.0, Page.ASPECT)))
+        } else {
+            region.copy(parts = region.parts.map { it.fitted(Page.ASPECT) })
+        }
+    }
+    return Page(id, laid)
 }

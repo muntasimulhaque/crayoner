@@ -92,11 +92,17 @@ fun HomeScreen(
 /**
  * The wall's own nameplate: the name, and the brand's mark beside it.
  *
- * The mark sits to the right of the word, leaning away from it, and it is
- * the app's own crayon lying down: the same object the launcher icon is made
- * of, in the brand's coral. It is drawn in its own square rather than in a
- * wide, short box, because a crayon's shape is measured from its own length
- * and a box that is not the shape's own proportion stretches it.
+ * The mark sits to the right of the word, the way a crayon is set down
+ * beside something it has just written, and it lies along the desk line
+ * rather than floating at the word's own height: a crayon resting on a table
+ * has one end on the table and the other on the thing it is next to, so tip
+ * and base share the same baseline as the word. The old mark was centered
+ * on the word's middle and then tilted, which left it hovering like a
+ * sticker and made the header look like two unrelated objects.
+ *
+ * It is drawn in its own square rather than in a wide, short box, because a
+ * crayon's shape is measured from its own length and a box that is not the
+ * shape's own proportion stretches it.
  *
  * There is no rule under the word and no switch beside it. The crayon-drawn
  * line that used to underline the name has been taken off: it read as a
@@ -111,23 +117,26 @@ private fun ShelfHeader() {
                 .fillMaxWidth()
                 .height(64.dp)
                 .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
         ) {
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displaySmall,
                 color = CrayonerColors.Ink,
             )
-            Spacer(Modifier.width(14.dp))
-            // The brand's own mark, lying down the way a crayon rests on a
-            // desk, leaning away from the word it belongs to. The box is the
-            // crayon's own proportion, so nothing about it is stretched.
+            Spacer(Modifier.width(12.dp))
+            // The brand's own mark, lying on the word's own baseline the way
+            // a crayon rests beside what it just wrote. The tip points right
+            // (away from the word) and the box is the crayon's own
+            // proportion, so nothing about it is stretched. It is nudged
+            // down a hair so the tip sits on the same line as the letters
+            // rather than hovering above it.
             CrayonGlyph(
                 color = CrayonerColors.Coral,
                 lying = true,
                 modifier = Modifier
-                    .size(width = 62.dp, height = 62.dp * CrayonShape.THICKNESS.toFloat())
-                    .rotate(12f),
+                    .padding(bottom = 7.dp)
+                    .size(width = 60.dp, height = 60.dp * CrayonShape.THICKNESS.toFloat()),
             )
         }
     }
@@ -258,7 +267,7 @@ private fun HungPicture(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
+                    .aspectRatio(1f / Page.ASPECT.toFloat())
                     .clip(RoundedCornerShape(3.dp))
                     .border(
                         width = 1.dp,
@@ -303,15 +312,17 @@ private fun WashiTape(modifier: Modifier = Modifier) {
     }
 }
 
-/** The sample picture filling the card's square. */
+/** The sample picture filling the card's sheet. */
 @Composable
 private fun SamplePlate(page: Page) {
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
-        val sidePx = with(LocalDensity.current) { maxWidth.roundToPx() }
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().aspectRatio(1f / Page.ASPECT.toFloat())) {
+        val widthPx = with(LocalDensity.current) { maxWidth.roundToPx() }
+        val heightPx = with(LocalDensity.current) { maxHeight.roundToPx() }
         PageCanvas(
             page = page,
             fills = remember(page) { sampleFills(page) },
-            sidePx = sidePx,
+            widthPx = widthPx,
+            heightPx = heightPx,
             // A card never stalls a frame: until its picture is rendered,
             // it draws itself live, and the shelf renders every card off
             // the main thread as soon as it knows how wide one is.

@@ -39,6 +39,17 @@ data class Region(
  * deliberately skip its outline, because a real coloring page prints no
  * border around the sheet. [isGround] states that rule in one place and the
  * structural tests hold every page to it.
+ *
+ * ## The sheet is a sheet
+ *
+ * A page is a sheet torn from a pad, and a pad is not square: a page is
+ * taller than it is wide by [ASPECT], and every picture in the book is
+ * composed in that rectangle. Page units are isotropic, one definition of a
+ * pixel shared by both axes, so a circle stays a circle at any size and a
+ * stroke is exactly as wide whichever way the hand dragged it. The x axis
+ * runs 0 to 1 and the y axis 0 to [ASPECT]; the taller frame is what lets a
+ * picture use the whole of a phone's screen instead of living in a square
+ * with two bands of empty desk above and below it.
  */
 data class Page(
     val id: String,
@@ -58,7 +69,7 @@ data class Page(
     /**
      * The region a touch at [p] lands on: the topmost one containing the
      * point, or -1 when the point is outside the paper. The ground covers the
-     * whole square, so a touch on the page always lands somewhere, which is
+     * whole sheet, so a touch on the paper always lands somewhere, which is
      * how the first touch knows which color the child is reaching for.
      */
     fun regionIndexAt(p: Vec2): Int {
@@ -66,5 +77,18 @@ data class Page(
             if (regions[i].contains(p)) return i
         }
         return -1
+    }
+
+    companion object {
+        /**
+         * A page's height divided by its width. The sheet is taller than it
+         * is wide, the way a real coloring pad is, so the picture can take
+         * the whole screen rather than fitting inside a square and leaving
+         * the rest of the desk bare.
+         */
+        const val ASPECT = 1.2
+
+        /** The height of the sheet in page units, for clarity at call sites. */
+        const val HEIGHT = ASPECT
     }
 }

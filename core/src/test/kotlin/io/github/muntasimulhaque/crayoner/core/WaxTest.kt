@@ -99,17 +99,44 @@ class WaxTest {
         // The wax surface has to be mostly down and honestly uneven: an
         // average near opaque, with real variation, so a colored area reads
         // as wax pressed into paper rather than as flat paint with speckle.
+        //
+        // The variation is the half that a high coverage alone cannot buy.
+        // Run at a mean of 233 with a standard deviation of 11, a mark is
+        // four percent away from flat: that is ink with a faint texture, the
+        // mark a sign pen leaves, which is exactly what this app must not
+        // draw. So the standard deviation is held here too, at a floor a real
+        // crayon clears and a flat fill cannot.
         val pixels = Wax.surface(Crayons.RED, 64, -30.0, 0, 12345)
         assertEquals(64 * 64, pixels.size)
         val alphas = pixels.map { (it ushr 24) and 0xFF }
         val mean = alphas.average()
+        val sd = kotlin.math.sqrt(alphas.sumOf { (it - mean) * (it - mean) } / alphas.size)
         assertTrue("the wax is see through: mean alpha $mean", mean > 180.0)
         assertTrue("the wax is a flat fill: mean alpha $mean", mean < 250.0)
         assertTrue("the wax has no tooth at all", alphas.max() - alphas.min() > 40)
+        assertTrue(
+            "the wax is flat ink with a texture, not wax: mean alpha $mean, sd $sd",
+            sd >= 20.0,
+        )
         // And it is the crayon's own color, never a gray veil over it.
         for (p in pixels) {
             assertEquals("the wax changed the color", Crayons.RED and 0xFFFFFF, (p and 0xFFFFFF).toLong())
         }
+    }
+
+    @Test
+    fun aMarkIsMadeOfTheSameWaxAnAreaIs() {
+        // A mark is the child's own wax, so it has to carry the same material
+        // an area does: the same high mean and the same real variation, not
+        // a narrower, flatter surface because it happens to be a line. This
+        // is the bug that made a mark read as ink while the sample read as
+        // crayon, and it lives on the fine tile a mark is drawn with.
+        val fine = Wax.surface(Crayons.BLUE, 64, -24.0, 0, 0x5A17, fine = true)
+        val alphas = fine.map { (it ushr 24) and 0xFF }
+        val mean = alphas.average()
+        val sd = kotlin.math.sqrt(alphas.sumOf { (it - mean) * (it - mean) } / alphas.size)
+        assertTrue("the mark is see through: mean alpha $mean", mean > 180.0)
+        assertTrue("the mark is flat ink: mean alpha $mean, sd $sd", sd >= 20.0)
     }
 
     @Test

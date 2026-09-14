@@ -277,14 +277,15 @@ private fun DrawScope.drawWrapperRules(
  * here is a crayon, and the difference has to read at the size of a
  * fingertip: the rubber is a block with corners, not a stick with a cone.
  *
- * [armed] is the whole selection mark, and it is the language the rest of
- * the app already speaks: the sleeve goes solid ink, so a child can see from
- * across the room which thing their finger is holding. It is drawn in the
- * same ink, at the same weight, as every other outline mark in the app.
+ * The rubber itself never changes color, whether it is lying on the desk or
+ * picked up. A real rubber is one object whatever its owner is doing with
+ * it, and a sleeve that fills in when the tool is in hand paints the object
+ * a second time: the seat's own plate already says which thing is picked
+ * up, and one selection language is enough. The sleeve is the printed paper
+ * wound around the block, always, in the app's one `Cardboard`.
  */
 @Composable
 fun EraserGlyph(
-    armed: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val ink = CrayonerColors.Ink
@@ -324,7 +325,7 @@ fun EraserGlyph(
         // thing on the object that says rubber rather than eraser block.
         val band = path(listOf(on(0.52f, 0f), on(1f, 0f), on(1f, 1f), on(0.52f, 1f)))
         drawPath(body, CrayonerColors.Card)
-        drawPath(band, if (armed) ink else CrayonerColors.Cardboard)
+        drawPath(band, CrayonerColors.Cardboard)
         drawPath(body, ink, style = line)
         // The fold where the paper is wrapped on, at the band's own edge.
         drawLine(ink, on(0.52f, 0f), on(0.52f, 1f), line.width, StrokeCap.Round)

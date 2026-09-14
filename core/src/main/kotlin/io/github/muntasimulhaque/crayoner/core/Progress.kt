@@ -121,7 +121,7 @@ object Strokes {
         val points = ArrayList<Vec2>(rows * 4)
         var flip = false
         for (row in 0..rows) {
-            val y = (b.y + b.h * row / rows).coerceIn(0.0, 1.0)
+            val y = (b.y + b.h * row / rows).coerceIn(0.0, Page.ASPECT)
             // Walk the row and keep its widest run inside the region: a
             // row across a ring crosses it twice, and the gap between the
             // crossings is not part of the area.
@@ -246,7 +246,9 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
                     val x = pair.substring(0, cut).toDoubleOrNull() ?: continue
                     val y = pair.substring(cut + 1).toDoubleOrNull() ?: continue
                     if (x.isNaN() || y.isNaN()) continue
-                    if (x < 0.0 || x > 1.0 || y < 0.0 || y > 1.0) continue
+                    // A point is on the paper when it is on the sheet: x runs
+                    // 0 to 1 and y runs 0 to the page's own height.
+                    if (x < 0.0 || x > 1.0 || y < 0.0 || y > Page.ASPECT) continue
                     points += Vec2(x, y)
                 }
                 if (points.isNotEmpty()) strokes += Stroke(argb, points, erase)

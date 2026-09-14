@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -21,14 +22,13 @@ import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Page
-import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
 
 /**
  * The coloring screen: the sheet, and the things a hand reaches for.
  *
- * The sheet takes the room it can: on a phone the cylinder of tools sits
+ * The sheet takes the room it can: on a phone the capsule of tools sits
  * under it, on anything wide and sideways it stands beside it. There is no
  * picture above the page, because the picture lives in the bar as one more
  * round button the same size and shape as the rest: look at it any time, and
@@ -52,8 +52,6 @@ fun PlayScreen(
     onErase: (Boolean) -> Unit,
     onOpenBox: (Boolean) -> Unit,
     onUndo: () -> Unit,
-    onZoom: (Double) -> Unit,
-    onPan: (Vec2) -> Unit,
     onHome: () -> Unit,
     onSound: (Boolean) -> Unit,
     onPeek: (Boolean) -> Unit,
@@ -63,8 +61,8 @@ fun PlayScreen(
     // One answer per finished mark, and only one: the small touch of wax that
     // says the hand did something. It is never a judgment of what the mark
     // did, because the app has no opinion about where the color went. A step
-    // back is the same answer, because a hand that just took a mark off the
-    // paper also did something.
+    // back is answered the same way, because a hand that just took a mark off
+    // the paper also did something.
     val answers = state.marks
     LaunchedEffect(answers) {
         if (answers != 0L) haptics.paint()
@@ -88,6 +86,7 @@ fun PlayScreen(
                     onSample = { onPeek(true) },
                     page = state.page,
                     announce = state.progress.strokes.isEmpty(),
+                    modifier = Modifier.widthIn(max = RAIL_WIDTH).fillMaxWidth(),
                 )
             }
             val sheet: @Composable (Modifier) -> Unit = { modifier ->
@@ -101,19 +100,22 @@ fun PlayScreen(
                 )
             }
             val tools: @Composable (Modifier) -> Unit = { modifier ->
-                ToolBox(
-                    state = state,
+                ToolCapsule(
+                    selected = state.crayon ?: Crayons.RED,
+                    erasing = state.erasing,
+                    boxOpen = state.boxOpen,
+                    canUndo = state.canUndo,
                     onOpenBox = onOpenBox,
-                    onPick = onPick,
                     onErase = onErase,
                     onUndo = onUndo,
-                    onZoom = onZoom,
-                    onPan = onPan,
                     modifier = modifier,
                 )
             }
             if (wide) {
-                Column(Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     bar()
                     Row(Modifier.fillMaxWidth().weight(1f)) {
                         sheet(Modifier.weight(1f).fillMaxSize())
@@ -121,16 +123,21 @@ fun PlayScreen(
                             modifier = Modifier.width(TOOLS_WIDTH).fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            tools(Modifier.fillMaxWidth().padding(end = 12.dp))
+                            tools(Modifier.padding(horizontal = 12.dp))
                         }
                     }
                 }
             } else {
                 Column(
                     modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
                     bar()
+                    // The sheet is given every pixel the capsule does not
+                    // need. It keeps the sheet's own proportion, so a phone
+                    // shows a tall page rather than a square with two bands
+                    // of empty desk above and below it.
                     sheet(Modifier.fillMaxWidth().weight(1f))
                     Box(
                         modifier = Modifier.fillMaxWidth().height(TOOLS_HEIGHT),
@@ -166,56 +173,25 @@ fun PlayScreen(
  */
 private val WIDE_AT = 640.dp
 
+/**
+ * The one width the bar and the capsule share. The top bar holds the home
+ * button, the sample and the sound switch; the capsule holds the step back,
+ * the crayon and the rubber. Both are rows of the same round controls, so
+ * both are laid on the same rail: the two ends of the screen line up, and
+ * the phone reads as one object rather than two rows that happen to be
+ * centered. On a very wide screen the rail stops growing, because a control
+ * row stretched across a tablet is a fence.
+ */
+internal val RAIL_WIDTH = 360.dp
+
 /** How tall the bar is, in both shapes. Home, the sample, the sound switch. */
 private val BAR_HEIGHT = 66.dp
 
-/** How much room the tools are given under the sheet on a phone. */
-private val TOOLS_HEIGHT = 172.dp
+/** How much room the capsule is given under the sheet on a phone. */
+private val TOOLS_HEIGHT = 120.dp
 
 /** The tool column's width beside the sheet. */
 private val TOOLS_WIDTH = 300.dp
-
-/**
- * The things a hand reaches for while coloring, in one column under (or
- * beside) the sheet: the capsule with the step back, the crayon and the
- * rubber in it, and under that the little chip that brings the paper closer
- * and moves it about once it is close. Both are quiet objects on the desk;
- * the sheet is what the child is here for.
- */
-@Composable
-private fun ToolBox(
-    state: Screen.Coloring,
-    onOpenBox: (Boolean) -> Unit,
-    onPick: (Long) -> Unit,
-    onErase: (Boolean) -> Unit,
-    onUndo: () -> Unit,
-    onZoom: (Double) -> Unit,
-    onPan: (Vec2) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        ToolCapsule(
-            selected = state.crayon ?: Crayons.RED,
-            erasing = state.erasing,
-            boxOpen = state.boxOpen,
-            canUndo = state.canUndo,
-            onOpenBox = onOpenBox,
-            onErase = onErase,
-            onUndo = onUndo,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        ZoomStrip(
-            view = state.view,
-            onZoom = onZoom,
-            onPan = onPan,
-            onReset = { onZoom(PageView.WHOLE_ZOOM) },
-        )
-    }
-}
 
 /**
  * Home on the left, then the sample and the sound switch. One size, one
@@ -229,10 +205,10 @@ private fun TopBar(
     onSample: () -> Unit,
     page: Page,
     announce: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .height(BAR_HEIGHT)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,

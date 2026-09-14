@@ -29,12 +29,11 @@ it and the finished picture in the top bar, a tap away.
 | | |
 |---|---|
 | **The picture wall** | Every picture hung like a child's drawing, taped to the wall with washi tape, each leaning at a small angle of its own. Nothing on the wall is locked, stamped or marked: the pictures are all there from the first launch. |
-| **A page** | A real sheet of paper lying on the desk, with the finished picture in the bar as one more round button: one tap holds it up large, one tap puts it back. |
+| **A page** | A real sheet of paper lying on the desk, taller than it is wide the way a page in a coloring pad is, with the finished picture in the bar as one more round button: one tap holds it up large, one tap puts it back. |
 | **The crayons** | One capsule with a crayon, a rubber and a step back in it. Press the crayon and all thirty two colors of a real box open over the page, with the color in hand a little longer and drawn with a heavier line. Every area of every picture asks for a color that box holds. |
 | **Coloring** | Your finger draws the crayon. Nothing is filled in for you: a mark follows your hand, lays down wax the way wax behaves, and covers the printed lines it is dragged over. |
 | **The rubber** | Press it and your crayon becomes an eraser: it takes the wax off and leaves the printed line, exactly as a rubber does on paper. Nothing is ever wiped. |
-| **One step back** | Press undo and the last mark comes off the paper. One mark and one press, never a stack: a fresh page has nothing to undo and the press simply lands. |
-| **A closer look** | The chip below the capsule brings the paper twice as close, so a child can work on a window frame or a sprinkle. One press puts it back whole. There is no pinch: a hand resting on the page must never zoom the picture it is drawing on. |
+| **One step back** | Press undo and the last mark comes off the paper. Press it again and the one before that comes off too: the marks walk back one press at a time, so a hand that drew three it did not mean gets all three back. A fresh page has nothing to undo and the press simply lands. |
 | **No score** | No progress bar, no timer, no stamp, no fail state, and nothing that measures the work. The app never decides that a picture is finished, because a coloring is finished when the child says so, and that is not the app's business. |
 
 Every mark is saved a moment after it is finished, so a phone call, a
@@ -106,10 +105,11 @@ The organizing principle: **the rules are pure data and functions; Android
 is a player of those rules, not a participant.** A page is a list of areas,
 an area is a list of shapes, and progress is the list of marks the child's
 hand has made: each one a line with a color on it, or a line made with the
-rubber. How much of the paper is on screen is `core/PageView`, a window onto
-the same sheet rather than a second mode, so a closer look changes nothing
-about the work. That is why the whole coloring engine is playable in
-plain JVM tests, and why the store screenshots render straight from state.
+rubber. A page is a sheet of paper taller than it is wide, and its pictures
+are fitted onto it from the square they are composed in, so the whole screen
+is picture and nothing is stretched. That is why the whole coloring engine is
+playable in plain JVM tests, and why the store screenshots render straight
+from state.
 
 See [AGENTS.md](AGENTS.md) for the working rules, the design decisions and
 the lessons behind them.

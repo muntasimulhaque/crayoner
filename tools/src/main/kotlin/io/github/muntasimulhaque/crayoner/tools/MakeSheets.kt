@@ -23,6 +23,9 @@ import javax.imageio.ImageIO
  * generator here.
  */
 private const val TILE = 300
+
+/** The sheet's own height: a page is taller than it is wide by Page.ASPECT. */
+private const val SHEET = (TILE * 1.2).toInt()
 private const val GAP = 22
 private const val MARGIN = 40
 private const val LABEL = 40
@@ -50,7 +53,7 @@ fun main(args: Array<String>) {
 private fun grid(pages: List<Page>, sample: Boolean, rootDir: File): BufferedImage {
     val rows = (pages.size + COLUMNS - 1) / COLUMNS
     val w = MARGIN * 2 + COLUMNS * TILE + (COLUMNS - 1) * GAP
-    val h = MARGIN * 2 + rows * (TILE + LABEL) + (rows - 1) * GAP
+    val h = MARGIN * 2 + rows * (SHEET + LABEL) + (rows - 1) * GAP
     val image = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
     val g = image.createGraphics()
     g.color = PAPER
@@ -59,7 +62,7 @@ private fun grid(pages: List<Page>, sample: Boolean, rootDir: File): BufferedIma
         val col = index % COLUMNS
         val row = index / COLUMNS
         val x = MARGIN + col * (TILE + GAP)
-        val y = MARGIN + row * (TILE + LABEL + GAP)
+        val y = MARGIN + row * (SHEET + LABEL + GAP)
         card(g, page, x, y, sample, rootDir)
     }
     g.dispose()
@@ -69,13 +72,13 @@ private fun grid(pages: List<Page>, sample: Boolean, rootDir: File): BufferedIma
 private fun pairs(pages: List<Page>, rootDir: File): BufferedImage {
     val cell = TILE
     val w = MARGIN * 2 + cell * 2 + GAP
-    val h = MARGIN * 2 + pages.size * (TILE + LABEL) + (pages.size - 1) * GAP
+    val h = MARGIN * 2 + pages.size * (SHEET + LABEL) + (pages.size - 1) * GAP
     val image = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
     val g = image.createGraphics()
     g.color = PAPER
     g.fillRect(0, 0, w, h)
     for ((index, page) in pages.withIndex()) {
-        val y = MARGIN + index * (TILE + LABEL + GAP)
+        val y = MARGIN + index * (SHEET + LABEL + GAP)
         card(g, page, MARGIN, y, sample = true, rootDir = rootDir)
         card(g, page, MARGIN + cell + GAP, y, sample = false, rootDir = rootDir)
     }
@@ -86,13 +89,17 @@ private fun pairs(pages: List<Page>, rootDir: File): BufferedImage {
 /** One picture card: the page on a white plate, its name and count under it. */
 private fun card(g: Graphics2D, page: Page, x: Int, y: Int, sample: Boolean, rootDir: File) {
     g.color = CARD
-    g.fill(RoundRectangle2D.Double(x.toDouble(), y.toDouble(), TILE.toDouble(), TILE.toDouble(), 24.0, 24.0))
-    val page2 = g.create(x, y, TILE, TILE) as Graphics2D
+    g.fill(
+        RoundRectangle2D.Double(
+            x.toDouble(), y.toDouble(), TILE.toDouble(), SHEET.toDouble(), 24.0, 24.0,
+        ),
+    )
+    val page2 = g.create(x, y, TILE, SHEET) as Graphics2D
     val fills = if (sample) RenderKit.sampleFills(page) else emptyMap()
     RenderKit.renderPage(page2, page, TILE.toDouble(), fills)
     page2.dispose()
     val label = if (sample) "${page.id} (sample)" else "${page.id} (${page.regionCount} areas)"
-    drawText(g, label, x + TILE / 2, y + TILE + 26, rootDir)
+    drawText(g, label, x + TILE / 2, y + SHEET + 26, rootDir)
 }
 
 private fun drawText(g: Graphics2D, text: String, centerX: Int, baselineY: Int, rootDir: File) {

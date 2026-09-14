@@ -13,17 +13,21 @@ import io.github.muntasimulhaque.crayoner.core.Region
  * drawn on top, so a later area's color covers an earlier area's line and
  * hidden edges vanish.
  *
- * The paths for one page at one size are built once and kept (see
+ * The paths for one page at one width are built once and kept (see
  * [PageCanvas]), because a page is otherwise rebuilt on every touch of a
  * crayon, and the whole printed picture is kept as pixels (see [PageImage]);
  * a finger crossing the paper then costs one image and a handful of marks,
  * however rich the wax underneath is.
+ *
+ * Page units are isotropic, so one pixel scale serves both axes: a page
+ * drawn [width] pixels across is [Page.ASPECT] times that tall, and a circle
+ * stays a circle on the taller sheet.
  */
-class PageGeometry(private val page: Page, private val side: Float) {
+class PageGeometry(private val page: Page, private val width: Float) {
 
     /** One path per area, the union of its parts. */
     val outlines: List<Path> = page.regions.map { region ->
-        unionOf(region.parts, side.toDouble())
+        unionOf(region.parts, width.toDouble())
     }
 
     /** The area at [index], for the wax its color is made of. */

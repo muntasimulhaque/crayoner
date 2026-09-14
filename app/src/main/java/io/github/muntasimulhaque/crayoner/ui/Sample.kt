@@ -79,15 +79,18 @@ fun SampleButton(
         contentAlignment = Alignment.Center,
     ) {
         // The whole picture, mounted in the round button like a picture in a
-        // round frame. It is inset well inside the coin: a picture pressed
-        // right up against the rim of the thing holding it looks like it is
-        // spilling out of it, and this one never does.
-        val side = size * PICTURE_IN_SET
-        Box(modifier = Modifier.size(side)) {
+        // round frame. It is inset well inside the coin, and it is the
+        // sheet's *height* that is fitted to that inset: a page is taller
+        // than it is wide, so fitting by width would push its top and bottom
+        // corners out past the rim of the coin holding it.
+        val height = size * PICTURE_IN_SET
+        val width = height / Page.ASPECT.toFloat()
+        Box(modifier = Modifier.size(width = width, height = height)) {
             PageCanvas(
                 page = page,
                 fills = remember(page) { sampleFills(page) },
-                sidePx = with(LocalDensity.current) { side.roundToPx() },
+                widthPx = with(LocalDensity.current) { width.roundToPx() },
+                heightPx = with(LocalDensity.current) { height.roundToPx() },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -161,16 +164,26 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
         val plateMax = minOf(maxWidth - margin * 2f, maxHeight - margin * 2f)
         val nameBlock = 50.dp
         val platePadding = 16.dp
-        val side = (plateMax - platePadding * 2 - nameBlock).coerceAtLeast(96.dp)
-        val total = side + platePadding * 2 + nameBlock
-        val sidePx = with(density) { side.roundToPx() }
+        // The sheet keeps its own proportion inside the plate, so a page is
+        // as tall in the peek as it is on the desk. Both the room's width
+        // and its height are respected: the sheet is as wide as it can be
+        // and as tall as its own shape needs, and the plate wraps it, name
+        // and all.
+        val innerW = (plateMax - platePadding * 2).coerceAtLeast(96.dp)
+        val innerH = (plateMax - platePadding * 2 - nameBlock).coerceAtLeast(96.dp)
+        val side = minOf(innerW, innerH / Page.ASPECT.toFloat()).coerceAtLeast(96.dp)
+        val sheet = side * Page.ASPECT.toFloat()
+        val totalW = side + platePadding * 2
+        val totalH = sheet + platePadding * 2 + nameBlock
+        val widthPx = with(density) { side.roundToPx() }
+        val heightPx = with(density) { sheet.roundToPx() }
         Box(
-            modifier = Modifier.size(total),
+            modifier = Modifier.size(width = totalW, height = totalH),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(total)
+                    .size(width = totalW, height = totalH)
                     .buttonShadow(PaperShape, elevation = 12.dp)
                     .clip(PaperShape)
                     .background(CrayonerColors.Card)
@@ -181,11 +194,12 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Box(modifier = Modifier.size(side)) {
+                    Box(modifier = Modifier.size(width = side, height = sheet)) {
                         PageCanvas(
                             page = page,
                             fills = remember(page) { sampleFills(page) },
-                            sidePx = sidePx,
+                            widthPx = widthPx,
+                            heightPx = heightPx,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }

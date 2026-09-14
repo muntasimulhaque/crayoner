@@ -25,11 +25,19 @@ import javax.imageio.ImageIO
  * The mark is one sentence with no words in it: a crayon standing on its
  * point, and the band of color it has just laid down beside itself. A child
  * of three cannot read the word Crayoner, and a crayon on its own says
- * writing tool, not coloring book. A crayon whose own tip sits in a swath of
- * wax says the whole thing at a glance: this is the thing you draw with, and
- * this is what comes out when you draw with it. The swath is broad and
- * ragged, the way a wax crayon dragged across paper covers it, so it reads
- * as a picture being colored in rather than as a line drawn with a pen.
+ * writing tool, not coloring book. A crayon whose own tip sits just above a
+ * swath of wax says the whole thing at a glance: this is the thing you draw
+ * with, and this is what comes out when you draw with it. The swath is broad
+ * and ragged, the way a wax crayon dragged across paper covers it, so it
+ * reads as a picture being colored in rather than as a line drawn with a
+ * pen.
+ *
+ * The crayon stands close to upright with only a small lean, and it is the
+ * biggest thing in the tile. That is what makes the mark survive a
+ * launcher's smallest size: a low, heavily leaned crayon and a swath merge
+ * into one red hook at twenty four pixels, while an upright stick whose tip
+ * reaches down into the swath is unmistakably a crayon at any size. See
+ * D-057.
  *
  * The crayon is the app's own object, drawn point down at the very lean the
  * tray in the app gives it, and in the crayon's real material: the wax color
@@ -109,36 +117,40 @@ internal enum class Layer { TILE, FOREGROUND, MONO }
 private object Mark {
 
     /** The crayon's tip, and how long the stick is. */
-    val TIP: Vec2 = Vec2(0.30, 0.78)
-    const val LENGTH = 0.62
+    val TIP: Vec2 = Vec2(0.30, 0.60)
+    const val LENGTH = 0.85
 
     /**
      * The lean, in degrees, turning the crayon's axis from straight up
-     * toward the left. This is the tray's own posting, so the icon's crayon
-     * and the app's crayon are one object and not two drawings of one.
+     * toward the right. It is small on purpose: a stick that leans far reads
+     * at a launcher's size as a blob with a hook, while an almost upright
+     * stick with a blunt tip reaches down into the swath and reads as a
+     * crayon even in a twenty four pixel tile.
      */
-    const val LEAN = -14.0
+    const val LEAN = 20.0
 
     /**
      * The line the hand traveled, as control points of a smooth curve. The
      * swath is drawn as a band of growing width along this line, so the
-     * stroke is thin where the crayon touched down and broad where the hand
-     * was moving, which is what a real drag looks like.
+     * stroke is broad where the hand was moving and narrows back toward the
+     * tip, which is what a real drag looks like. It runs out from just below
+     * the tip to the right, so the mark reads as wax the crayon has just
+     * laid down rather than as a second object beside it.
      */
     val SWATH: List<Vec2> = listOf(
-        Vec2(0.24, 0.775),
-        Vec2(0.52, 0.810),
-        Vec2(0.80, 0.790),
-        Vec2(1.02, 0.720),
+        Vec2(0.22, 0.72),
+        Vec2(0.50, 0.80),
+        Vec2(0.78, 0.83),
+        Vec2(1.02, 0.82),
     )
 
     /** How wide the swath is at the tip, and at its far end. */
-    const val SWATH_START = 0.12
-    const val SWATH_END = 0.22
+    const val SWATH_START = 0.13
+    const val SWATH_END = 0.16
 
     /** How the swath's edges are finished: samples, and how ragged they are. */
     const val SWATH_STEPS = 64
-    const val SWATH_RAGGED = 0.10
+    const val SWATH_RAGGED = 0.08
 }
 
 /** A point in the mark's own box, in the icon's own pixels. */

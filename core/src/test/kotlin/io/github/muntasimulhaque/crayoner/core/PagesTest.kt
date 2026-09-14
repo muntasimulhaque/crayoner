@@ -64,13 +64,20 @@ class PagesTest {
 
     @Test
     fun everyRegionIsInsideThePaperAndBigEnoughToTap() {
+        // A picture is composed in a square and fitted onto the taller sheet,
+        // so a full-bleed band (a sea, a lawn, a wall) reaches a little past
+        // the paper's own left and right edges and is clipped by the canvas.
+        // The slack is exactly the fit's own margin, no more, so a shape that
+        // really left the sheet still fails.
+        val slack = (Page.ASPECT - 1.0) / 2.0 + 0.02
         for (page in Pages.all) {
             for (region in page.regions) {
                 assertTrue("${page.id}/${region.id} has no shapes", region.parts.isNotEmpty())
                 val b = region.bounds
                 assertTrue(
                     "${page.id}/${region.id} leaves the paper: $b",
-                    b.x >= -0.02 && b.y >= -0.02 && b.right <= 1.02 && b.bottom <= 1.02,
+                    b.x >= -slack && b.y >= -slack &&
+                        b.right <= 1.0 + slack && b.bottom <= Page.ASPECT + slack,
                 )
                 assertTrue(
                     "${page.id}/${region.id} is a sliver (${region.area})",
@@ -82,15 +89,17 @@ class PagesTest {
 
     @Test
     fun everyRegionCanBeSeenAndTouched() {
-        // One fine grid per page: a point is "seen" when this region is the
-        // topmost one under it, exactly the rule taps use. A region nobody
-        // can see could never be colored, so it must not ship.
+        // One fine grid of the whole sheet: a point is "seen" when this
+        // region is the topmost one under it, exactly the rule taps use. A
+        // region nobody can see could never be colored, so it must not ship.
+        // The sheet is taller than it is wide, so the grid walks its full
+        // height rather than the unit square.
         val steps = 160
         for (page in Pages.all) {
             val seen = IntArray(page.regionCount)
             for (i in 0 until steps) {
                 for (j in 0 until steps) {
-                    val p = Vec2((i + 0.5) / steps, (j + 0.5) / steps)
+                    val p = Vec2((i + 0.5) / steps, (j + 0.5) / steps * Page.ASPECT)
                     val index = page.regionIndexAt(p)
                     if (index >= 0) seen[index]++
                 }
@@ -110,7 +119,7 @@ class PagesTest {
         for (page in Pages.all) {
             for (i in 0 until steps) {
                 for (j in 0 until steps) {
-                    val p = Vec2((i + 0.5) / steps, (j + 0.5) / steps)
+                    val p = Vec2((i + 0.5) / steps, (j + 0.5) / steps * Page.ASPECT)
                     assertTrue(
                         "${page.id} leaves a hole at $p",
                         page.regionIndexAt(p) >= 0,
@@ -143,7 +152,8 @@ class PagesTest {
             val b = ground.bounds
             assertTrue(
                 "${page.id} ground is not the whole paper: $b",
-                b.x <= 0.001 && b.y <= 0.001 && b.right >= 0.999 && b.bottom >= 0.999,
+                b.x <= 0.001 && b.y <= 0.001 &&
+                    b.right >= 0.999 && b.bottom >= Page.ASPECT - 0.001,
             )
             assertTrue(
                 "${page.id} ground is not a plain rectangle",

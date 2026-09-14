@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -64,20 +65,23 @@ fun ToolCapsule(
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        // The three seats and the padding around them are one width, so the
-        // capsule's seat size follows from the room it was given: a capsule
-        // that has to shrink shrinks its seats rather than hanging off the
-        // side of the desk. The floor keeps a seat a comfortable target, and
-        // the capsule is wrapped rather than allowed to overflow, so a screen
-        // narrower than three targets stacks them instead of cutting one.
-        val reach = (maxWidth / SEAT_SPAN).coerceIn(COIN_MIN, COIN_MAX)
+        // The three seats sit on the same rail the top bar uses, one at each
+        // end and one in the middle, so the capsule and the bar above it line
+        // up at both edges and the phone reads as one object rather than two
+        // rows that happen to be centered. The seat size follows from the
+        // room the rail got, with a floor a small hand can hit and a ceiling
+        // so a tablet never gets a fence: the extra room goes into the air
+        // between the seats, not into fat seats.
+        val rail = minOf(maxWidth, RAIL_WIDTH)
+        val reach = (rail / SEAT_SPAN).coerceIn(COIN_MIN, COIN_MAX)
         Row(
             modifier = Modifier
+                .width(rail)
                 .buttonShadow(RoundedCornerShape(reach * 0.62f), elevation = 5.dp)
                 .clip(RoundedCornerShape(reach * 0.62f))
                 .background(CrayonerColors.Card)
-                .padding(horizontal = reach * 0.12f, vertical = reach * 0.10f),
-            horizontalArrangement = Arrangement.spacedBy(reach * 0.08f),
+                .padding(horizontal = RAIL_PAD, vertical = reach * 0.08f),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             UndoSeat(
@@ -126,35 +130,56 @@ fun ToolCapsule(
  * are drawn as large as they can be without touching.
  */
 private val COIN_MIN = 62.dp
+
+/**
+ * The shortest a seat is ever drawn. The ceiling is the taste rule: the
+ * capsule is a tool lying on a desk under the paper and must not compete with
+ * the picture, so it only grows on a tablet where there is room to spare.
+ */
 private val COIN_MAX = 66.dp
 
 /**
- * How many seats' worth of width one seat takes up, including its own gaps
- * and the capsule's padding: three seats, the two gaps between them and the
- * padding at either end, all of them a fixed fraction of the seat itself.
+ * Three seats, their air and the capsule's own padding, as seat widths. The
+ * capsule and the top bar share [RAIL_WIDTH], so the leftmost and rightmost
+ * controls of the two rows line up; the seat's own size follows from the
+ * rail, and the room left over becomes the air between the seats rather than
+ * a bigger target.
  */
-private val SEAT_SPAN = 3.34f
+private val SEAT_SPAN = 3.30f
+
+/**
+ * How far the outer controls sit from the rail's own edge, the same on the
+ * capsule and on the [RAIL_WIDTH] bar above it, so the first seat and the
+ * home button share a left edge and the last seat and the sound switch share
+ * a right one.
+ */
+private val RAIL_PAD = 14.dp
 
 /**
  * The rubber's seat. Press it and the crayon becomes an eraser: the next
  * mark rubs wax off the paper. Press it again and the crayon comes back.
+ *
+ * The rubber itself looks the same whether it is picked up or lying down:
+ * the seat's own plate is the whole selection mark (see [CapsuleSeat]).
  */
 @Composable
 private fun RubberSeat(armed: Boolean, onClick: () -> Unit, size: Dp) {
     val label = stringResource(if (armed) R.string.eraser_on else R.string.eraser_off)
     CapsuleSeat(onClick = onClick, armed = armed, size = size, label = label) {
-        EraserGlyph(armed = armed, modifier = Modifier.size(size * 0.70f))
+        EraserGlyph(modifier = Modifier.size(size * 0.70f))
     }
 }
 
 /**
- * The step back: the mark the hand finished last comes off the paper.
+ * The step back: the mark the hand finished last comes off the paper, and
+ * pressed again it keeps walking back, one finished mark a press.
  *
  * It is drawn quieter until there is a mark to take back, so a child who
  * presses it on a fresh sheet can see that the app heard the press and that
  * there was simply nothing to put down. Nothing is confirmed, nothing is
- * asked twice, and no press can lose a picture: one mark at a time is all
- * this ever takes.
+ * asked twice, and no press can lose a picture: the marks come back in the
+ * reverse order they were drawn, and the rubber is what changes a whole
+ * picture.
  */
 @Composable
 private fun UndoSeat(ready: Boolean, onClick: () -> Unit, size: Dp) {

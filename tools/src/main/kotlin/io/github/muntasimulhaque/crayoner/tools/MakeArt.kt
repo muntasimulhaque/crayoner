@@ -3,7 +3,6 @@ package io.github.muntasimulhaque.crayoner.tools
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Strokes
-import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.RenderingHints
@@ -46,42 +45,23 @@ object MakeArt {
         // The picture plate on the left: the sailboat, the book's first page,
         // half colored by a child's own hand. Every mark on it is a real
         // scribble from the same code the app draws with, so the banner shows
-        // the app and not an artist's idea of the app.
-        val plate = 372
-        val px = 62
-        val py = (h - plate) / 2
+        // the app and not an artist's idea of the app. The plate keeps the
+        // page's own proportion, taller than it is wide, the way a sheet in
+        // the pad is, so the banner shows the shape of the thing the child
+        // really colors.
+        val plateW = 300
+        val plateH = (plateW * 1.2).toInt()
+        val px = 74
+        val py = (h - plateH) / 2
         g.color = Color(0xFFFFFDF8.toInt(), true)
         g.fill(
             RoundRectangle2D.Double(
                 px.toDouble() - 14, py.toDouble() - 14,
-                plate.toDouble() + 28, plate.toDouble() + 28,
+                plateW.toDouble() + 28, plateH.toDouble() + 28,
                 6.0, 6.0,
             ),
         )
-        // The tape at its corners, the same roll the app uses: short strips
-        // crossing each corner, half on the paper and half on the desk behind
-        // it.
-        for ((corner, angle) in listOf(
-            (px - 4 to py - 4) to 45,
-            (px + plate + 4 to py - 4) to -45,
-            (px - 4 to py + plate + 4) to -45,
-            (px + plate + 4 to py + plate + 4) to 45,
-        )) {
-            val tape = java.awt.geom.AffineTransform.getRotateInstance(
-                Math.toRadians(angle.toDouble()), corner.first.toDouble(), corner.second.toDouble(),
-            )
-            val strip = tape.createTransformedShape(
-                Rectangle2D.Double(
-                    corner.first - 38.0, corner.second - 11.0, 76.0, 22.0,
-                ),
-            )
-            g.color = Color(0xE0EFD9A8.toInt(), true)
-            g.fill(strip)
-            g.color = Color(0x599C7F45.toInt(), true)
-            g.stroke = BasicStroke(2.0f)
-            g.draw(strip)
-        }
-        val plateG = g.create(px, py, plate, plate) as Graphics2D
+        val plateG = g.create(px, py, plateW, plateH) as Graphics2D
         val page = Pages.byId("sail") ?: error("the sail page is gone")
         // Everything printed, and then the child's own hand: the sky, the
         // clouds and the sea rubbed in with real wax, the sail and the boat
@@ -93,10 +73,10 @@ object MakeArt {
         val half = page.regions.indices
             .filter { it in started }
             .associateWith { page.regions[it].fillArgb }
-        RenderKit.renderPage(plateG, page, plate.toDouble(), half)
+        RenderKit.renderPage(plateG, page, plateW.toDouble(), half)
         plateG.dispose()
 
-        drawCleanString(g, "Crayoner", "chewy.ttf", 124f, 0xFFFFFDF8.toInt(), 486f, 250f, rootDir)
+        drawCleanString(g, "Crayoner", "chewy.ttf", 124f, 0xFFFFFDF8.toInt(), 470f, 250f, rootDir)
         drawCleanString(
             g,
             "Color the picture, just like the book.",
