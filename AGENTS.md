@@ -139,14 +139,27 @@ Sixteen pictures. Tap one and color it.
   the child's mark is in that color. From then on they are holding a crayon
   and every mark uses it. A three year old's first act must never end in
   nothing happening.
-- **The tray is one capsule with three seats: a crayon, a rubber, and a
-  step back.** A three year old does not choose between thirty two crayons,
-  they pick one up and draw. The crayon in the capsule always shows the color
-  in hand, and pressing it opens the box: thirty two real crayon colors, laid
+- **The tray is one capsule with three seats, and the order runs the way
+  the hand works: step back, crayon, rubber.** A three year old does not
+  choose between thirty two crayons, they pick one up and draw. The crayon
+  sits in the middle, where a thumb naturally lands; the step back sits at
+  the left, out of the way, because it is the one thing on the capsule that
+  undoes rather than draws; the rubber sits at the right, as the other end
+  of the same axis. The crayon in the capsule always shows the color in
+  hand, and pressing it opens the box: thirty two real crayon colors, laid
   out the way the box lays them out, with the color in hand lying among the
   others, a little longer and drawn with a heavier line. That difference is
   the whole selection mark; there is no ring, no plate, no tick and no
-  shadow.
+  shadow. See D-050.
+- **A seat that is picked up wears the capsule's own cardboard.** One
+  selection language for every seat, the same plate, the same color, the
+  same lift: a plate under the thing in hand and nothing else. Nothing on
+  the capsule may flash a different color for a different tool. See D-051.
+- **Every outline mark in the app is struck at one weight.** The house, the
+  speaker, the rubber and the step back share one line, as a fraction of
+  each mark's own box, chosen for the smallest size a mark is ever drawn
+  at. A row of buttons is read as one object, so a hairline beside a marker
+  looks like two apps. See D-052.
 - **The rubber takes wax off the paper and leaves the print.** Press it and
   the next mark erases: the rubber is drawn with the printed page itself as
   its paint, so the wax goes and the printed line stays, which is what a
@@ -157,12 +170,19 @@ Sixteen pictures. Tap one and color it.
   nothing to undo and the press simply lands. The rubber is what a child uses
   to change their mind about a whole picture; undo is the one step a hand
   that drew a mark it did not mean needs. See D-045.
-- **The paper can be brought closer, and never by accident.** A page always
-  opens whole. The chip on the desk below the capsule slides between the
-  whole sheet and a look twice as close, and its own left end puts the paper
-  back. There is no pinch and no double tap: a hand rests on the page while
-  it colors, and a two finger gesture on a page a three year old is drawing
-  on is exactly the mistake that ruins the mark under it. See D-046.
+- **The paper can be brought closer, never by accident, and everything on
+  it stays reachable.** A page always opens whole. The chip on the desk
+  below the capsule slides between the whole sheet and a look twice as
+  close, and its own left end puts the paper back. Once it is close, the
+  same chip's little map of the sheet is how the child moves about it: a
+  press or a drag anywhere on the map puts that part of the page in the
+  middle of the screen, with the window marked on the map as the darker
+  square inside the sheet. Without that map a closer look would put the
+  corners of every picture out of reach, which is worse than not zooming.
+  There is no pinch and no double tap anywhere on the paper: a hand rests on
+  the page while it colors, and a two finger gesture on a page a three year
+  old is drawing on is exactly the mistake that ruins the mark under it.
+  See D-046 and D-049.
 - **The sheet is a sheet of paper, and it is not taped down.** Square
   corners, a soft shadow, and the tape is gone from its four corners: a
   sheet you can bring closer to your face is a sheet nobody taped to a desk.
@@ -240,20 +260,26 @@ them is a bug this project already shipped once.
   drawn display face. There is no second face and nothing set in type: the
   words and the pictures come from the same hand, and the words are painted
   with wax (`WaxInkBrush`) rather than filled flat.
-- **The mark: one crayon, point down**, wax coral, wrapper in the wax's own
-  color with its two dark rules, with real wax grain over it, drawn point
-  down because that is how a crayon is held and how a child recognizes it.
-  A dark cone tip or a pale sleeve turns a crayon into a pencil, and this
-  app must never show a pencil. The crayon's geometry lives once, in
-  `core/CrayonShape`, its four colors once, in `core/CrayonInk`, and its one
-  drawing lives in `IconDesign.paintCrayon` in `:tools`; it serves the
-  launcher icon, the store icon, the shelf header and the capsule through
-  `CrayonGlyph` on the device. **Nothing is drawn around the wax**: a real
-  crayon has no line around it, and at the size of a tray seat the line is
-  most of what the eye reads, which is what turns a drawing of a crayon into
-  a diagram of one. **The launcher icon is that same mark mirrored**, so on
-  the home screen the crayon faces the other way while being the same crayon,
-  at the same lean and the same proportions.
+- **The launcher icon is the app's whole sentence in two strokes: a crayon
+  standing on its point, and the band of wax it has just laid down.** A
+  child of three cannot read the word Crayoner, and a crayon alone says
+  writing tool, not coloring book; a crayon whose own tip sits in a swath of
+  wax says the whole thing at a glance, and the swath is broad and ragged
+  the way a wax crayon dragged across paper covers it. The crayon is the
+  app's own object, point down, at the tray's own lean, in the crayon's real
+  material: the wax color of the stick, the cone a shade deeper, the wrapper
+  in the wax's own hue, and the two dark rules a real wrapper wears. A dark
+  cone tip or a pale sleeve turns a crayon into a pencil, and this app must
+  never show a pencil. The crayon's geometry lives once, in `core/CrayonShape`,
+  its four colors once, in `core/CrayonInk`, and its one drawing lives in
+  `IconDesign.paintCrayon` in `:tools`; it serves the launcher icon, the
+  store icon, the shelf header and the capsule through `CrayonGlyph` on the
+  device. **Nothing is drawn around the wax**: a real crayon has no line
+  around it, and at the size of a tray seat the line is most of what the eye
+  reads, which is what turns a drawing of a crayon into a diagram of one.
+  **The launcher icon is that same mark mirrored**, so on the home screen the
+  crayon faces the other way while being the same crayon, at the same lean
+  and the same proportions. See D-053.
 - **The shelf is a wall of pictures, not a record.** Every card is the
   finished sample with the picture's name under it, and nothing on the wall
   says which picture was opened, colored or left alone. See D-041.
@@ -313,10 +339,14 @@ same picture, and they must agree on eight things:
    a sixteen pixel mottle, because a tooth alone reads as dirt and a mottle
    alone reads as a stain.
 5. **The same crayon mark.** The child's marks are drawn by both renderers,
-   in the same order and with the same alphas: the wax body, then a narrower
-   second pass of the same wax. Nothing is drawn around a mark: a wide faint
-   pass reads as a border, and wax dragged over paper simply stops.
-   `CRAYON_TIP_FRACTION` in both files, 0.030, and
+   in the same order and with the same alphas: one pass of the wax body,
+   and nothing else. A second, narrower pass down the middle was tried and
+   it was wrong: two translucent passes of one color multiply instead of
+   averaging, so the core of every mark came out almost pure and the grain
+   was pushed out of the one place it was most needed, and the pale edges
+   the pair left behind read as marker ink. Nothing is drawn around a mark
+   either: a wide faint pass reads as a border, and wax dragged over paper
+   simply stops. `CRAYON_TIP_FRACTION` in both files, 0.030, and
    `ERASER_TIP_FRACTION`, 0.044. A mark the child
    made on the device and the same mark in the store art are the same mark.
    An eraser mark is not painted in a color at all: it lays the printed page
@@ -761,3 +791,86 @@ the screenshots, all in the same session.
   a seam at eleven angles, both tile kinds, and measures that the material
   really is stretched along the hand that made it: both of these are bugs
   that no close reading of the code caught and one store capture did.
+- D-049 **A closer look is movable, and a thing that is not the paper moves
+  it.** Bringing the paper closer was half a feature: a window at twice the
+  scale shows a quarter of the sheet, `PageView` pins it to the paper's edge,
+  and a page opened at the middle could therefore never show its own
+  corners. The child could zoom in and then find most of the picture out of
+  reach, which is worse than not zooming at all. The chip on the desk now
+  carries a little map of the sheet with the part on screen marked on it, and
+  a press or a drag anywhere on that map puts that part of the page in the
+  middle of the screen. `PageView.slid` is the one new rule in :core, held to
+  the paper by the same clamp that was already there, so a child throwing the
+  paper about can never see the desk. Nothing about the work moves: every
+  mark is a line of page coordinates and a window is only what a renderer is
+  looking at. The map is a second control on the chip, which is a thing on
+  the desk and not the picture, so the one rule that matters survives: no
+  gesture on the paper itself may ever move it, because a hand rests on the
+  page while it colors. See D-046.
+- D-050 **The capsule runs the way the hand works: step back, crayon,
+  rubber.** The order was crayon, rubber, undo, which put the one control
+  that undoes work at the far end of the row, where a wandering thumb lands
+  it by accident, and the crayon, which is picked up a hundred times a
+  session, off center. The crayon now sits in the middle, where a thumb
+  naturally falls; the step back sits at the left, out of the way, because a
+  child should have to mean it; and the rubber sits at the right, as the
+  other end of the same axis. The capsule's seats also came down from 62 to
+  84 dp to a floor of 62 and a ceiling of 66, with tighter padding: three
+  comfortable targets already cost most of a phone's width, and the capsule
+  is a tool lying on a desk under the paper, not a second thing to look at.
+  The glyphs inside the seats grew to use the room instead, so nothing got
+  harder to hit. Amends D-045.
+- D-051 **Every selected seat wears the same plate, in the capsule's own
+  cardboard.** The rubber's seat filled with a sepia and the step back's with
+  nothing at all, so the same state was drawn two ways and the row read as
+  two kinds of control rather than one row of three. Every seat now wears the
+  same round plate, in the same `Cardboard`, lifted the same way; which tool
+  is in hand reads at a glance and no seat means anything different from any
+  other. Amends D-028 and D-034's selection language.
+- D-052 **One line weight for every outline mark in the app.** The house and
+  the speaker were drawn at a hairline and the tray's rubber and step back at
+  a marker, so the top bar and the floating capsule looked like two different
+  apps. All of them now come out of one `iconStroke`, one fraction of each
+  mark's own box, and the fraction is chosen for the smallest size a mark is
+  ever drawn at: a mark that reads at 24 dp reads at 26 dp, and the other
+  way round is not true.
+- D-053 **The launcher icon says what the app is without a word.** The icon
+  was one large crayon, mirrored, which a child of three cannot read: it
+  says writing tool at least as readily as coloring book, and at the size of
+  a launcher tile its proportions read as a bullet. The mark is now two
+  strokes, a crayon standing point down with the band of wax it has just
+  drawn beside it, because that is the whole app in one glance and it needs
+  no reading. The band is a filled shape of growing width with ragged edges,
+  not a wide line, which is what a crayon drag really leaves; the whole mark
+  leans and is mirrored exactly as before, so it is still the app's own
+  crayon facing the other way. The drawing lives in `Mark` and `MarkBox` in
+  `:tools`, measured from its own geometry and fitted by its furthest point
+  from its own center, so no launcher mask can clip a tip at any density.
+  Supersedes D-040's "the icon is the crayon alone" while keeping its mirror.
+- D-054 **The crayon rules were drawn off the end of the crayon, and every
+  screen showed the two hairs.** `drawWrapperRules` was handed a pixel
+  measure and used it as an inset into a band measured in the crayon's own
+  thicknesses, so each rule landed roughly a hundred thicknesses along the
+  stick and past its end: two thin coral hairs floating beside the mark, on
+  the shelf header, in the capsule, in the box and in the icon. `RULE_INSET`
+  is now a share of the band's own length, so the two unit systems can no
+  longer be mixed, and `CrayonShapeTest` holds both rules inside the band
+  and inside the crayon. The bug had been in every capture since the wrapper
+  gained its rules, and it was found by making the rules green on a device
+  and watching the hairs turn green with them: a mark drawn in a color
+  nothing else in the app uses is worth more than any amount of reading.
+- D-055 **The wax is the stick's color, and a mark is one pass of it.** Two
+  things were wrong with the child's own marks, and they had the same
+  cause. The wax surface laid down an average coverage of 0.78, so a mark
+  came out a pale wash of the crayon rather than the crayon; and the mark
+  renderer then drew two translucent passes of it, one narrow over one wide,
+  and two translucent passes of a color multiply rather than average: the
+  core of every mark came out nearly pure, the grain was pushed out of the
+  one place it was most needed, and the pale edges the pair left behind are
+  exactly what makes ink from a pen and not wax from a stick. Coverage is
+  now 0.90 for an area and a mark alike, with the variation carried by the
+  drag and the tooth instead of by a low average, and a mark is a single
+  pass. Measured on a device, a red mark over paper now carries an implied
+  alpha of 0.95 of the crayon's own hex, against 0.75 before. Both renderers
+  changed together, because this is exactly the agreement the renderer
+  section exists to hold. Amends D-036 and D-047.
