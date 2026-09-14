@@ -106,7 +106,106 @@ class DraftTest {
     }
 
     @Test
-    fun undoTakesBackAnEraserMarkLikeAnyOtherMark() {
+    fun aPageReadBackFromASaveCarriesNoStepBack() {
+        val progress = Progress.Empty.with(line(Crayons.RED, 0.2))
+        val draft = Draft.of(progress)
+        assertEquals(1, draft.progress.strokes.size)
+        // Nothing happened in front of the child, so there is nothing for
+        // the hand to take back: opening a saved picture and pressing undo
+        // does nothing at all.
+        assertFalse(draft.canUndo)
+        assertTrue(draft.undo() === draft)
+        // And nothing to put forward either, for the same reason.
+        assertFalse(draft.canRedo)
+        assertTrue(draft.redo() === draft)
+    }
+
+    @Test
+    fun redoPutsBackExactlyWhatUndoTookOff() {
+        // The two are one pair: whatever a step back took off the paper, a
+        // step forward puts back on it, unchanged, wherever it was in the
+        // stack of marks.
+        val one = line(Crayons.RED, 0.2)
+        val two = line(Crayons.BLUE, 0.4)
+        val three = line(Crayons.GREEN, 0.6)
+        val drawn = Draft.Empty.add(one).add(two).add(three)
+        val back = drawn.undo().undo()
+        assertEquals(1, back.progress.strokes.size)
+        val forward = back.redo()
+        assertEquals(2, forward.progress.strokes.size)
+        assertEquals(Progress.Empty.with(one).with(two), forward.progress)
+        val allTheWay = forward.redo()
+        assertEquals(drawn.progress, allTheWay.progress)
+        // And at the top of the stack there is nothing more to put back.
+        assertFalse(allTheWay.canRedo)
+        assertTrue(allTheWay.redo() === allTheWay)
+    }
+
+    @Test
+    fun aFreshSheetHasNothingToRedo() {
+        assertFalse(Draft.Empty.canRedo)
+        assertTrue(Draft.Empty.redo() === Draft.Empty)
+    }
+
+    @Test
+    fun walkingBackAndForwardKeepsEveryMark() {
+        // A child who stepped back over three marks they did not mean can
+        // walk the whole way forward again: nothing is lost by looking, and
+        // the paper at the end is the paper they had.
+        var draft = Draft.Empty
+        for (i in 0 until 6) draft = draft.color(Crayons.RED, line(Crayons.RED, i / 10.0).points)
+        val atTop = draft
+        repeat(4) { draft = draft.undo() }
+        repeat(4) { draft = draft.redo() }
+        assertEquals(atTop.progress, draft.progress)
+        assertTrue(draft.canUndo)
+        assertFalse(draft.canRedo)
+    }
+
+    @Test
+    fun drawingClearsTheStepsForward() {
+        // A mark made now is the new truth of the paper. No press may ever
+        // take it away to put back a mark the hand has already drawn over.
+        val drawn = Draft.Empty
+            .color(Crayons.RED, line(Crayons.RED, 0.2).points)
+            .color(Crayons.BLUE, line(Crayons.BLUE, 0.4).points)
+        val steppedBack = drawn.undo()
+        assertTrue(steppedBack.canRedo)
+        val drawnOver = steppedBack.color(Crayons.GREEN, line(Crayons.GREEN, 0.6).points)
+        assertFalse(drawnOver.canRedo)
+        assertEquals(2, drawnOver.progress.strokes.size)
+        assertEquals(Crayons.GREEN, drawnOver.progress.strokes.last().color)
+        // Stepping back from there reaches the red mark, and the blue mark
+        // the child drew over is not waiting anywhere behind it: the only
+        // thing a step forward can put back is the green mark just taken off.
+        val back = drawnOver.undo()
+        assertEquals(1, back.progress.strokes.size)
+        assertEquals(Crayons.RED, back.progress.strokes.last().color)
+        val again = back.redo()
+        assertEquals(2, again.progress.strokes.size)
+        assertEquals(Crayons.GREEN, again.progress.strokes.last().color)
+        assertTrue(again.progress.strokes.none { it.color == Crayons.BLUE })
+        assertFalse(again.canRedo)
+    }
+
+    @Test
+    fun theStepsForwardAreBoundedLikeTheStepsBack() {
+        var draft = Draft.Empty
+        for (i in 0 until Draft.UNDO_DEPTH + 6) {
+            draft = draft.color(Crayons.RED, line(Crayons.RED, (i % 100) / 100.0).points)
+        }
+        repeat(Draft.UNDO_DEPTH + 6) { draft = draft.undo() }
+        assertTrue(draft.future.size <= Draft.UNDO_DEPTH)
+        var steps = 0
+        while (draft.canRedo) {
+            draft = draft.redo()
+            steps++
+            assertTrue("the walk forward never ended", steps <= Draft.UNDO_DEPTH)
+        }
+    }
+
+    @Test
+    fun undoTakesBackAnEraserMarkAndRedoPutsItBack() {
         val erased = Draft.Empty
             .color(Crayons.RED, line(Crayons.RED, 0.3).points)
             .erase(line(Stroke.ERASE_COLOR, 0.5).points)
@@ -114,6 +213,11 @@ class DraftTest {
         val after = erased.undo()
         assertEquals(1, after.progress.strokes.size)
         assertTrue(!after.progress.strokes.last().erase)
+        // The rubber's own mark is a mark like any other, and the pair walks
+        // over it in both directions.
+        val again = after.redo()
+        assertEquals(erased.progress, again.progress)
+        assertTrue(again.progress.strokes.last().erase)
     }
 
     @Test
@@ -150,14 +254,16 @@ class DraftTest {
     }
 
     @Test
-    fun aPageReadBackFromASaveCarriesNoStepBack() {
+    fun aPageReadBackFromASaveCarriesNoHistory() {
         val progress = Progress.Empty.with(line(Crayons.RED, 0.2))
         val draft = Draft.of(progress)
         assertEquals(1, draft.progress.strokes.size)
         // Nothing happened in front of the child, so there is nothing for
-        // the hand to take back: opening a saved picture and pressing undo
-        // does nothing at all.
+        // the hand to take back or to put forward: opening a saved picture
+        // and pressing either press does nothing at all.
         assertFalse(draft.canUndo)
         assertTrue(draft.undo() === draft)
+        assertFalse(draft.canRedo)
+        assertTrue(draft.redo() === draft)
     }
 }

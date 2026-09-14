@@ -156,6 +156,7 @@ class ScreenshotTest {
             onErase = {},
             onOpenBox = {},
             onUndo = {},
+            onRedo = {},
             onHome = {},
             onSound = {},
             onPeek = {},

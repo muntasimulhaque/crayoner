@@ -92,3 +92,23 @@ data class Page(
         const val HEIGHT = ASPECT
     }
 }
+
+/**
+ * The point of the paper under a point of the frame the sheet is drawn in.
+ *
+ * Page units are isotropic: x runs 0 to 1 and y runs 0 to [Page.ASPECT], and
+ * one pixel scale serves both axes, so a frame point is divided by the
+ * sheet's own *width* on both axes. The frame's height is how tall the sheet
+ * is on screen, never a number to divide by.
+ *
+ * Dividing y by the frame's height was a real bug, and it is the reason this
+ * lives here with a test on it. The sheet became taller than it is wide, and
+ * the one place that still divided by the height went on treating the result
+ * as a page unit: on a sheet 1.2 times taller than it is wide every mark
+ * landed a fifth of the sheet above the finger that drew it, which is exactly
+ * the gap between a crayon and the wax it just laid down.
+ */
+fun pagePointOf(xPx: Double, yPx: Double, frameWidthPx: Double): Vec2 = Vec2(
+    xPx.div(frameWidthPx).coerceIn(0.0, 1.0),
+    yPx.div(frameWidthPx).coerceIn(0.0, Page.ASPECT),
+)

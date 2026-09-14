@@ -81,6 +81,11 @@ internal fun crayonNameRes(argb: Long): Int = when (argb) {
  * crayon is the same color at every size and in every place, and the rules
  * that keep it from being a pencil live in one file in :core.
  *
+ * Standing, the crayon is drawn point down, which is how it is held and how
+ * a child recognizes one. [leanDeg] turns it about its own middle, and a
+ * turned crayon is drawn in a box of its own turned bounds, so the box has
+ * to be the mark's own proportion or a corner of the wrapper is clipped off.
+ *
  * [contact] draws the paper collar a held crayon wears, and is reserved for
  * the crayon that is actually in the hand.
  */
@@ -90,19 +95,19 @@ fun CrayonGlyph(
     modifier: Modifier = Modifier,
     contact: Boolean = false,
     lying: Boolean = false,
+    leanDeg: Double = 0.0,
     lineBoost: Float = 1f,
 ) {
     val inks = remember(color) { CrayonPaints.of(color) }
     Canvas(modifier = modifier) {
-        val length = if (lying) size.width else size.height
         drawCrayonShape(
             wax = color,
             inks = inks,
             contact = contact,
             left = 0f,
             top = 0f,
-            length = length,
             lying = lying,
+            leanDeg = leanDeg,
             lineBoost = lineBoost,
         )
     }
@@ -135,18 +140,25 @@ internal class CrayonPaints(
 }
 
 /**
- * Draws one crayon, [length] pixels long, in the box starting at ([left],
- * [top]).
+ * Draws one crayon filling the box it is given.
  *
- * Lying, its length runs across the canvas and its tip is at the right, the
- * way a crayon rests in a tray. Standing, its length runs down the canvas
- * with the tip at the bottom, the way a crayon is held. The width always
- * follows from the length, because a crayon's thickness is a property of the
- * crayon and not of the box it happens to be drawn in.
+ * Standing, the crayon's length runs down the box with the tip at the bottom,
+ * the way a crayon is held. Lying, its length runs across the box with the
+ * tip at the right, the way it rests in a tray. A crayon thicker or thinner
+ * than its own proportions is not a crayon, so the box is fitted by the one
+ * scale that puts the whole stick inside it and the mark is centered in
+ * whatever room is left over: a caller that passes the mark's own proportions
+ * gets a mark that fills its box, and a caller that does not still gets a
+ * crayon rather than a stretched one.
+ *
+ * The turn is applied to the shape's own points, before they are placed, so
+ * turning the stick can never stretch it or slide the wrapper off it. Lying
+ * is not a special case of drawing but the same turn taken a different way,
+ * which is why one mapping serves every way a crayon is ever held.
  *
  * The shape itself is core's one crayon: the body, the blunt cone, the
- * squared base. This function only decides where the pieces land and which
- * of the four waxes paints each one.
+ * squared base, and the two turns the app draws it at. This function only
+ * decides where the pieces land and which of the four waxes paints each one.
  */
 internal fun DrawScope.drawCrayonShape(
     wax: Color,
@@ -154,19 +166,29 @@ internal fun DrawScope.drawCrayonShape(
     contact: Boolean,
     left: Float,
     top: Float,
-    length: Float,
     lying: Boolean,
+    leanDeg: Double = 0.0,
     lineBoost: Float = 1f,
 ) {
-    // The shape is measured in the crayon's own thicknesses, so one unit is
-    // the thickness on both axes and the crayon cannot be stretched.
-    val unit = length / CrayonShape.LENGTH.toFloat()
-    // One mapping for the whole drawing: a point in the shape's own unit box
-    // to a point on the canvas, in whichever way the crayon is turned.
-    fun px(p: Vec2): Offset = if (lying) {
-        Offset(left + length - p.y.toFloat() * unit, top + p.x.toFloat() * unit)
-    } else {
-        Offset(left + p.x.toFloat() * unit, top + p.y.toFloat() * unit)
+    // A held crayon is the shape turned point down; a lean is that stance
+    // turned a little further, so the app's own mark is one number in :core
+    // and the launcher icon wears the same one. Lying is the shape laid down.
+    val turn = when {
+        lying -> CrayonShape.LYING_TURN
+        else -> CrayonShape.HELD_TURN + leanDeg
+    }
+    val bounds = CrayonShape.turnedBounds(turn)
+    val boxW = size.width
+    val boxH = size.height
+    // One scale for both axes, and the mark is centered in what is left over:
+    // the caller's box decides how much paper the crayon gets, and the
+    // crayon's own proportion decides how much of it is crayon.
+    val unit = minOf(boxW / bounds.w.toFloat(), boxH / bounds.h.toFloat())
+    val originX = left + (boxW - bounds.w.toFloat() * unit) / 2f - bounds.x.toFloat() * unit
+    val originY = top + (boxH - bounds.h.toFloat() * unit) / 2f - bounds.y.toFloat() * unit
+    fun px(p: Vec2): Offset {
+        val turned = CrayonShape.turned(p, turn)
+        return Offset(originX + turned.x.toFloat() * unit, originY + turned.y.toFloat() * unit)
     }
     val silhouette = outlinePath(::px)
     drawPath(silhouette, wax)
@@ -347,7 +369,7 @@ fun EraserGlyph(
  * a three year old who has never seen either.
  */
 @Composable
-fun UndoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
+fun UndoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) {
     val side = size
     Canvas(modifier = modifier.size(side)) {
         val w = side.toPx()
@@ -367,6 +389,46 @@ fun UndoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
             moveTo(w * 0.03f, w * 0.46f)
             lineTo(w * 0.44f, w * 0.03f)
             lineTo(w * 0.46f, w * 0.50f)
+            close()
+        }
+        drawPath(head, color)
+    }
+}
+
+/**
+ * The step forward: undo's own mark, facing the other way.
+ *
+ * It is the same turn and the same wedge, mirrored about the mark's own
+ * middle, because the two are one pair and a child should read them as one
+ * pair. Two marks that meant back and forward but were drawn as different
+ * shapes would be two things to learn instead of one thing with two
+ * directions, and the pair sits side by side on the capsule where the eye
+ * compares them directly.
+ *
+ * The mirror is drawn rather than applied as a transform, so the arrow's
+ * stroke weight and its head are exactly the ones the step back has: a
+ * flipped copy of a drawing can end up a hair narrower at the head, and at
+ * the size of a seat that hair is the whole mark.
+ */
+@Composable
+fun RedoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) {
+    val side = size
+    Canvas(modifier = modifier.size(side)) {
+        val w = side.toPx()
+        val line = iconStroke(w)
+        // The turn, mirrored: over the top and down the left.
+        val turn = Path().apply {
+            moveTo(w * 0.70f, w * 0.30f)
+            cubicTo(w * 0.44f, w * 0.02f, w * 0.04f, w * 0.20f, w * 0.14f, w * 0.56f)
+            cubicTo(w * 0.22f, w * 0.88f, w * 0.56f, w * 0.92f, w * 0.74f, w * 0.80f)
+        }
+        drawPath(turn, color, style = line)
+        // The head, mirrored: a wedge whose point is the direction, at the
+        // upper right.
+        val head = Path().apply {
+            moveTo(w * 0.97f, w * 0.46f)
+            lineTo(w * 0.56f, w * 0.03f)
+            lineTo(w * 0.54f, w * 0.50f)
             close()
         }
         drawPath(head, color)

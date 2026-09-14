@@ -90,24 +90,25 @@ fun HomeScreen(
 }
 
 /**
- * The wall's own nameplate: the name, and the brand's mark beside it.
+ * The wall's own nameplate: the name, and the brand's mark in the app's own
+ * hand.
  *
- * The mark sits to the right of the word, the way a crayon is set down
- * beside something it has just written, and it lies along the desk line
- * rather than floating at the word's own height: a crayon resting on a table
- * has one end on the table and the other on the thing it is next to, so tip
- * and base share the same baseline as the word. The old mark was centered
- * on the word's middle and then tilted, which left it hovering like a
- * sticker and made the header look like two unrelated objects.
+ * The mark leans the way the launcher icon's crayon leans, and it is the very
+ * same mark: one crayon, at one angle, with one set of proportions, drawn by
+ * one piece of code. A mark that stood bolt upright in the app and leaned in
+ * the launcher would be two crayons, and the wall is the first place a child
+ * meets the app, so it is the place the two would be seen side by side.
  *
- * It is drawn in its own square rather than in a wide, short box, because a
- * crayon's shape is measured from its own length and a box that is not the
- * shape's own proportion stretches it.
+ * It sits after the word, the way a crayon is set down beside what it has
+ * just written, and it is drawn in its own box rather than in a wide, short
+ * one: a crayon is measured from its own length, and a box that is not the
+ * shape's own proportion stretches it. The box is the leaning mark's own
+ * bounds ([CrayonShape.turnedBounds]), so the stick fills the space it is
+ * given without a corner of the wrapper being clipped off.
  *
  * There is no rule under the word and no switch beside it. The crayon-drawn
  * line that used to underline the name has been taken off: it read as a
- * scoreboard rail on a wall that deliberately keeps no score, and the header
- * is quieter and more certain without it.
+ * scoreboard rail on a wall that deliberately keeps no score.
  */
 @Composable
 private fun ShelfHeader() {
@@ -115,31 +116,46 @@ private fun ShelfHeader() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
                 .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displaySmall,
                 color = CrayonerColors.Ink,
             )
-            Spacer(Modifier.width(12.dp))
-            // The brand's own mark, lying on the word's own baseline the way
-            // a crayon rests beside what it just wrote. The tip points right
-            // (away from the word) and the box is the crayon's own
-            // proportion, so nothing about it is stretched. It is nudged
-            // down a hair so the tip sits on the same line as the letters
-            // rather than hovering above it.
+            Spacer(Modifier.width(10.dp))
+            // The brand's mark, at the app's own lean: the same crayon, at
+            // the same angle, drawn by the same code as the launcher icon.
+            // The box is the leaning mark's own bounds, so nothing about it
+            // is cropped or stretched.
             CrayonGlyph(
                 color = CrayonerColors.Coral,
-                lying = true,
-                modifier = Modifier
-                    .padding(bottom = 7.dp)
-                    .size(width = 60.dp, height = 60.dp * CrayonShape.THICKNESS.toFloat()),
+                leanDeg = CrayonShape.MARK_LEAN,
+                modifier = Modifier.size(width = MarkBox.WIDTH, height = MarkBox.HEIGHT),
             )
         }
     }
+}
+
+/**
+ * The nameplate's crayon: how big it is drawn, and nothing else.
+ *
+ * The lean is the app's own mark's ([CrayonShape.MARK_LEAN]), which the
+ * launcher icon draws too, so the crayon a child taps on the home screen and
+ * the crayon beside the app's name are the same object at the same angle. The
+ * box is measured from the turned shape itself, so the stick is as large as
+ * the line of type it stands beside without a corner of it being clipped by
+ * the box it is drawn in.
+ */
+private object MarkBox {
+    private val bounds = CrayonShape.turnedBounds(CrayonShape.MARK_TURN)
+
+    /** How long the crayon itself is drawn, in dp: a step above the type. */
+    private const val LENGTH_DP = 58f
+
+    val WIDTH: Dp = (LENGTH_DP * bounds.w / CrayonShape.LENGTH).dp
+    val HEIGHT: Dp = (LENGTH_DP * bounds.h / CrayonShape.LENGTH).dp
 }
 
 @Composable

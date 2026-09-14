@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Vec2
+import io.github.muntasimulhaque.crayoner.core.pagePointOf
 import io.github.muntasimulhaque.crayoner.host.Screen
 
 /** The shape of a real sheet of paper: only the least softening so the
@@ -41,6 +42,12 @@ val PaperShape = RoundedCornerShape(2.dp)
  * colors, and no gesture on the picture may ever take that away: there is no
  * pinch and no double tap anywhere on the sheet, because a hand rests on the
  * page while it colors. A page opens whole and stays whole.
+ *
+ * A finger's position is read in the paper's own units through
+ * [pagePointOf], so the mark lands exactly where the fingertip is. The sheet
+ * is taller than it is wide, which means the frame's height is *not* the
+ * number to divide y by: page units are isotropic, and both axes are
+ * measured by the sheet's width.
  */
 @Composable
 internal fun SheetOf(
@@ -66,14 +73,11 @@ internal fun SheetOf(
                 .clip(PaperShape)
                 .background(CrayonerColors.Card)
                 .clipToBounds()
-                .pointerInput(state.page.id, widthPx, heightPx) {
-                    if (widthPx <= 0 || heightPx <= 0) return@pointerInput
-                    val w = widthPx.toFloat()
-                    val h = heightPx.toFloat()
-                    fun at(offset: Offset) = Vec2(
-                        (offset.x / w).toDouble().coerceIn(0.0, 1.0),
-                        (offset.y / h).toDouble().coerceIn(0.0, Page.ASPECT),
-                    )
+                .pointerInput(state.page.id, widthPx) {
+                    if (widthPx <= 0) return@pointerInput
+                    val w = widthPx.toDouble()
+                    fun at(offset: Offset) =
+                        pagePointOf(offset.x.toDouble(), offset.y.toDouble(), w)
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         onStrokeStart(at(down.position))

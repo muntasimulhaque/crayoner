@@ -131,4 +131,62 @@ class CrayonShapeTest {
             assertTrue("a wrapper rule left the crayon", y < CrayonShape.LENGTH)
         }
     }
+
+    @Test
+    fun theHeldStanceIsTheShapeTurnedPointDown() {
+        // Every standing crayon in the app is this stance and nothing else:
+        // the tray's crayon, the one in the box, the one beside the app's
+        // name and the one on the launcher are one object at one angle.
+        val tip = CrayonShape.turned(Vec2(0.5, 0.0), CrayonShape.HELD_TURN)
+        assertEquals("the tip is not at the bottom", CrayonShape.LENGTH, tip.y, 1e-9)
+        assertEquals(0.5, tip.x, 1e-9)
+        val base = CrayonShape.turned(Vec2(0.5, CrayonShape.LENGTH), CrayonShape.HELD_TURN)
+        assertEquals("the base is not at the top", 0.0, base.y, 1e-9)
+    }
+
+    @Test
+    fun theMarkLeansTheWayAHeldCrayonDoes() {
+        // The app's own mark is the held stance leaned by its own angle, and
+        // the lean carries the tip down and to the left while the base goes
+        // up and to the right: the way a right hand holds a crayon to draw a
+        // line running away to the right. The launcher icon wears the same
+        // number, which is why this one is pinned.
+        assertEquals(200.0, CrayonShape.MARK_TURN, 1e-9)
+        val tip = CrayonShape.turned(Vec2(0.5, 0.0), CrayonShape.MARK_TURN)
+        val base = CrayonShape.turned(Vec2(0.5, CrayonShape.LENGTH), CrayonShape.MARK_TURN)
+        assertTrue("the tip is not to the left of the base", tip.x < base.x)
+        assertTrue("the tip is not below the base", tip.y > base.y)
+    }
+
+    @Test
+    fun theLyingStanceLaysTheCrayonDownTipLeading() {
+        // A crayon resting in a box runs across the box with its tip at the
+        // right, which is the shape turned a right angle clockwise on screen.
+        val tip = CrayonShape.turned(Vec2(0.5, 0.0), CrayonShape.LYING_TURN)
+        val base = CrayonShape.turned(Vec2(0.5, CrayonShape.LENGTH), CrayonShape.LYING_TURN)
+        assertTrue("the tip is not to the right of the base", tip.x > base.x)
+        assertEquals("the crayon is not level", tip.y, base.y, 1e-9)
+    }
+
+    @Test
+    fun aTurnedCrayonStillMeasuresOneThicknessAcross() {
+        // Turning a crayon cannot stretch it. The turned bounds of the held
+        // stance are exactly the authored box read the other way up, and a
+        // lying crayon is the same box on its side, so a caller that sizes a
+        // box from [CrayonShape.turnedBounds] gets a crayon and not a ribbon.
+        val upright = CrayonShape.turnedBounds(0.0)
+        assertEquals(1.0, upright.w, 1e-9)
+        assertEquals(CrayonShape.LENGTH, upright.h, 1e-9)
+        val held = CrayonShape.turnedBounds(CrayonShape.HELD_TURN)
+        assertEquals("the held crayon is not one thickness across", 1.0, held.w, 1e-9)
+        assertEquals("the held crayon is not a whole crayon long", CrayonShape.LENGTH, held.h, 1e-9)
+        val lying = CrayonShape.turnedBounds(CrayonShape.LYING_TURN)
+        assertEquals("the lying crayon is not a whole crayon long", CrayonShape.LENGTH, lying.w, 1e-9)
+        assertEquals("the lying crayon is not one thickness across", 1.0, lying.h, 1e-9)
+        // And a lean is a lean: the box grows on both axes, and neither of
+        // them is the mark's own length any more.
+        val marked = CrayonShape.turnedBounds(CrayonShape.MARK_TURN)
+        assertTrue(marked.w > 1.0 && marked.w < CrayonShape.LENGTH)
+        assertTrue(marked.h > 1.0 && marked.h < CrayonShape.LENGTH)
+    }
 }

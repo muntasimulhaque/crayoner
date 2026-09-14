@@ -59,6 +59,9 @@ sealed interface Screen {
 
         /** True while there is a mark the child can take back. */
         val canUndo: Boolean get() = draft.canUndo
+
+        /** True while there is a step back the child can put forward. */
+        val canRedo: Boolean get() = draft.canRedo
     }
 }
 
@@ -189,6 +192,25 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s !is Screen.Coloring) return
         if (s.live != null) return
         val next = s.draft.undo()
+        if (next === s.draft) return
+        commit(s, next)
+    }
+
+    /**
+     * One step forward: the mark the last step back took off the paper comes
+     * back exactly where it was.
+     *
+     * It is undo's pair and it is bounded the same way: it can only return
+     * papers that were really on the desk, and drawing a new mark clears it,
+     * so no press may ever put back a mark the hand has drawn over. A sheet
+     * with no step behind it has nothing to put back and the press lands
+     * quietly, exactly as it does in the other direction.
+     */
+    fun redo() {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        if (s.live != null) return
+        val next = s.draft.redo()
         if (next === s.draft) return
         commit(s, next)
     }

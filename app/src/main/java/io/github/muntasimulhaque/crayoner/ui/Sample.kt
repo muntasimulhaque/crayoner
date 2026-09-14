@@ -59,7 +59,7 @@ fun SampleButton(
     page: Page,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 52.dp,
+    size: Dp = CoinSize,
     announce: Boolean = false,
 ) {
     val label = stringResource(R.string.show_sample)

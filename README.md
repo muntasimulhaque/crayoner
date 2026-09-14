@@ -30,10 +30,10 @@ it and the finished picture in the top bar, a tap away.
 |---|---|
 | **The picture wall** | Every picture hung like a child's drawing, taped to the wall with washi tape, each leaning at a small angle of its own. Nothing on the wall is locked, stamped or marked: the pictures are all there from the first launch. |
 | **A page** | A real sheet of paper lying on the desk, taller than it is wide the way a page in a coloring pad is, with the finished picture in the bar as one more round button: one tap holds it up large, one tap puts it back. |
-| **The crayons** | One capsule with a crayon, a rubber and a step back in it. Press the crayon and all thirty two colors of a real box open over the page, with the color in hand a little longer and drawn with a heavier line. Every area of every picture asks for a color that box holds. |
+| **The crayons** | One capsule with a step back, a step forward, the crayon in hand and a rubber, drawn on the same coins the top bar uses. Press the crayon and all thirty two colors of a real box open over the page, with the color in hand a little longer and drawn with a heavier line. Every area of every picture asks for a color that box holds. |
 | **Coloring** | Your finger draws the crayon. Nothing is filled in for you: a mark follows your hand, lays down wax the way wax behaves, and covers the printed lines it is dragged over. |
 | **The rubber** | Press it and your crayon becomes an eraser: it takes the wax off and leaves the printed line, exactly as a rubber does on paper. Nothing is ever wiped. |
-| **One step back** | Press undo and the last mark comes off the paper. Press it again and the one before that comes off too: the marks walk back one press at a time, so a hand that drew three it did not mean gets all three back. A fresh page has nothing to undo and the press simply lands. |
+| **Two steps** | Press undo and the last mark comes off the paper; press it again and the one before that comes off too, so a hand that drew three it did not mean gets all three back. Press redo beside it and the marks walk forward again, one a press, so looking at what you just did never costs you your work. A fresh page has nothing to walk either way and the press simply lands. |
 | **No score** | No progress bar, no timer, no stamp, no fail state, and nothing that measures the work. The app never decides that a picture is finished, because a coloring is finished when the child says so, and that is not the app's business. |
 
 Every mark is saved a moment after it is finished, so a phone call, a

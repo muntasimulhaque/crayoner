@@ -1,24 +1,27 @@
 package io.github.muntasimulhaque.crayoner.core
 
 /**
- * The page the child is working on, and the steps back they get.
+ * The page the child is working on, and the steps back and forward they get.
  *
  * [progress] is the paper itself: every mark that is on it, always the whole
  * truth. [past] is the paper as it was before each finished mark, oldest
  * first, so one press of undo walks back one state and the child may keep
  * pressing: a hand that draws three marks it did not mean gets all three
- * back, one press each.
+ * back, one press each. [future] is the other direction: the papers that
+ * were stepped back from, newest step first, so a press of redo puts the
+ * last one on the desk again and the pair of them walks the child's work up
+ * and down without either press ever losing a mark.
  *
- * The stack is bounded ([UNDO_DEPTH]), because a page a three year old has
- * worked on for an hour must not grow a second copy of itself in memory, and
- * because a step that reaches past the last dozen marks is not a step back
- * any more: the rubber is what changes a whole picture. Once the stack is
- * empty, a press simply lands.
+ * The two stacks are bounded ([UNDO_DEPTH]), because a page a three year old
+ * has worked on for an hour must not grow a second copy of itself in memory,
+ * and because a step that reaches past the last dozen marks is not a step
+ * back any more: the rubber is what changes a whole picture. Once either
+ * stack is empty, that press simply lands.
  *
  * Drawing again after a step back starts a fresh stack from where the paper
  * now is, so the paper a press returns to is always a paper the hand really
- * made. A page read back from a save carries no stack at all: nothing
- * happened in front of the child, and undo is for the hand.
+ * made. A page read back from a save carries no history at all: nothing
+ * happened in front of the child, and the pair is for the hand.
  *
  * Every operation here is total and quiet. Undoing an empty page changes
  * nothing, a mark is appended and never reshuffled, and a save that reads
@@ -33,11 +36,19 @@ data class Draft(
      * entry is what one press of undo puts back.
      */
     val past: List<Progress> = emptyList(),
+    /**
+     * The papers that were stepped back from, most recent step first. The
+     * first entry is what one press of redo puts back.
+     */
+    val future: List<Progress> = emptyList(),
 ) {
     val isEmpty: Boolean get() = progress.isEmpty
 
     /** True while there is at least one mark the child can take back. */
     val canUndo: Boolean get() = past.isNotEmpty()
+
+    /** True while there is a step back the child can put forward again. */
+    val canRedo: Boolean get() = future.isNotEmpty()
 
     /** One finished mark made with the crayon, in page units. */
     fun color(crayon: Long, points: List<Vec2>): Draft =
@@ -54,7 +65,10 @@ data class Draft(
         // A full page takes no more marks and remembers no more: the sheet
         // is what it is, and nothing about it changes under the child.
         if (next === progress) return this
-        return Draft(next, (past + progress).takeLast(UNDO_DEPTH))
+        // Drawing clears the forward steps: a mark made now is the new truth
+        // of the paper, and no press may ever take it away to put back a
+        // mark the hand has already drawn over.
+        return Draft(next, (past + progress).takeLast(UNDO_DEPTH), emptyList())
     }
 
     /**
@@ -68,8 +82,31 @@ data class Draft(
      * rubber already exists for rubbing a page back to paper, and nothing a
      * child can reach may cost them their picture.
      */
-    fun undo(): Draft =
-        if (past.isEmpty()) this else Draft(past.last(), past.dropLast(1))
+    fun undo(): Draft = if (past.isEmpty()) {
+        this
+    } else {
+        // The paper being stepped back from is the nearest thing redo can
+        // put back, so it goes to the front of the forward steps.
+        Draft(past.last(), past.dropLast(1), (listOf(progress) + future).take(UNDO_DEPTH))
+    }
+
+    /**
+     * Puts back the mark the last step back took off the paper, and pressed
+     * again it keeps walking forward, one mark a press, for exactly as many
+     * steps as were walked back. A sheet with no step behind it has nothing
+     * to put back and the press simply lands.
+     *
+     * It is the mirror of [undo] and nothing more: it never invents a mark,
+     * it only returns a paper that was really on the desk, so the child can
+     * walk a mistake out and back without ever losing the work around it.
+     * Drawing clears the forward steps, so a press can never put back a mark
+     * the hand has drawn over.
+     */
+    fun redo(): Draft = if (future.isEmpty()) {
+        this
+    } else {
+        Draft(future.first(), (past + progress).takeLast(UNDO_DEPTH), future.drop(1))
+    }
 
     companion object {
         val Empty: Draft = Draft()
@@ -83,9 +120,9 @@ data class Draft(
         const val UNDO_DEPTH = 16
 
         /**
-         * A page read back from a save: no step back, because nothing
-         * happened in front of the child.
+         * A page read back from a save: no history, because nothing happened
+         * in front of the child.
          */
-        fun of(progress: Progress): Draft = Draft(progress, emptyList())
+        fun of(progress: Progress): Draft = Draft(progress, emptyList(), emptyList())
     }
 }

@@ -52,6 +52,7 @@ fun PlayScreen(
     onErase: (Boolean) -> Unit,
     onOpenBox: (Boolean) -> Unit,
     onUndo: () -> Unit,
+    onRedo: () -> Unit,
     onHome: () -> Unit,
     onSound: (Boolean) -> Unit,
     onPeek: (Boolean) -> Unit,
@@ -110,9 +111,11 @@ fun PlayScreen(
                     erasing = state.erasing,
                     boxOpen = state.boxOpen,
                     canUndo = state.canUndo,
+                    canRedo = state.canRedo,
                     onOpenBox = onOpenBox,
                     onErase = onErase,
                     onUndo = onUndo,
+                    onRedo = onRedo,
                     modifier = modifier,
                 )
             }
@@ -179,21 +182,24 @@ fun PlayScreen(
 private val WIDE_AT = 640.dp
 
 /**
- * The one width the bar and the capsule share. The top bar holds the home
- * button, the sample and the sound switch; the capsule holds the step back,
- * the crayon and the rubber. Both are rows of the same round controls, so
- * both are laid on the same rail: the two ends of the screen line up, and
- * the phone reads as one object rather than two rows that happen to be
- * centered. On a very wide screen the rail stops growing, because a control
- * row stretched across a tablet is a fence.
+ * The one width the bar and the capsule share, and the caps at which the two
+ * rows of controls stop growing on a wide screen: a control row stretched
+ * across a tablet is a fence. It is measured in the capsule's own file
+ * ([RAIL_WIDTH]), from the coins the capsule holds, so the two rows can never
+ * drift apart: the bar holds the home button, the sample and the sound switch,
+ * the capsule holds the step back, the crayon, the step forward and the
+ * rubber, and both rows stand on the same rail at both ends.
  */
-internal val RAIL_WIDTH = 360.dp
 
 /** How tall the bar is, in both shapes. Home, the sample, the sound switch. */
 private val BAR_HEIGHT = 66.dp
 
-/** How much room the capsule is given under the sheet on a phone. */
-private val TOOLS_HEIGHT = 120.dp
+/**
+ * How much room the capsule is given under the sheet on a phone. It is the
+ * capsule's own height and a little air, so the tools sit on the desk rather
+ * than pressing against the paper or the edge of the screen.
+ */
+private val TOOLS_HEIGHT = 84.dp
 
 /** The tool column's width beside the sheet. */
 private val TOOLS_WIDTH = 300.dp
@@ -224,7 +230,7 @@ private fun TopBar(
             background = CrayonerColors.Card,
             label = stringResource(R.string.home),
         ) {
-            HomeIcon(color = CrayonerColors.Ink, size = 26.dp)
+            HomeIcon(color = CrayonerColors.Ink)
         }
         Spacer(Modifier.weight(1f))
         // The sample stands at the right, one tap from the page: look at the
@@ -235,7 +241,7 @@ private fun TopBar(
             background = CrayonerColors.Card,
             label = stringResource(if (soundOn) R.string.sound_on else R.string.sound_off),
         ) {
-            SoundIcon(on = soundOn, color = CrayonerColors.Ink, size = 26.dp)
+            SoundIcon(on = soundOn, color = CrayonerColors.Ink)
         }
     }
 }

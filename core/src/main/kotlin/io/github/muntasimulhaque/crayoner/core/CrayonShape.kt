@@ -148,4 +148,62 @@ object CrayonShape {
 
     /** True when [p] is inside the crayon's own silhouette. */
     fun contains(p: Vec2): Boolean = Poly(outline()).contains(p)
+
+    /**
+     * One point of the shape, turned by [turnDeg] about the crayon's own
+     * middle, in shape units. A turn of zero is the shape as it is authored,
+     * with the tip at the top of its box; a turn of a right angle lays the
+     * crayon down with the tip leading.
+     */
+    fun turned(p: Vec2, turnDeg: Double): Vec2 =
+        rotateAround(p, Vec2(0.5, LENGTH / 2.0), turnDeg)
+
+    /**
+     * The box a turned crayon needs, in shape units: its own silhouette
+     * turned and measured, so a caller can size a box the whole stick fits
+     * inside rather than guessing at one and clipping a corner off. A turn of
+     * zero answers the shape's own box: one thickness across, [LENGTH] along.
+     */
+    fun turnedBounds(turnDeg: Double): Area {
+        val points = outline().map { turned(it, turnDeg) }
+        val minX = points.minOf { it.x }
+        val maxX = points.maxOf { it.x }
+        val minY = points.minOf { it.y }
+        val maxY = points.maxOf { it.y }
+        return Area(minX, minY, maxX - minX, maxY - minY)
+    }
+
+    /**
+     * The turn the crayon is held at: a half turn of the shape, which puts
+     * the tip at the bottom of the box. Point down is how a crayon is held
+     * and how a child recognizes one, and it is the stance of every crayon
+     * that is not lying in the box.
+     */
+    const val HELD_TURN = 180.0
+
+    /**
+     * The turn that lays the crayon down, tip leading to the right, the way
+     * it rests in the tray of a real box.
+     */
+    const val LYING_TURN = 90.0
+
+    /**
+     * How far the app's own mark leans from point down, in degrees. It is the
+     * launcher icon's own lean, and it is the one angle every standing crayon
+     * in the app is drawn at.
+     */
+    const val MARK_LEAN = 20.0
+
+    /**
+     * The turn the app's mark is drawn at: held, and leaning [MARK_LEAN] to
+     * the right, so the tip sits low and to the left and the base is up and
+     * to the right, the way a right hand holds a crayon to draw a line that
+     * runs away to the right.
+     *
+     * This is the app's one crayon. The launcher icon draws this turn, the
+     * wall's nameplate draws this turn, and the capsule's crayon is this
+     * turn, so the mark on the home screen, the mark beside the app's name
+     * and the crayon in the child's hand are one object at one angle.
+     */
+    const val MARK_TURN = HELD_TURN + MARK_LEAN
 }

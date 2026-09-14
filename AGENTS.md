@@ -138,29 +138,34 @@ Sixteen pictures. Tap one and color it.
   the child's mark is in that color. From then on they are holding a crayon
   and every mark uses it. A three year old's first act must never end in
   nothing happening.
-- **The tray is one capsule with three seats, and the order runs the way
-  the hand works: step back, crayon, rubber.** A three year old does not
-  choose between thirty two crayons, they pick one up and draw. The crayon
-  sits in the middle, where a thumb naturally lands; the step back sits at
-  the left, out of the way, because it is the one thing on the capsule that
-  undoes rather than draws; the rubber sits at the right, as the other end
-  of the same axis. The crayon in the capsule always shows the color in
-  hand, and pressing it opens the box: thirty two real crayon colors, laid
-  out the way the box lays them out, with the color in hand lying among the
-  others, a little longer and drawn with a heavier line. That difference is
-  the whole selection mark; there is no ring, no plate, no tick and no
-  shadow. See D-050. The capsule and the top bar are laid on one shared
-  rail, so the two rows of round controls line up at both ends and the
-  phone reads as one object. See D-058.
+- **The tray is one capsule with four seats, and the order runs the way
+  the hand works: step back, step forward, crayon, rubber.** A three year
+  old does not choose between thirty two crayons, they pick one up and draw.
+  The two steps sit together at the left, out of the way, because they are
+  the two things on the capsule that move the paper rather than draw on it
+  and because they are one pair: a child who walked a mistake out has to be
+  able to walk it back without hunting for the other end of the row. The
+  crayon sits next, in the working part of the row where a thumb naturally
+  lands, and the rubber sits last, at the right end. Every seat is the same
+  coin the bar above uses, and the rail is measured from those coins, so the
+  two rows line up at both ends by construction. See D-064. The capsule and
+  the top bar share one rail, so the two rows of round controls line up at
+  both ends and the phone reads as one object. See D-058.
+- **Every mark in the app is the same size, and every seat the same coin.**
+  The house and the speaker in the bar, the step back, the step forward, the
+  rubber and the crayon's own height on the capsule: one `IconSize`, so no
+  row of buttons reads as a row of different apps, and one `CoinSize` under
+  all of them. See D-052 and D-064.
 - **A seat that is picked up wears the capsule's own cardboard.** One
   selection language for every seat, the same plate, the same color, the
   same lift: a plate under the thing in hand and nothing else. Nothing on
   the capsule may flash a different color for a different tool. See D-051.
-- **Every outline mark in the app is struck at one weight.** The house, the
-  speaker, the rubber and the step back share one line, as a fraction of
-  each mark's own box, chosen for the smallest size a mark is ever drawn
-  at. A row of buttons is read as one object, so a hairline beside a marker
-  looks like two apps. See D-052.
+- **Every outline mark in the app is struck at one weight and drawn at one
+  size.** The house, the speaker, the rubber and the two steps share one
+  line, as a fraction of each mark's own box, chosen for the smallest size a
+  mark is ever drawn at, and they are all drawn at `IconSize`. A row of
+  buttons is read as one object, so a hairline beside a marker, or a mark
+  twice the size of its neighbor, looks like two apps. See D-052 and D-064.
 - **The rubber takes wax off the paper and leaves the print.** Press it and
   the next mark erases: the rubber is drawn with the printed page itself as
   its paint, so the wax goes and the printed line stays, which is what a
@@ -169,14 +174,19 @@ Sixteen pictures. Tap one and color it.
   looks the same whether it is in the hand or lying on the desk: the seat's
   own plate is the whole selection mark, so the sleeve is never repainted a
   second time. See D-059.
-- **Undo is not one step, it is a walk back.** One press takes back the
-  last mark the hand made, and pressing again takes back the one before it,
-  one finished mark a press, so a hand that drew three marks it did not mean
-  gets all three back. The history is bounded (sixteen marks), because a
-  page worked on for an hour must not grow a copy of itself, and because a
-  step that reaches past the last dozen marks is not a step any more: the
-  rubber is what changes a whole picture. A fresh page has nothing to undo
-  and the press simply lands. See D-056.
+- **Undo is not one step, it is a walk, and it walks both ways.** One press
+  takes back the last mark the hand made, and pressing again takes back the
+  one before it, one finished mark a press, so a hand that drew three marks
+  it did not mean gets all three back. The step forward next to it puts a
+  mark back, one press a mark, for exactly as many steps as were walked
+  back: the pair is what makes looking at the paper safe, because nothing a
+  child does to look at it costs them their work. Drawing clears the steps
+  forward, so no press can put back a mark that has already been drawn over.
+  Both walks are bounded (sixteen marks), because a page worked on for an
+  hour must not grow a copy of itself, and because a step that reaches past
+  the last dozen marks is not a step any more: the rubber is what changes a
+  whole picture. A fresh page has nothing to walk either way and the press
+  simply lands. See D-056 and D-064.
 - **The paper is always whole, and it never moves under the hand.** A page
   opens showing the entire sheet and stays that way. There is no zoom, no
   pan, no pinch and no double tap anywhere in the app. A closer look was
@@ -271,22 +281,23 @@ them is a bug this project already shipped once.
   standing on its point, and the band of wax it has just laid down.** A
   child of three cannot read the word Crayoner, and a crayon alone says
   writing tool, not coloring book; a crayon whose own tip sits in a swath of
-  wax says the whole thing at a glance, and the swath is broad and ragged
-  the way a wax crayon dragged across paper covers it. The crayon is the
-  app's own object, point down, at the tray's own lean, in the crayon's real
-  material: the wax color of the stick, the cone a shade deeper, the wrapper
-  in the wax's own hue, and the two dark rules a real wrapper wears. A dark
-  cone tip or a pale sleeve turns a crayon into a pencil, and this app must
-  never show a pencil. The crayon's geometry lives once, in `core/CrayonShape`,
+  wax says the whole thing at a glance, and the swath is a line of wax, not
+  a slab: the drag one crayon leaves behind, running out from the tip that
+  made it. The crayon is the app's own object at the app's own lean
+  (`CrayonShape.MARK_TURN`), in the crayon's real material: the wax color of
+  the stick, the cone a shade deeper, the wrapper in the wax's own hue, and
+  the two dark rules a real wrapper wears. A dark cone tip or a pale sleeve
+  turns a crayon into a pencil, and this app must never show a pencil. The
+  crayon's geometry lives once, in `core/CrayonShape`,
   its four colors once, in `core/CrayonInk`, and its one drawing lives in
   `IconDesign.paintCrayon` in `:tools`; it serves the launcher icon, the
   store icon, the shelf header and the capsule through `CrayonGlyph` on the
   device. **Nothing is drawn around the wax**: a real crayon has no line
   around it, and at the size of a tray seat the line is most of what the eye
   reads, which is what turns a drawing of a crayon into a diagram of one.
-  **The launcher icon is that same mark mirrored**, so on the home screen the
-  crayon faces the other way while being the same crayon, at the same lean
-  and the same proportions. See D-053.
+  **The launcher icon is that same mark at that same lean**, the crayon the
+  app itself draws, so the mark on the home screen and the mark in the
+  child's hand are one object. See D-053 and D-065.
 - **The shelf is a wall of pictures, not a record.** Every card is the
   finished sample with the picture's name under it, and nothing on the wall
   says which picture was opened, colored or left alone. See D-041.
@@ -834,7 +845,8 @@ the screenshots, all in the same session.
   comfortable targets already cost most of a phone's width, and the capsule
   is a tool lying on a desk under the paper, not a second thing to look at.
   The glyphs inside the seats grew to use the room instead, so nothing got
-  harder to hit. Amends D-045.
+  harder to hit. Amends D-045. Amended by D-064: the capsule holds four
+  seats now, on the bar's own coins, and the pair of steps sits together.
 - D-051 **Every selected seat wears the same plate, in the capsule's own
   cardboard.** The rubber's seat filled with a sepia and the step back's with
   nothing at all, so the same state was drawn two ways and the row read as
@@ -850,7 +862,9 @@ the screenshots, all in the same session.
   apps. All of them now come out of one `iconStroke`, one fraction of each
   mark's own box, and the fraction is chosen for the smallest size a mark is
   ever drawn at: a mark that reads at 24 dp reads at 26 dp, and the other
-  way round is not true.
+  way round is not true. Amended by D-064: one `IconSize` for every mark in
+  the app, bar and capsule both, and the capsule's seats are `CoinSize`, the
+  bar's own.
 - D-053 **The launcher icon says what the app is without a word.** The icon
   was one large crayon, mirrored, which a child of three cannot read: it
   says writing tool at least as readily as coloring book, and at the size of
@@ -866,7 +880,10 @@ the screenshots, all in the same session.
   Supersedes D-040's "the icon is the crayon alone" while keeping its mirror.
   Superseded in part by D-057: the sentence and the mirror stand, the low
   leaned crayon in a swath is replaced by an upright one, because the low
-  mark merged into a single red hook at a launcher's smallest size.
+  mark merged into a single red hook at a launcher's smallest size. Amended
+  by D-065: the mirror is gone, the crayon faces the app's own way, the band
+  is a line rather than a slab, and the stance is `CrayonShape.MARK_TURN` in
+  :core, which the tray and the nameplate draw too.
 - D-054 **The crayon rules were drawn off the end of the crayon, and every
   screen showed the two hairs.** `drawWrapperRules` was handed a pixel
   measure and used it as an inset into a band measured in the crayon's own
@@ -979,3 +996,44 @@ the screenshots, all in the same session.
   the sheet and the tools stand side by side and the bar is the full width
   of the screen, exactly as it always was: a rail there dragged the home
   button into the middle of the desk. Amends D-058.
+- D-063 **The finger lands where the finger is.** A mark is placed by
+  `core/pagePointOf`, the one conversion from a point on the glass to a point
+  of the paper. Page units are isotropic, so a frame point is divided by the
+  sheet's *width* on both axes, and the frame's height is never a number to
+  divide by. Dividing y by the height is the bug this replaces, and it was a
+  bad one: the sheet is 1.2 times taller than it is wide, so on a phone every
+  mark landed a fifth of the sheet above the fingertip, which is exactly the
+  gap between a crayon and the wax it just laid down. The eraser was placed
+  the same wrong way and is fixed by the same line. `PagePointTest` walks the
+  frame at five scales and holds the paper's corners, its middle and its
+  edges, and holds that a point of the paper always resolves to an area: a
+  first touch may never land on nothing.
+- D-064 **The tray is four seats on the bar's own coins, and the paper walks
+  both ways.** Two changes to the same row. The capsule and the bar now draw
+  one coin (`CoinSize`) and one icon (`IconSize`), and the capsule's rail is
+  *measured* from the coins it holds rather than chosen, so the two rows line
+  up at both ends by construction and neither can drift away from the other.
+  Adding the fourth seat made the rail one coin wider instead of making every
+  seat smaller, which is what kept the seats at the size of the coins above
+  them. The step forward sits beside the step back with the crayon and the
+  rubber on their right, because the two steps are one pair and a child who
+  walked a mistake out has to be able to walk it back without hunting for the
+  other end of the row. `Draft.redo` is the exact mirror of `Draft.undo`,
+  bounded the same way and read off the same list of real papers, and drawing
+  clears the steps forward so no press can put back a mark the hand has
+  already drawn over. Amends D-045, which had one direction of a two-way
+  pair.
+- D-065 **The app's crayon leans, and it leans the same way everywhere.** The
+  mark is one crayon at one angle: `CrayonShape.MARK_TURN` is the held
+  stance leaned 20 degrees, with the tip down and to the left and the base up
+  and to the right, the way a right hand holds a crayon to draw a line that
+  runs away to the right. The launcher icon draws that turn, the wall's
+  nameplate draws that turn, and the tray's crayon draws that turn, all
+  through one `drawCrayonShape`; the icon generator no longer mirrors its
+  drawing, because a mark that faces one way in the launcher and the other
+  way in the app is two crayons. The shelf's mark used to lie on its side,
+  which made it a third one. The wax band the icon's crayon has just laid
+  down is a line, not a slab, at 0.095 to 0.115 of the mark's own box: a
+  band a fifth of the crayon long read as a painted swoosh beside the stick
+  rather than as the drag the stick made. Supersedes the mirror half of
+  D-040, amends D-029, D-052 in part.

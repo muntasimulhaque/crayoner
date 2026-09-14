@@ -48,7 +48,7 @@ internal fun iconStroke(w: Float): Stroke = Stroke(
 )
 
 @Composable
-fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
+fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) {
     GeoIcon(modifier, color, size) { w, h ->
         val line = iconStroke(w)
         val roof = Path().apply {
@@ -76,7 +76,7 @@ fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
 }
 
 @Composable
-fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp = 26.dp) {
+fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp = IconSize) {
     GeoIcon(modifier, color, size) { w, h ->
         val line = iconStroke(w)
         val cone = Path().apply {

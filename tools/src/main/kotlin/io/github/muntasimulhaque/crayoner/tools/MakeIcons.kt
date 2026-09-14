@@ -53,10 +53,11 @@ import javax.imageio.ImageIO
  * legacy tile, a 432 pixel adaptive foreground and a 512 pixel store icon
  * without a tip being clipped by a launcher's round mask at any of them.
  *
- * The whole mark is mirrored about the canvas center, which is what makes
- * the launcher icon the app's own crayon facing the other way. One flip of
- * one finished drawing, so the mirror is a mirror of the mark and not a
- * change to it: same crayon, same lean, same proportions, other way round.
+ * The whole mark is mirrored about the canvas center, so the launcher icon
+ * is the app's own crayon facing the other way: the same crayon, at the same
+ * lean, with the same proportions, turned around. The mirror is applied to
+ * the finished drawing rather than to the geometry, so the mark on the home
+ * screen is a sprite of the in-app mark and not a second crayon. See D-057.
  *
  * Rendered three ways: the legacy tile for API 24-25, the adaptive
  * foreground for API 26+, and the white monochrome sibling (the same mark as
@@ -121,13 +122,13 @@ private object Mark {
     const val LENGTH = 0.85
 
     /**
-     * The lean, in degrees, turning the crayon's axis from straight up
-     * toward the right. It is small on purpose: a stick that leans far reads
-     * at a launcher's size as a blob with a hook, while an almost upright
-     * stick with a blunt tip reaches down into the swath and reads as a
-     * crayon even in a twenty four pixel tile.
+     * The turn the crayon stands at, in degrees. It is not this file's
+     * choice: it is [CrayonShape.MARK_TURN], the app's own mark's angle, so
+     * the crayon a child taps on the home screen is the crayon they hold on
+     * the page and the one beside the app's name. Every number below is in
+     * the mark's own box; this one is in the app's own geometry.
      */
-    const val LEAN = 20.0
+    const val TURN = CrayonShape.MARK_TURN
 
     /**
      * The line the hand traveled, as control points of a smooth curve. The
@@ -144,9 +145,18 @@ private object Mark {
         Vec2(1.02, 0.82),
     )
 
-    /** How wide the swath is at the tip, and at its far end. */
-    const val SWATH_START = 0.13
-    const val SWATH_END = 0.16
+    /**
+     * How wide the swath is at the tip, and at its far end.
+     *
+     * It is a line, not a slab. The swath is the wax one drag of the crayon
+     * leaves behind, so its width belongs to the crayon that drew it: a band
+     * a third of the stick's own width and tapering as the wax runs out is
+     * what a real drag looks like, while a band as wide as the mark beside
+     * it is a painted swoosh and reads as a second object. A real drag grows
+     * a little as the hand moves, which is what the two numbers say.
+     */
+    const val SWATH_START = 0.095
+    const val SWATH_END = 0.115
 
     /** How the swath's edges are finished: samples, and how ragged they are. */
     const val SWATH_STEPS = 64
@@ -191,17 +201,18 @@ private class MarkBox(size: Int, inset: Double) {
 
     /** A point of the crayon's own shape, in the mark's box. */
     fun crayonPoint(p: Vec2): Vec2 {
+        // The shape's own turn, applied in the shape's own units first, so
+        // the icon's crayon is the app's crayon and not a second drawing of
+        // one: the same points, the same turn, the same proportions. The
+        // shape is anchored by its own tip, so [Mark.TIP] stays the one
+        // number in this file that says where the crayon stands, and the
+        // swath below is drawn off the tip it belongs to.
+        val tip = CrayonShape.turned(Vec2(0.5, 0.0), Mark.TURN)
+        val turned = CrayonShape.turned(p, Mark.TURN)
         val len = Mark.LENGTH / CrayonShape.LENGTH
-        val a = Math.toRadians(Mark.LEAN)
-        // The shape's y runs from the tip along the stick, and its x runs
-        // across it; the axis is "up" turned by the lean.
-        val along = p.y * len
-        val across = (p.x - 0.5) * len
-        val dirX = Math.sin(a)
-        val dirY = -Math.cos(a)
         return Vec2(
-            Mark.TIP.x + along * dirX - across * dirY,
-            Mark.TIP.y + along * dirY + across * dirX,
+            Mark.TIP.x + (turned.x - tip.x) * len,
+            Mark.TIP.y + (turned.y - tip.y) * len,
         )
     }
 
@@ -212,14 +223,17 @@ private class MarkBox(size: Int, inset: Double) {
 /**
  * Paints the mark: the swath of wax first, then the crayon standing in it.
  *
+ * The crayon's tip stands at the near end of the band it has just laid down
+ * and the band runs away to the right, and the stick leans back over it the
+ * way a right hand holds a crayon while the line goes left to right. That is
+ * the way round the mark is drawn, and the launcher icon wears it as it is:
+ * there is no mirror anywhere in this file, because a mark that faces one way
+ * in the launcher and the other way in the app is two crayons, not one.
+ *
  * [mono] draws the whole mark as one flat white silhouette, which is what
  * Android's themed icons want: the launcher supplies the color.
  */
 internal fun paintMark(g: Graphics2D, size: Int, mono: Boolean, inset: Double) {
-    // One transform for everything: the canvas is mirrored about its own
-    // center, so the finished mark faces the other way on the home screen.
-    g.transform(AffineTransform(-1.0, 0.0, 0.0, 1.0, size.toDouble(), 0.0))
-
     val box = MarkBox(size, inset)
     val wax = Color(if (mono) IconDesign.WHITE else IconDesign.WAX, true)
 

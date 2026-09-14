@@ -83,6 +83,7 @@ class MainActivity : ComponentActivity() {
                                 onErase = host::setErasing,
                                 onOpenBox = host::setBoxOpen,
                                 onUndo = host::undo,
+                                onRedo = host::redo,
                                 onHome = host::home,
                                 onSound = host::setSound,
                                 onPeek = host::setPeek,
