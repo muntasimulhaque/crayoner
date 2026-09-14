@@ -208,29 +208,23 @@ object RenderKit {
                 // The dot a pressed-and-lifted crayon leaves: one round of
                 // wax, the width of the tip, the same mark the device draws.
                 val r = tip * 0.5
-                g.paint = texture(markWax(stroke.color, 0))
+                g.paint = texture(markWax(stroke.color))
                 g.fill(Ellipse2D.Double(first.x * side - r, first.y * side - r, r * 2, r * 2))
                 continue
             }
-            // The mark is wax, the same wax an area is colored with: two
-            // passes of it, the second narrower, which is the hand going
-            // back over its own line. Nothing is drawn around the mark: a
-            // paler wide pass was tried and it read as a sticker's border,
-            // and wax dragged over paper does not lay a halo of itself
-            // beside the stroke, it simply stops.
-            val waxSurface = markWax(stroke.color, 0)
-            val waxAgain = markWax(stroke.color, 1)
-            fun pass(width: Double, paint: java.awt.Paint) {
-                g.paint = paint
-                g.stroke = BasicStroke(
-                    width.toFloat(),
-                    BasicStroke.CAP_ROUND,
-                    BasicStroke.JOIN_ROUND,
-                )
-                g.draw(path)
-            }
-            pass(tip, texture(waxSurface))
-            pass(tip * 0.74, texture(waxAgain))
+            // One drag of one crayon: the mark is a single pass of the same
+            // wax an area is colored with, at the same width the device
+            // draws it. A second, narrower pass down the middle was tried and
+            // it was wrong (see ui/CrayonStroke.kt): two translucent passes
+            // of one color multiply instead of averaging, so the core of a
+            // mark came out almost pure and the grain was pushed out of it.
+            g.paint = texture(markWax(stroke.color))
+            g.stroke = BasicStroke(
+                tip.toFloat(),
+                BasicStroke.CAP_ROUND,
+                BasicStroke.JOIN_ROUND,
+            )
+            g.draw(path)
         }
     }
 
@@ -274,9 +268,9 @@ object RenderKit {
      * with, keyed by color alone, because a mark belongs to the hand and not
      * to any area of the picture.
      */
-    private fun markWax(argb: Long, pass: Int): BufferedImage =
-        markWaxes.getOrPut(argb * 2 + pass) {
-            val pixels = Wax.surface(argb, WAX_TILE, -24.0 + pass * 26.0, 0, 0x5A17 + pass * 6161, fine = true)
+    private fun markWax(argb: Long): BufferedImage =
+        markWaxes.getOrPut(argb) {
+            val pixels = Wax.surface(argb, WAX_TILE, -24.0, 0, 0x5A17, fine = true)
             BufferedImage(WAX_TILE, WAX_TILE, BufferedImage.TYPE_INT_ARGB).apply {
                 setRGB(0, 0, WAX_TILE, WAX_TILE, pixels, 0, WAX_TILE)
             }

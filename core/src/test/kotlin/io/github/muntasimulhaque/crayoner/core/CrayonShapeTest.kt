@@ -110,4 +110,25 @@ class CrayonShapeTest {
         assertTrue(collar.y > CrayonShape.TIP_LENGTH)
         assertTrue(collar.bottom < CrayonShape.BASE)
     }
+
+    @Test
+    fun theWrapperRulesStayInsideTheirOwnBand() {
+        // Both the rules and the band are in the crayon's own units, and the
+        // inset is a share of the band's own length. That is the whole rule
+        // that keeps them on the crayon: the rules were once inset by a
+        // pixel count inside a shape-space band, which put them roughly a
+        // hundred thicknesses along the stick, past its end, where they drew
+        // as two floating hairs beside it on every screen in the app.
+        val band = CrayonShape.wrapperBand()
+        val near = band.h * CrayonShape.RULE_INSET
+        assertTrue("the rules are outside the wrapper", near > 0.0)
+        assertTrue("the two rules cross each other", near * 2.0 < band.h)
+        // Both rule positions, in the shape's own box, must land inside the
+        // crayon: the whole point of the bug was that a rule landed on bare
+        // paper.
+        for (y in listOf(band.y + near, band.bottom - near)) {
+            assertTrue("a wrapper rule left the band at y = $y", y > band.y && y < band.bottom)
+            assertTrue("a wrapper rule left the crayon", y < CrayonShape.LENGTH)
+        }
+    }
 }

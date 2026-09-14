@@ -70,10 +70,17 @@ object CrayonShape {
     const val WRAPPER_TOP = LENGTH * 0.40
     const val WRAPPER_BOTTOM = LENGTH * 0.90
 
-    /** The wrapper's two printed rules: how far in from the band's own ends
-     *  they run, in units of the thickness, and how heavy the line is. */
-    const val RULE_INSET = 0.15
+    /** How heavy the wrapper's two printed rules are, in thicknesses. */
     const val RULE_WEIGHT = 0.05
+
+    /**
+     * How far in from the band's own ends the two rules run, as a share of
+     * the band's length. Both rules and band are in the shape's own units,
+     * so a caller can never mix a pixel distance into a shape-space band:
+     * that mistake put the rules off the end of the crayon and drew two
+     * floating hairs beside it (see ui/CrayonGlyph.kt).
+     */
+    const val RULE_INSET = 0.12
 
     /** The paper collar a held crayon wears: its top and its height. */
     const val COLLAR_TOP = LENGTH * 0.48

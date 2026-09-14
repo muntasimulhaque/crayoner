@@ -235,10 +235,14 @@ private fun rectPath(px: (Vec2) -> Offset, x: Double, y: Double, right: Double, 
  * it. They follow the crayon's own turn, so a lying crayon's rules run across
  * it and a standing one's run down it.
  *
- * They are drawn with round caps at a width that follows the crayon, so a
- * crayon twenty pixels wide wears two fine lines and a crayon two hundred
- * pixels wide wears two lines in proportion: the wrapper is printed the same
- * way at every size.
+ * Two unit systems meet in here, and mixing them up is a bug that already
+ * shipped once: the crayon's shape is measured in its own thicknesses, and
+ * the canvas is measured in pixels. The shape's two numbers have to be
+ * turned into pixels exactly once, through [px]. The rules were once inset
+ * a *pixel* distance into a band measured in shape units, which put both
+ * lines roughly a hundred thicknesses along the crayon and off the end of
+ * it: two floating hairs beside the stick. The inset is a share of the
+ * band's own ends, so it is correct at every size by construction.
  */
 private fun DrawScope.drawWrapperRules(
     px: (Vec2) -> Offset,
@@ -247,7 +251,9 @@ private fun DrawScope.drawWrapperRules(
     unit: Float,
 ) {
     val line = Stroke((unit * 0.055f).coerceAtLeast(0.7f), cap = StrokeCap.Round)
-    val near = unit * 0.070f
+    // Derived from the band itself, not from a pixel count: a real wrapper's
+    // rules sit inside its own ends by a fixed share of the band.
+    val near = band.h * 0.12
     for (y in listOf(band.y + near, band.bottom - near)) {
         val a = px(Vec2(band.x, y))
         val b = px(Vec2(band.right, y))
@@ -263,14 +269,18 @@ private fun DrawScope.drawWrapperRules(
 }
 
 /**
- * The rubber: a real eraser, drawn the way one sits in a box, with the paper
- * sleeve a new one comes in. The rubber end shows above the sleeve, which is
- * the half that touches the paper and the half that wears away.
+ * The rubber: the app's own object, drawn the way the tray draws the crayon.
  *
- * [armed] fills the sleeve dark, which is the same language the whole app
- * speaks: an object in the child's hand is drawn solid, an object waiting on
- * the tray is drawn open. That is also why the rubber needs no other
- * selection mark.
+ * It is a block of pale rubber with a band of printed paper wound around it,
+ * which is what a real one is: a squared block lying at an angle, the bare
+ * eraser end at the top right, and the sleeve at the bottom left. Nothing
+ * here is a crayon, and the difference has to read at the size of a
+ * fingertip: the rubber is a block with corners, not a stick with a cone.
+ *
+ * [armed] is the whole selection mark, and it is the language the rest of
+ * the app already speaks: the sleeve goes solid ink, so a child can see from
+ * across the room which thing their finger is holding. It is drawn in the
+ * same ink, at the same weight, as every other outline mark in the app.
  */
 @Composable
 fun EraserGlyph(
@@ -281,73 +291,81 @@ fun EraserGlyph(
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
-        val line = Stroke(w * 0.11f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        // The whole eraser, upright and tilted a little: a block with squared
-        // corners, because this is not a crayon and the difference has to read
-        // at the size of a fingertip.
-        val body = Path().apply {
-            moveTo(w * 0.26f, h * 0.94f)
-            lineTo(w * 0.16f, h * 0.12f)
-            lineTo(w * 0.70f, h * 0.06f)
-            lineTo(w * 0.84f, h * 0.84f)
+        val line = iconStroke(w)
+        // The block, lying at an angle the way a rubber sits when it is put
+        // down: four square corners, and no curve anywhere on it. Its four
+        // corners are named for where they sit on the object: near and far
+        // along the block, low and high across it. The long axis runs from
+        // the lower left to the upper right, so the eraser end is up and to
+        // the right and the hand holds the near end.
+        val nearLow = 0.16f to 0.70f
+        val farLow = 0.72f to 0.90f
+        val farHigh = 0.90f to 0.34f
+        val nearHigh = 0.34f to 0.14f
+        // A point of the block: [along] runs from the near end to the far
+        // end and [across] from the low edge to the high edge. Bilinear, so
+        // the sleeve is a real band wound on the block rather than a shape
+        // that happens to overlap it, which is how it came out as a bow tie.
+        fun on(along: Float, across: Float): Offset {
+            val x = nearLow.first + (farLow.first - nearLow.first) * along +
+                (nearHigh.first - nearLow.first) * across
+            val y = nearLow.second + (farLow.second - nearLow.second) * along +
+                (nearHigh.second - nearLow.second) * across
+            return Offset(x * w, y * h)
+        }
+        fun path(points: List<Offset>): Path = Path().apply {
+            moveTo(points[0].x, points[0].y)
+            for (i in 1 until points.size) lineTo(points[i].x, points[i].y)
             close()
         }
+        val body = path(listOf(on(0f, 0f), on(1f, 0f), on(1f, 1f), on(0f, 1f)))
+        // The printed sleeve, wound across the block at right angles to its
+        // own length, which is where a real one is: the band is the only
+        // thing on the object that says rubber rather than eraser block.
+        val band = path(listOf(on(0.52f, 0f), on(1f, 0f), on(1f, 1f), on(0.52f, 1f)))
         drawPath(body, CrayonerColors.Card)
-        // The mineral end above the sleeve: the part that erases.
-        val bare = Path().apply {
-            moveTo(w * 0.16f, h * 0.12f)
-            lineTo(w * 0.70f, h * 0.06f)
-            lineTo(w * 0.73f, h * 0.26f)
-            lineTo(w * 0.19f, h * 0.33f)
-            close()
-        }
-        drawPath(bare, CrayonerColors.Coral)
-        // The paper sleeve: everything below the fold.
-        val sleeve = Path().apply {
-            moveTo(w * 0.19f, h * 0.33f)
-            lineTo(w * 0.73f, h * 0.26f)
-            lineTo(w * 0.84f, h * 0.84f)
-            lineTo(w * 0.26f, h * 0.94f)
-            close()
-        }
-        drawPath(sleeve, if (armed) ink else CrayonerColors.Tape)
+        drawPath(band, if (armed) ink else CrayonerColors.Cardboard)
         drawPath(body, ink, style = line)
-        drawPath(sleeve, ink, style = line)
+        // The fold where the paper is wrapped on, at the band's own edge.
+        drawLine(ink, on(0.52f, 0f), on(0.52f, 1f), line.width, StrokeCap.Round)
     }
 }
 
 /**
- * The undo mark, drawn on the thing that takes the last mark back: one turn
- * of a hand's own stroke running back on itself, with a chunky head where
- * the arrow is leaving from.
+ * The step back: one mark comes off the paper, and the mark says which way.
  *
- * It is deliberately not a line of type and not a stock glyph: it is one
- * stroke of wax in the same coral the brand is, with the small wobble of a
- * hand. The head is a solid triangle rather than two bristles, because at
- * the size of a seat a pair of thin strokes beside a thin arc reads as a
- * broken circle and says nothing about direction; a solid head reads as an
- * arrow from across the room.
+ * It is an arrow, because an arrow is the one shape every child already
+ * knows: a stroke turning over the top and down the right, and a head at the
+ * upper left pointing the way the mark leaves. The head points left and up,
+ * which reads as the picture being rewound the way film rewinds.
+ *
+ * It is deliberately not a circle with a notch. A ring with a gap and a
+ * triangle beside it is a redraw arrow only if the eye can see the gap; at
+ * the size of a seat on a phone the gap closes up and the mark reads as a
+ * broken circle, which says nothing at all. A stroke and a head say back to
+ * a three year old who has never seen either.
  */
 @Composable
 fun UndoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
     val side = size
     Canvas(modifier = modifier.size(side)) {
         val w = side.toPx()
-        // The arc: over the top, down the right, and back along the bottom,
-        // leaving the head its own room at the left.
-        val stroke = Stroke(w * 0.13f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        val sweep = Path().apply {
-            moveTo(w * 0.26f, w * 0.32f)
-            cubicTo(w * 0.46f, w * 0.04f, w * 0.88f, w * 0.16f, w * 0.84f, w * 0.54f)
-            cubicTo(w * 0.80f, w * 0.86f, w * 0.48f, w * 0.94f, w * 0.30f, w * 0.82f)
+        val line = iconStroke(w)
+        // The turn of the stroke: from the head's shoulder, over the top and
+        // down the right, so the mark is the last thing a hand drew.
+        val turn = Path().apply {
+            moveTo(w * 0.30f, w * 0.30f)
+            cubicTo(w * 0.56f, w * 0.02f, w * 0.96f, w * 0.20f, w * 0.86f, w * 0.56f)
+            cubicTo(w * 0.78f, w * 0.88f, w * 0.44f, w * 0.92f, w * 0.26f, w * 0.80f)
         }
-        drawPath(sweep, color, style = stroke)
-        // The head: one solid wedge, point outward at the left, so the mark
-        // says which way the step goes.
+        drawPath(turn, color, style = line)
+        // The head: a filled wedge whose point is the direction, at the upper
+        // left. Filled rather than two bristles, because two thin strokes
+        // beside a thin turn read as a broken circle and say nothing.
         val head = Path().apply {
-            moveTo(w * 0.05f, w * 0.22f)
-            lineTo(w * 0.37f, w * 0.10f)
-            lineTo(w * 0.30f, w * 0.46f)
+            moveTo(w * 0.03f, w * 0.46f)
+            lineTo(w * 0.44f, w * 0.03f)
+            lineTo(w * 0.46f, w * 0.50f)
             close()
         }
         drawPath(head, color)
