@@ -168,30 +168,36 @@ object Wax {
         fine: Boolean = false,
     ): IntArray {
         require(size > 0) { "a wax tile needs a positive size" }
-        val toothCells = if (fine) TOOTH_CELLS / 2 else TOOTH_CELLS
-        val broadCells = if (fine) BROAD_CELLS / 2 else BROAD_CELLS
-        val tooth = blur(noise(size, toothCells, toothCells, seed))
+        // The tooth of the paper is the same size under a mark as under a
+        // colored area, because it is the same paper either way. Only the
+        // mottle changes scale: a mark is about a fortieth of the page
+        // across, so the broad blotches that read as a hand in a big area
+        // would read as gloss on a stroke, and they are laid at the scale of
+        // the hand that drew the line instead.
+        val tooth = blur(noise(size, TOOTH_CELLS, TOOTH_CELLS, seed))
         val drag = dragField(size, angleDeg, seed + 101, fine)
-        val broad = noise(size, broadCells, broadCells, seed + 977)
+        val broad = noise(
+            size,
+            if (fine) MARK_BROAD_CELLS else BROAD_CELLS,
+            if (fine) MARK_BROAD_CELLS else BROAD_CELLS,
+            seed + 977,
+        )
         val cover = if (fine) MARK_COVERAGE else COVERAGE
         val swing = if (fine) MARK_COVERAGE_SWING else COVERAGE_SWING
-        // The drag leans harder on a mark than on a filled area. A hand
-        // drawing a line moves the whole arm and the streak is most of what
-        // the eye reads; a hand covering an area moves its wrist and the wax
-        // is more even. Either way the drag is the strongest of the three,
-        // because the streak is what says a hand went back and forth.
+        // The drag leans hard on both: the streak is what says a hand went
+        // back and forth, and it is the difference in coverage along the
+        // stroke, not a darker color, that shows it. Wax is never darker
+        // than the pigment it is made of.
         val dragWeight = if (fine) MARK_DRAG_WEIGHT else COVERAGE_DRAG_WEIGHT
         val toothWeight = if (fine) MARK_TOOTH_WEIGHT else COVERAGE_TOOTH_WEIGHT
+        val broadWeight = if (fine) MARK_BROAD_WEIGHT else COVERAGE_BROAD_WEIGHT
         val rgb = (argb and 0xFFFFFF).toInt()
         val out = IntArray(size * size)
         for (i in out.indices) {
-            // A mark's unevenness lives at the coarse scale; the tooth is a
-            // faint speckle either way, and up close it is visible as the
-            // paper's grain and not as noise.
             val s =
-                ((tooth[i] - 0.5) * toothWeight +
+                (tooth[i] - 0.5) * toothWeight +
                     (drag[i] - 0.5) * dragWeight +
-                    (broad[i] - 0.5) * 0.55) * if (fine) 0.72 else 1.0
+                    (broad[i] - 0.5) * broadWeight
             // The middle of the range is held back and the extremes pushed:
             // wax is mostly down, with places it skipped and places it piled.
             val c = (cover + s * swing).coerceIn(0.0, 1.0).pow(COVERAGE_CURVE)
@@ -201,30 +207,49 @@ object Wax {
         return out
     }
 
-    /** How much wax the surface lays down on average, and how it varies. */
-    private const val COVERAGE = 0.78
-    private const val COVERAGE_SWING = 0.34
+    /**
+     * How much of the paper a pass of the hand leaves covered.
+     *
+     * A real crayon is not a wash: dragged across paper it lays nearly all
+     * of its pigment down, and what breaks the color is the paper's tooth
+     * and the places the stick skipped, not a thin veil of the color. So
+     * coverage is high and the variation is what makes it wax. The old
+     * model ran at under eighty percent and read as a marker: too pale to be
+     * the stick the child picked up, and too flat to be pressed into paper.
+     */
+    private const val COVERAGE = 0.90
+    private const val COVERAGE_SWING = 0.28
     private const val COVERAGE_CURVE = 0.80
 
     /** How heavily each noise leans on a filled area. */
     private const val COVERAGE_DRAG_WEIGHT = 1.60
     private const val COVERAGE_TOOTH_WEIGHT = 0.60
+    private const val COVERAGE_BROAD_WEIGHT = 0.45
 
     /**
-     * The same two numbers for a mark. A hand drawing a line presses less
-     * evenly than a hand filling an area, so a stroke is thinner and more
-     * broken up and the paper keeps coming through it. That break is what
-     * makes a line read as crayon rather than as paint out of a tube.
+     * The same numbers for a mark. A hand drawing a line presses a hair more
+     * evenly than a hand filling an area, but the grain is the paper's, and
+     * a mark is as opaque as the stick that made it for the same reason an
+     * area is: the color on the paper is the crayon's own.
      */
-    private const val MARK_COVERAGE = 0.68
-    private const val MARK_COVERAGE_SWING = 0.60
+    private const val MARK_COVERAGE = 0.90
+    private const val MARK_COVERAGE_SWING = 0.30
 
-    /** How heavily each noise leans on a mark. */
-    private const val MARK_DRAG_WEIGHT = 2.00
+    /**
+     * How heavily each noise leans on a mark. The drag is heavier here than
+     * on an area, because a mark is a single line rather than a field of
+     * passes: with nothing over it to carry the streak, the smear itself has
+     * to be what says a hand went along it.
+     */
+    private const val MARK_DRAG_WEIGHT = 2.40
     private const val MARK_TOOTH_WEIGHT = 0.60
+    private const val MARK_BROAD_WEIGHT = 0.30
 
     private const val TOOTH_CELLS = 40
     private const val BROAD_CELLS = 7
+
+    /** A mark's own mottle, at the scale of a line rather than an area. */
+    private const val MARK_BROAD_CELLS = 16
 
     /** Noise on a lattice that wraps, at [cx] by [cy] cells over the tile. */
     private fun noise(size: Int, cx: Int, cy: Int, seed: Int): DoubleArray {
@@ -274,8 +299,11 @@ object Wax {
      * are not all parallel to each other either.
      */
     private fun dragField(size: Int, angleDeg: Double, seed: Int, fine: Boolean): DoubleArray {
-        val long = smear(size, angleDeg, seed, if (fine) 0.34 else 0.40, if (fine) 12 else 10)
-        val short = smear(size, angleDeg + 11.0, seed + 331, if (fine) 0.12 else 0.16, if (fine) 18 else 14)
+        // A mark is looked at from close up, so its wisps are short against
+        // its own width: the same reach on a stroke a thirtieth of the page
+        // across would run off both ends of it.
+        val long = smear(size, angleDeg, seed, if (fine) 0.40 else 0.40, if (fine) 12 else 10)
+        val short = smear(size, angleDeg + 11.0, seed + 331, if (fine) 0.12 else 0.16, if (fine) 17 else 14)
         return DoubleArray(size * size) { i -> long[i] * 0.62 + short[i] * 0.38 }
     }
 

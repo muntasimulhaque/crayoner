@@ -97,20 +97,24 @@ private fun waxBrush(region: Region, color: Color, side: Float): ShaderBrush? {
 
 /**
  * The wax of the child's own marks: the same surface an area is colored
- * with, keyed by color and by which pass of the hand drew it, because a mark
- * belongs to the hand and not to any area of the picture. A mark the child
- * makes is then literally made of the material the sample is made of.
+ * with, keyed by color alone, because a mark belongs to the hand and not to
+ * any area of the picture. A mark the child makes is then literally made of
+ * the material the sample is made of.
+ *
+ * One tile per color, and one pass of it under a mark. The tile is built
+ * fine, which is the paper's own tooth at the scale of a line rather than of
+ * a whole area.
  */
 private val strokeWax = HashMap<Long, ImageBitmap>()
 
-internal fun waxStroke(argb: Long, pass: Int): ShaderBrush? {
-    val tile = strokeWax.getOrPut(argb * 2 + pass) {
+internal fun waxStroke(argb: Long): ShaderBrush? {
+    val tile = strokeWax.getOrPut(argb) {
         val pixels = Wax.surface(
             argb = argb,
             size = WAX_TILE,
-            angleDeg = MARK_ANGLE + pass * MARK_PASS_TILT,
+            angleDeg = MARK_ANGLE,
             phase = 0,
-            seed = MARK_SEED + pass * 6161,
+            seed = MARK_SEED,
             fine = true,
         )
         val bitmap = Bitmap.createBitmap(pixels, WAX_TILE, WAX_TILE, Bitmap.Config.ARGB_8888)
@@ -124,9 +128,6 @@ internal fun waxStroke(argb: Long, pass: Int): ShaderBrush? {
 /** The angle a mark's wax lies at, and its seed: the same for every mark. */
 private const val MARK_ANGLE = -24.0
 private const val MARK_SEED = 0x5A17
-
-/** How far the second pass of a mark leans off the first one's angle. */
-private const val MARK_PASS_TILT = 26.0
 
 /** The wax tile's side, in pixels. Small, and it wraps, so it repeats. */
 private const val WAX_TILE = 96
