@@ -73,9 +73,14 @@ internal fun SheetOf(
                 .clip(PaperShape)
                 .background(CrayonerColors.Card)
                 .clipToBounds()
-                .pointerInput(state.page.id, widthPx) {
-                    if (widthPx <= 0) return@pointerInput
-                    val w = widthPx.toDouble()
+                // The pointer input is told its own size by the layout system
+                // rather than being handed the size the caller meant to ask
+                // for: a mark's geometry is read from the same frame the
+                // finger's coordinates are in, to the pixel, so rounding can
+                // never pull the wax away from the fingertip.
+                .pointerInput(state.page.id) {
+                    val w = size.width.toDouble()
+                    if (w <= 0.0) return@pointerInput
                     fun at(offset: Offset) =
                         pagePointOf(offset.x.toDouble(), offset.y.toDouble(), w)
                     awaitEachGesture {
