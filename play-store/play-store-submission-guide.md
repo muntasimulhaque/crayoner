@@ -179,14 +179,14 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 0.5 (versionCode 5) is ready for Play review.** It was built by CI
-from commit da3814c, signed with the Crayoner upload key, and reads
-versionCode 5, versionName 0.5, package io.github.muntasimulhaque.crayoner,
-target 37, with no permission beyond the androidx core private receiver
-(checked in the built APK's own manifest, `aapt2 dump permissions`). The AAB
-is waiting in `play-store/aab/app-release.aab`, sha256 17fe2480, and must be
-deleted from that folder once it is submitted so a stale build can never be
-uploaded twice. The next build to upload will be 0.6.
+**Version 0.5 (versionCode 5) was submitted for Play review on 14 Sep
+2026.** It was built by CI from commit da3814c, signed with the Crayoner
+upload key, and reads versionCode 5, versionName 0.5, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked in the built APK's own manifest,
+`aapt2 dump permissions`). The AAB was sha256 17fe2480 and has been DELETED
+from `play-store/aab/` now that it is submitted, so a stale build can never
+be uploaded twice. The next build to upload will be 0.6.
 
 0.5 is the round where the paper answers the hand. Three things a hand
 reaches for now sit in one capsule: the crayon in hand, the rubber, and undo,
