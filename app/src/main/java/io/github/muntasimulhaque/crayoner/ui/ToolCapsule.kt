@@ -1,9 +1,5 @@
 package io.github.muntasimulhaque.crayoner.ui
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,12 +24,16 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.animateColorAsState
 import io.github.muntasimulhaque.crayoner.R
 import io.github.muntasimulhaque.crayoner.core.CrayonShape
 
 /**
  * One capsule on the desk, holding the three things a hand reaches for while
- * coloring: the crayon it is drawing with, the rubber, and the step back.
+ * coloring: the step back, the crayon it is drawing with, and the rubber.
  *
  * They are one object on purpose. Three separate coins put three separate
  * shadows on the desk and ask a three year old to find the small gap between
@@ -42,10 +42,15 @@ import io.github.muntasimulhaque.crayoner.core.CrayonShape
  * is what the child is here for, and the tools are one object lying below it
  * rather than a row of them.
  *
- * The crayon is drawn the way a real crayon is held (point down), the rubber
- * the way a real rubber sits in a box, and the step back is the one mark
- * that is not a hand drawing: a stroke running round on itself, in the
- * brand's own coral.
+ * The order runs the way the hand works. A step back sits at the left, out
+ * of the way, because it is the one thing on the capsule that undoes rather
+ * than draws and a child should have to mean it. The crayon sits in the
+ * middle, where a thumb naturally lands, because it is the thing they pick
+ * up a hundred times. The rubber sits at the right, as the other end of the
+ * same axis: draw on the left of it, undo on the right of it.
+ *
+ * The crayon is drawn the way a real crayon is held (point down) and the
+ * rubber the way a real rubber sits on a desk.
  */
 @Composable
 fun ToolCapsule(
@@ -68,13 +73,18 @@ fun ToolCapsule(
         val reach = (maxWidth / SEAT_SPAN).coerceIn(COIN_MIN, COIN_MAX)
         Row(
             modifier = Modifier
-                .buttonShadow(RoundedCornerShape(reach * 0.62f), elevation = 7.dp)
+                .buttonShadow(RoundedCornerShape(reach * 0.62f), elevation = 5.dp)
                 .clip(RoundedCornerShape(reach * 0.62f))
                 .background(CrayonerColors.Card)
-                .padding(horizontal = reach * 0.16f, vertical = reach * 0.14f),
+                .padding(horizontal = reach * 0.12f, vertical = reach * 0.10f),
             horizontalArrangement = Arrangement.spacedBy(reach * 0.08f),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            UndoSeat(
+                ready = canUndo,
+                onClick = onUndo,
+                size = reach,
+            )
             CapsuleSeat(
                 onClick = { onOpenBox(!boxOpen) },
                 armed = boxOpen,
@@ -85,7 +95,7 @@ fun ToolCapsule(
                 // Standing, point down the way a held crayon is drawn: it is
                 // the color in hand, so the child never has to remember which
                 // one they picked up.
-                val height = reach * 0.80f
+                val height = reach * 0.86f
                 CrayonGlyph(
                     color = Color(selected),
                     modifier = Modifier.size(
@@ -99,25 +109,31 @@ fun ToolCapsule(
                 onClick = { onErase(!erasing) },
                 size = reach,
             )
-            UndoSeat(
-                ready = canUndo,
-                onClick = onUndo,
-                size = reach,
-            )
         }
     }
 }
 
-/** The tallest and shortest a seat in the capsule is ever drawn. */
+/**
+ * The tallest and shortest a seat in the capsule is ever drawn.
+ *
+ * The floor is the accessibility rule: a target a small hand can find and
+ * hit, and it is the number the floor may never go under. The ceiling is the
+ * taste rule: the capsule is a tool lying on a desk under the paper, and it
+ * must not compete with the picture for the eye, so on a phone it stays
+ * close to its floor and only grows on a tablet where there is room to
+ * spare. Three comfortable targets already cost most of a phone's width, so
+ * the ceiling is deliberately near the floor and the glyphs inside the seats
+ * are drawn as large as they can be without touching.
+ */
 private val COIN_MIN = 62.dp
-private val COIN_MAX = 84.dp
+private val COIN_MAX = 66.dp
 
 /**
  * How many seats' worth of width one seat takes up, including its own gaps
  * and the capsule's padding: three seats, the two gaps between them and the
  * padding at either end, all of them a fixed fraction of the seat itself.
  */
-private val SEAT_SPAN = 3.48f
+private val SEAT_SPAN = 3.34f
 
 /**
  * The rubber's seat. Press it and the crayon becomes an eraser: the next
@@ -127,7 +143,7 @@ private val SEAT_SPAN = 3.48f
 private fun RubberSeat(armed: Boolean, onClick: () -> Unit, size: Dp) {
     val label = stringResource(if (armed) R.string.eraser_on else R.string.eraser_off)
     CapsuleSeat(onClick = onClick, armed = armed, size = size, label = label) {
-        EraserGlyph(armed = armed, modifier = Modifier.size(size * 0.56f))
+        EraserGlyph(armed = armed, modifier = Modifier.size(size * 0.70f))
     }
 }
 
@@ -148,15 +164,19 @@ private fun UndoSeat(ready: Boolean, onClick: () -> Unit, size: Dp) {
         label = "undo-ink",
     ).value
     CapsuleSeat(onClick = onClick, armed = false, size = size, label = label) {
-        UndoGlyph(color = ink, size = size * 0.58f)
+        UndoGlyph(color = ink, size = size * 0.70f, modifier = Modifier)
     }
 }
 
 /**
  * One seat in the capsule: the round plate a child presses, lifted a little
- * on its spring when the thing it holds is in hand. All three wear it, so
- * they are always the same size, the same shadow and the same reach, and a
- * small hand learns the row once.
+ * on its spring when the thing it holds is in hand.
+ *
+ * [armed] is the one selection language in the app, and it is the same one
+ * on every seat: the plate under the thing in hand takes the capsule's own
+ * cardboard, so which tool is picked up reads at a glance and no seat means
+ * anything different from any other. The plate is not the button, so it is
+ * drawn behind the glyph and never as a ring around it.
  */
 @Composable
 private fun CapsuleSeat(

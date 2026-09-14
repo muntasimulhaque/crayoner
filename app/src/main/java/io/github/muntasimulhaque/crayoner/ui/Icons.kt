@@ -18,13 +18,39 @@ import androidx.compose.ui.unit.dp
 
 /**
  * The app's own icon set, drawn as geometry: a house for the shelf, a
- * speaker for the sound switch. No icon fonts, no third party packs: same
- * hand, same weights, everywhere.
+ * speaker for the sound switch, a rubber, a step back. No icon fonts, no
+ * third party packs: same hand, same weights, everywhere.
+ *
+ * The whole set shares one weight, and that is the point of [IconLine]. A
+ * row of buttons is read as one object, so a round mark drawn with a hair
+ * line beside one drawn with a marker looks like two different apps. Every
+ * outline mark in the app is struck at the same fraction of its own box, and
+ * the fraction is chosen for the smallest size the mark is ever drawn at: a
+ * mark that reads at 24 dp reads at 26 dp too, and the other way round is
+ * not true.
  */
+
+/**
+ * The one line weight for an outline icon, as a fraction of the icon's own
+ * box. A mark has to read at the size of a fingertip, which is where a
+ * lighter line stops being a line at all.
+ */
+private const val ICON_LINE = 0.098f
+
+/**
+ * The stroke every outline icon is drawn with: one weight, one set of caps,
+ * scaled to the box it is drawn in.
+ */
+internal fun iconStroke(w: Float): Stroke = Stroke(
+    width = (w * ICON_LINE).coerceAtLeast(1.4f),
+    cap = StrokeCap.Round,
+    join = StrokeJoin.Round,
+)
+
 @Composable
 fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
     GeoIcon(modifier, color, size) { w, h ->
-        val line = Stroke(w * 0.105f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val line = iconStroke(w)
         val roof = Path().apply {
             moveTo(w * 0.16f, h * 0.48f)
             lineTo(w * 0.50f, h * 0.18f)
@@ -52,7 +78,7 @@ fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = 24.dp) {
 @Composable
 fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp = 26.dp) {
     GeoIcon(modifier, color, size) { w, h ->
-        val line = Stroke(w * 0.095f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val line = iconStroke(w)
         val cone = Path().apply {
             moveTo(w * 0.15f, h * 0.40f)
             lineTo(w * 0.30f, h * 0.40f)
