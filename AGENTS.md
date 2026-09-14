@@ -402,9 +402,8 @@ plays one effect and the raw folder holds one file.
 CI is the loop: `build.yml` gates every push to `main` on tests, lint, asset
 pins, then signs and publishes the AAB and APK to the `latest-build` GitHub
 release. `screenshots.yml` recaptures the store screenshots whenever UI files
-change: seven captures per form factor (phone, 7", 10"), 21 in all, plus a
-phone capture of a page looked at closely, pinned to
-API 35.
+change: seven captures per form factor (phone, 7", 10"), 21 in all, pinned
+to API 35.
 
 The asset pins refuse a hand-edited or stale asset. `checkSounds` is exact:
 the WAVs are pure integer arithmetic from `SoundGen`. `checkIcons` compares
@@ -418,9 +417,8 @@ change on the 48 pixel icon fails it.
 
 Download the three `store-screenshots-*` artifacts with
 `gh run download <run-id> -R muntasimulhaque/crayoner -D <dir>` and strip the
-form-factor prefix into `play-store/screenshots/`. The celebration scene is
-mid-animation by design, so its pixels wobble a little between runs; every
-other scene should come back effectively identical.
+form-factor prefix into `play-store/screenshots/`. The scenes are static
+state renders, so a rerun should come back effectively identical.
 
 Do not pre-check UI on a local emulator unless CI cannot answer; CI is the
 loop. A local AVD exists on the owner's machine (API 37.1, `Pixel_4` and
