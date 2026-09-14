@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.muntasimulhaque.crayoner.R
+import io.github.muntasimulhaque.crayoner.core.CrayonShape
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.host.ShelfState
@@ -89,50 +90,46 @@ fun HomeScreen(
 }
 
 /**
- * The wall's own nameplate: the brand's mark, the name, and a rule under it.
+ * The wall's own nameplate: the name, and the brand's mark beside it.
  *
- * There is no switch up here. The one thing the shelf used to carry was the
- * sound switch, and it belongs on the page, where a child hears a crayon
- * being picked up and can turn it off then and there without leaving the
- * picture they are coloring. Here it was a control on a wall of pictures.
+ * The mark sits to the right of the word, leaning away from it, and it is
+ * the app's own crayon lying down: the same object the launcher icon is made
+ * of, in the brand's coral. It is drawn in its own square rather than in a
+ * wide, short box, because a crayon's shape is measured from its own length
+ * and a box that is not the shape's own proportion stretches it.
+ *
+ * There is no rule under the word and no switch beside it. The crayon-drawn
+ * line that used to underline the name has been taken off: it read as a
+ * scoreboard rail on a wall that deliberately keeps no score, and the header
+ * is quieter and more certain without it.
  */
 @Composable
 private fun ShelfHeader() {
-    Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 6.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(64.dp)
                 .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // The brand's own mark, drawn by the same hand that draws the
-            // box: one crayon, in the coral the first picture in the book
-            // wears, leaning the way a crayon put down on a desk leans. It
-            // points the way the app's own icon does, so the mark on the wall
-            // is the mark on the home screen.
-            CrayonGlyph(
-                color = CrayonerColors.Coral,
-                lying = true,
-                modifier = Modifier
-                    .size(width = 54.dp, height = 26.dp)
-                    .rotate(-18f),
-            )
-            Spacer(Modifier.width(14.dp))
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displaySmall,
                 color = CrayonerColors.Ink,
             )
+            Spacer(Modifier.width(14.dp))
+            // The brand's own mark, lying down the way a crayon rests on a
+            // desk, leaning away from the word it belongs to. The box is the
+            // crayon's own proportion, so nothing about it is stretched.
+            CrayonGlyph(
+                color = CrayonerColors.Coral,
+                lying = true,
+                modifier = Modifier
+                    .size(width = 62.dp, height = 62.dp * CrayonShape.THICKNESS.toFloat())
+                    .rotate(12f),
+            )
         }
-        // A crayon-drawn rule under the name: one wavering stroke, the way a
-        // ruler-less line actually comes out, in the brand coral.
-        CrayonUnderline(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 22.dp)
-                .height(10.dp),
-        )
     }
 }
 

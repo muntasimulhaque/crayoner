@@ -1,14 +1,17 @@
 package io.github.muntasimulhaque.crayoner.tools
 
+import io.github.muntasimulhaque.crayoner.core.Area
 import io.github.muntasimulhaque.crayoner.core.CrayonInk
 import io.github.muntasimulhaque.crayoner.core.CrayonShape
 import io.github.muntasimulhaque.crayoner.core.Crayons
+import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.core.WaxGrain
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.TexturePaint
+import java.awt.geom.AffineTransform
 import java.awt.geom.Path2D
 import java.awt.geom.Rectangle2D
 import java.awt.geom.RoundRectangle2D
@@ -19,33 +22,37 @@ import javax.imageio.ImageIO
 /**
  * The launcher icon, drawn from code so every PNG has exactly one author.
  *
- * The mark: one crayon, the tool the whole app is about, held the way the
- * app's own tray draws it, with its point down and its body leaning, as if
- * it had just come off a page. It is drawn in a crayon's real material: the
- * wax color of the tip, the cone a shade deeper where the light leaves it,
- * a wrapper in the wax's own hue, the two dark rules a real wrapper wears,
- * the same wax grain every colored area in the book carries, and no ink
- * line around the wax at all.
+ * The mark is one sentence with no words in it: a crayon standing on its
+ * point, and the band of color it has just laid down beside itself. A child
+ * of three cannot read the word Crayoner, and a crayon on its own says
+ * writing tool, not coloring book. A crayon whose own tip sits in a swath of
+ * wax says the whole thing at a glance: this is the thing you draw with, and
+ * this is what comes out when you draw with it. The swath is broad and
+ * ragged, the way a wax crayon dragged across paper covers it, so it reads
+ * as a picture being colored in rather than as a line drawn with a pen.
  *
- * Nothing is drawn around the stick, and that is deliberate. A real crayon
- * has no line around it: the wrapper's edge is where the paper wound over
- * the wax ends, and the wax beside it is the stick's own color laid on
- * thick. A line there is ink the object does not have, and at the size of an
- * icon the line is most of what the eye reads, which is what turns a drawing
- * of a crayon into a diagram of one. The two printed rules stay, because
- * they are the one line a real wrapper really wears.
+ * The crayon is the app's own object, drawn point down at the very lean the
+ * tray in the app gives it, and in the crayon's real material: the wax color
+ * of the stick, the cone a shade deeper where the light leaves it, a wrapper
+ * in the wax's own hue, and the two dark rules a real wrapper wears. Nothing
+ * is drawn around the wax, and that is deliberate: a real crayon has no line
+ * around it, and at the size of an icon a line is most of what the eye reads,
+ * which is what turns a drawing of a crayon into a diagram of one.
  *
- * The point is down for two reasons. A crayon is used point down, so that is
- * the way it looks in a hand and the way a child recognizes it; and a crayon
- * standing on its point cannot read as anything but a crayon.
+ * Every number lives in [Mark], in the mark's own box. [MarkBox] measures
+ * that box from the geometry itself and fits it to the canvas by the mark's
+ * furthest point from its own center, so the same drawing fills a 48 pixel
+ * legacy tile, a 432 pixel adaptive foreground and a 512 pixel store icon
+ * without a tip being clipped by a launcher's round mask at any of them.
  *
- * The whole mark leans the other way from the wall's own crayon and points
- * the other way round: the app's icon is the one mark that faces inward at
- * the launcher, and nothing else in the app is drawn mirrored.
+ * The whole mark is mirrored about the canvas center, which is what makes
+ * the launcher icon the app's own crayon facing the other way. One flip of
+ * one finished drawing, so the mirror is a mirror of the mark and not a
+ * change to it: same crayon, same lean, same proportions, other way round.
  *
  * Rendered three ways: the legacy tile for API 24-25, the adaptive
- * foreground for API 26+, and a white monochrome sibling (the crayon
- * silhouette) for Android 13+ themed icons.
+ * foreground for API 26+, and the white monochrome sibling (the same mark as
+ * a flat silhouette) for Android 13+ themed icons.
  *
  * Colors mirror app/src/main/res/values/colors.xml; change both together,
  * run makeIcons, and commit the regenerated PNGs.
@@ -56,6 +63,7 @@ object IconDesign {
 
     /** The crayon's wax: the brand coral, the sailboat's red. */
     val WAX: Int = Crayons.RED.toInt()
+
     /** The white the monochrome layer is drawn in. */
     const val WHITE: Int = -0x1 // 0xFFFFFFFF, how Kotlin spells opaque white
 
@@ -76,155 +84,291 @@ object IconDesign {
     const val ADAPTIVE_DP = 108.0
     const val LEGACY_CORNER_FRACTION = 0.22
     const val STORE_CORNER_FRACTION = 0.19
+
+    /**
+     * How close a stroke is allowed to come to a canvas's own edge on the
+     * layers a launcher masks, as a fraction of the canvas radius. Android's
+     * safe zone is 66 of the adaptive icon's 108dp; this leaves the mark a
+     * hair inside it so antialiasing has room to finish.
+     */
+    const val ADAPTIVE_INSET = 0.56
+    const val TILE_INSET = 0.80
 }
 
 internal enum class Layer { TILE, FOREGROUND, MONO }
 
 /**
- * The crayon mark: the app's own object, drawn the way the device draws it
- * (see `ui/CrayonBox.drawCrayonShape`), standing point down and leaning a
- * little, the way a crayon looks the moment it has been used.
+ * The mark, in its own box.
  *
- * The proportions are the real object's and they are the whole reason this
- * reads as a crayon: the body is a little under three times as long as it is
- * thick, the cone is as wide as the body and a little longer than it is
- * wide, and the nose is bluntly rounded rather than sharp. A shorter cone is
- * a block, a longer or sharper one is a pencil, and a fatter body is a
- * marker.
- *
- * [inset] is how much of the canvas the mark may use: 1.0 fills it, and the
- * adaptive layer asks for less, so no launcher shape can clip a tip.
+ * The box is a unit square and the whole mark is laid out inside it, so
+ * every number here is a proportion of the drawing rather than a size. The
+ * crayon stands at the left with its tip low, and the swath it has just laid
+ * runs away to the right, which is the one arrangement that reads as a hand
+ * having moved rather than as two objects.
  */
-internal fun paintCrayon(g: Graphics2D, size: Int, mono: Boolean, inset: Double = 1.0) {
-    // One turn around the canvas center. The half turn stands the crayon on
-    // its point, and the lean is the wrist: because both happen here, every
-    // layer and every density lean by exactly the same amount.
-    //
-    // The whole mark is then mirrored about the canvas center, which is what
-    // makes the launcher icon the wall's crayon facing the other way. The
-    // mirror goes on first in code and so lands outermost in the transform,
-    // which is what keeps it a mirror of the finished drawing rather than a
-    // change to the drawing itself: same crayon, same lean, other way round.
-    val lean = -14.0
-    g.translate(size.toDouble(), 0.0)
-    g.scale(-1.0, 1.0)
-    g.rotate(Math.toRadians(180.0), size / 2.0, size / 2.0)
-    g.rotate(Math.toRadians(lean), size / 2.0, size / 2.0)
+private object Mark {
 
-    // One mapping for the whole drawing: a point in the shape's own unit
-    // box to a point in the icon, in the icon's own scale. It is the same
-    // mapping the device uses (see ui/CrayonGlyph.drawCrayonShape), so the
-    // pieces land in the same proportions and the icon cannot drift from
-    // the crayon the tray draws.
-    val unit = size.toDouble() * inset * 0.86
-    val left = (size - unit) / 2.0
-    fun pxX(v: Double) = left + v * unit
-    fun pxY(v: Double) = left + v * unit
-    fun path(points: List<Pair<Double, Double>>): Path2D.Double = Path2D.Double().apply {
-        val first = points.first()
-        moveTo(pxX(first.first), pxY(first.second))
-        for (i in 1 until points.size) lineTo(pxX(points[i].first), pxY(points[i].second))
-        closePath()
+    /** The crayon's tip, and how long the stick is. */
+    val TIP: Vec2 = Vec2(0.30, 0.78)
+    const val LENGTH = 0.62
+
+    /**
+     * The lean, in degrees, turning the crayon's axis from straight up
+     * toward the left. This is the tray's own posting, so the icon's crayon
+     * and the app's crayon are one object and not two drawings of one.
+     */
+    const val LEAN = -14.0
+
+    /**
+     * The line the hand traveled, as control points of a smooth curve. The
+     * swath is drawn as a band of growing width along this line, so the
+     * stroke is thin where the crayon touched down and broad where the hand
+     * was moving, which is what a real drag looks like.
+     */
+    val SWATH: List<Vec2> = listOf(
+        Vec2(0.24, 0.775),
+        Vec2(0.52, 0.810),
+        Vec2(0.80, 0.790),
+        Vec2(1.02, 0.720),
+    )
+
+    /** How wide the swath is at the tip, and at its far end. */
+    const val SWATH_START = 0.12
+    const val SWATH_END = 0.22
+
+    /** How the swath's edges are finished: samples, and how ragged they are. */
+    const val SWATH_STEPS = 64
+    const val SWATH_RAGGED = 0.10
+}
+
+/** A point in the mark's own box, in the icon's own pixels. */
+private class MarkBox(size: Int, inset: Double) {
+
+    private val canvas = size.toDouble()
+    private val scale: Double
+    private val middleX: Double
+    private val middleY: Double
+
+    init {
+        // The drawing's own extent, measured from its geometry rather than
+        // guessed at, so a change to the swath can never push the crayon off
+        // the edge of the tile. The mark is fitted by its furthest point from
+        // its own center, not by its bounding box: a wide, low drawing in a
+        // square canvas would otherwise have its corners cut off by a
+        // launcher's round mask, which is exactly what a safe zone prevents.
+        val points = ArrayList<Vec2>()
+        points += Mark.SWATH
+        points += CrayonShape.outline().map { crayonPoint(it) }
+        val minX = points.minOf { it.x }
+        val maxX = points.maxOf { it.x }
+        val minY = points.minOf { it.y }
+        val maxY = points.maxOf { it.y }
+        middleX = (minX + maxX) / 2.0
+        middleY = (minY + maxY) / 2.0
+        val reach = points.maxOf { Math.hypot(it.x - middleX, it.y - middleY) }
+        scale = canvas / 2.0 * inset / reach
     }
-    val outline = CrayonShape.outline().map { it.x to it.y }
-    val body = path(outline)
-    val band = CrayonShape.wrapperBand()
-    val wrap = path(
-        listOf(
-            band.x to band.y,
-            band.right to band.y,
-            band.right to band.bottom,
-            band.x to band.bottom,
-        ),
-    )
-    val coneBreaks = CrayonShape.TIP_LENGTH * 0.72
-    val cone = path(
-        outline.takeWhile { it.second <= CrayonShape.TIP_LENGTH + 1e-9 } +
-            listOf(1.0 to CrayonShape.TIP_LENGTH, 0.0 to CrayonShape.TIP_LENGTH),
-    )
-    val base = CrayonShape.baseBand()
-    val end = path(
-        listOf(
-            base.x to base.y,
-            base.right to base.y,
-            base.right to base.bottom,
-            base.x to base.bottom,
-        ),
-    )
-    val coneSplit = coneBreaks
 
+    /** One unit of the mark's own box, in the icon's pixels. */
+    val unit: Double get() = scale
+
+    fun at(p: Vec2): DoubleArray = doubleArrayOf(
+        canvas / 2.0 + (p.x - middleX) * scale,
+        canvas / 2.0 + (p.y - middleY) * scale,
+    )
+
+    /** A point of the crayon's own shape, in the mark's box. */
+    fun crayonPoint(p: Vec2): Vec2 {
+        val len = Mark.LENGTH / CrayonShape.LENGTH
+        val a = Math.toRadians(Mark.LEAN)
+        // The shape's y runs from the tip along the stick, and its x runs
+        // across it; the axis is "up" turned by the lean.
+        val along = p.y * len
+        val across = (p.x - 0.5) * len
+        val dirX = Math.sin(a)
+        val dirY = -Math.cos(a)
+        return Vec2(
+            Mark.TIP.x + along * dirX - across * dirY,
+            Mark.TIP.y + along * dirY + across * dirX,
+        )
+    }
+
+    /** The crayon's own thickness unit, in the icon's pixels. */
+    fun crayonUnit(): Double = Mark.LENGTH / CrayonShape.LENGTH * unit
+}
+
+/**
+ * Paints the mark: the swath of wax first, then the crayon standing in it.
+ *
+ * [mono] draws the whole mark as one flat white silhouette, which is what
+ * Android's themed icons want: the launcher supplies the color.
+ */
+internal fun paintMark(g: Graphics2D, size: Int, mono: Boolean, inset: Double) {
+    // One transform for everything: the canvas is mirrored about its own
+    // center, so the finished mark faces the other way on the home screen.
+    g.transform(AffineTransform(-1.0, 0.0, 0.0, 1.0, size.toDouble(), 0.0))
+
+    val box = MarkBox(size, inset)
     val wax = Color(if (mono) IconDesign.WHITE else IconDesign.WAX, true)
-    val wrapper = Color(if (mono) IconDesign.WHITE else IconDesign.WRAPPER, true)
-    val rule = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_SHADE, true)
-    val tip = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_CONE, true)
-    val baseShade = Color(if (mono) IconDesign.WHITE else IconDesign.WAX_BASE, true)
 
+    // The swath: the wax the crayon has already laid down. It is drawn as a
+    // filled band rather than as a wide line, because the width has to grow
+    // along the stroke, and it carries the same grain as every colored area
+    // in the book, so the band is made of the material its own crayon is.
+    val swath = swathBand(box)
+    g.color = wax
+    g.fill(swath)
+    paintGrain(g, swath)
+
+    // The crayon, standing with its tip in the swath: the nib is the top of
+    // the line it made, which is the direction the wax really travels.
+    val body = crayonPath(box, CrayonShape.outline())
     g.color = wax
     g.fill(body)
-
-    // The cone, a shade deeper than the body: a drawn crayon's tip is where
-    // the light leaves it, and that is the only shading a stick gets. Then
-    // the wrapper's band, from the same geometry the tray uses, and the
-    // base's own sliver at the far end, so the stick reads as round and not
-    // as a block. No line is drawn around any of it (see the class comment).
     if (!mono) {
-        g.color = tip
-        g.fill(cone)
-
-        g.color = wrapper
-        g.fill(wrap)
+        g.color = Color(IconDesign.WAX_CONE, true)
+        g.fill(conePath(box))
+        g.color = Color(IconDesign.WRAPPER, true)
+        g.fill(bandPath(box, CrayonShape.wrapperBand()))
         // The two dark rules a real wrapper wears. They are drawn as floats:
         // rounding them to whole pixels would make the mark a hair different
         // on the two sides of the mirror that turns it the other way round.
-        g.color = rule
+        g.color = Color(IconDesign.WAX_SHADE, true)
         g.stroke = BasicStroke(
-            (unit * CrayonShape.RULE_WEIGHT).toFloat().coerceAtLeast(1f),
+            (box.crayonUnit() * CrayonShape.RULE_WEIGHT).toFloat().coerceAtLeast(1f),
             BasicStroke.CAP_ROUND,
             BasicStroke.JOIN_ROUND,
         )
-        val ruleInset = CrayonShape.RULE_INSET
-        g.draw(
-            java.awt.geom.Line2D.Double(
-                pxX(band.x), pxY(band.y + ruleInset),
-                pxX(band.right), pxY(band.y + ruleInset),
-            ),
-        )
-        g.draw(
-            java.awt.geom.Line2D.Double(
-                pxX(band.x), pxY(band.bottom - ruleInset),
-                pxX(band.right), pxY(band.bottom - ruleInset),
-            ),
-        )
-        g.color = baseShade
-        g.fill(end)
+        val band = CrayonShape.wrapperBand()
+        // The inset is a share of the band's own ends, in the shape's own
+        // units, so it is right at every size. A pixel count here would be
+        // off the end of the crayon (see ui/CrayonGlyph.kt).
+        val near = band.h * 0.12
+        for (y in listOf(band.y + near, band.bottom - near)) {
+            val a = box.at(box.crayonPoint(Vec2(band.x, y)))
+            val b = box.at(box.crayonPoint(Vec2(band.right, y)))
+            g.draw(java.awt.geom.Line2D.Double(a[0], a[1], b[0], b[1]))
+        }
+        g.color = Color(IconDesign.WAX_BASE, true)
+        g.fill(bandPath(box, CrayonShape.baseBand()))
     }
-    // The wax grain goes down last, over the whole stick: the same tile every
-    // colored area in the book carries, so the crayon is made of the same
-    // material as the pictures it draws. It is a whisper over the wax, the
-    // wrapper and the rules alike, exactly as it lies on a page.
+    // The grain goes over the stick too, so the crayon is made of the same
+    // wax as the band it is drawing.
     paintGrain(g, body)
 }
 
 /**
- * The crayon's own silhouette, in the icon's own pixels, so the same shape
- * can be filled, grained and (for the monochrome layer) drawn as a flat
- * white mark. It is the one crayon in the project, scaled into the canvas,
- * and it is the shape the tray draws.
+ * The swath as a filled band: a smooth line of growing width with ragged
+ * edges, which is the shape a crayon drag leaves and not the shape a pen
+ * does. Every point is measured off the same center line, so the band can
+ * never fold back on itself.
  */
-internal fun crayonSilhouette(size: Int, inset: Double): Path2D.Double {
-    val s = size.toDouble()
-    val h = s * inset * 0.86
-    val thickness = h * CrayonShape.THICKNESS
-    val cx = s / 2.0
-    val top = (s - h) / 2.0
-    val points = CrayonShape.outline()
+private fun swathBand(box: MarkBox): Path2D.Double {
+    val line = smooth(Mark.SWATH, Mark.SWATH_STEPS)
+    val near = ArrayList<Vec2>(line.size)
+    val far = ArrayList<Vec2>(line.size)
+    for ((i, p) in line.withIndex()) {
+        val t = i.toDouble() / (line.size - 1)
+        val width = Mark.SWATH_START + (Mark.SWATH_END - Mark.SWATH_START) * t
+        val before = line[(i - 1).coerceAtLeast(0)]
+        val after = line[(i + 1).coerceAtMost(line.size - 1)]
+        val dx = after.x - before.x
+        val dy = after.y - before.y
+        val len = Math.hypot(dx, dy).takeIf { it > 1e-9 } ?: 1.0
+        // The normal of the center line: which way this slice's edge runs.
+        val nx = -dy / len
+        val ny = dx / len
+        // The ragged edge of wax skipping the paper's low spots, and a taper
+        // at the far end so the stroke finishes the way wax does: thin and
+        // broken, never chopped off square. The near end is not tapered: the
+        // wax starts where the tip is standing, and a taper there would
+        // pinch the stroke away from the crayon that made it.
+        val wobble = Math.sin(t * 11.0) * width * Mark.SWATH_RAGGED
+        val cap = minOf(1.0, (1.0 - t) * 5.0)
+        val half = width * (0.72 + 0.28 * cap) / 2.0
+        near += Vec2(p.x + nx * (half + wobble), p.y + ny * (half + wobble))
+        far += Vec2(p.x - nx * (half - wobble), p.y - ny * (half - wobble))
+    }
+    val ring = near + far.asReversed()
     return Path2D.Double().apply {
-        moveTo(cx + (points[0].x - 0.5) * thickness, top + points[0].y * thickness)
-        for (i in 1 until points.size) {
-            lineTo(cx + (points[i].x - 0.5) * thickness, top + points[i].y * thickness)
+        val first = box.at(ring[0])
+        moveTo(first[0], first[1])
+        for (i in 1 until ring.size) {
+            val p = box.at(ring[i])
+            lineTo(p[0], p[1])
         }
         closePath()
     }
+}
+
+/** A closed path of the crayon's own points, mapped into the icon. */
+private fun crayonPath(box: MarkBox, points: List<Vec2>): Path2D.Double = Path2D.Double().apply {
+    val first = box.at(box.crayonPoint(points[0]))
+    moveTo(first[0], first[1])
+    for (i in 1 until points.size) {
+        val p = box.at(box.crayonPoint(points[i]))
+        lineTo(p[0], p[1])
+    }
+    closePath()
+}
+
+/** The cone alone, so the tip can be a shade deeper than the body. */
+private fun conePath(box: MarkBox): Path2D.Double {
+    val outline = CrayonShape.outline()
+    return crayonPath(
+        box,
+        outline.takeWhile { it.y <= CrayonShape.TIP_LENGTH + 1e-9 } +
+            listOf(Vec2(1.0, CrayonShape.TIP_LENGTH), Vec2(0.0, CrayonShape.TIP_LENGTH)),
+    )
+}
+
+/** One band of the crayon, mapped into the icon. */
+private fun bandPath(box: MarkBox, band: Area): Path2D.Double =
+    crayonPath(
+        box,
+        listOf(
+            Vec2(band.x, band.y),
+            Vec2(band.right, band.y),
+            Vec2(band.right, band.bottom),
+            Vec2(band.x, band.bottom),
+        ),
+    )
+
+/** A Catmull-Rom polyline through [control], which is how a hand's line is. */
+private fun smooth(control: List<Vec2>, samples: Int): List<Vec2> {
+    val segs = control.size - 1
+    val out = ArrayList<Vec2>(samples + 1)
+    for (i in 0..samples) {
+        val u = i.toDouble() / samples * segs
+        val k = u.toInt().coerceAtMost(segs - 1)
+        val f = u - k
+        val a = control[(k - 1).coerceAtLeast(0)]
+        val b = control[k]
+        val c = control[(k + 1).coerceAtMost(segs)]
+        val d = control[(k + 2).coerceAtMost(segs)]
+        out += catmull(a, b, c, d, f)
+    }
+    return out
+}
+
+private fun catmull(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2, t: Double): Vec2 {
+    val t2 = t * t
+    val t3 = t2 * t
+    fun axis(a: Double, b: Double, c: Double, d: Double): Double = 0.5 * (
+        2.0 * b + (-a + c) * t + (2.0 * a - 5.0 * b + 4.0 * c - d) * t2 +
+            (-a + 3.0 * b - 3.0 * c + d) * t3
+        )
+    return Vec2(axis(p0.x, p1.x, p2.x, p3.x), axis(p0.y, p1.y, p2.y, p3.y))
+}
+
+/**
+ * The crayon's own silhouette, in the icon's own pixels, so the mark can be
+ * laid over a white desk by the icon pin. It is the one crayon in the
+ * project, scaled into the canvas, and it is the shape the tray draws.
+ */
+internal fun crayonSilhouette(size: Int, inset: Double): Path2D.Double {
+    val box = MarkBox(size, inset)
+    return crayonPath(box, CrayonShape.outline())
 }
 
 /** Lays the app's wax grain over [shape], clipped to it by the paint itself. */
@@ -255,20 +399,20 @@ internal fun paintLayer(size: Int, layer: Layer, cornerFraction: Double): Buffer
                     size * cornerFraction * 2, size * cornerFraction * 2,
                 ),
             )
-            paintCrayon(g, size, mono = false, inset = 0.66)
+            paintMark(g, size, mono = false, inset = IconDesign.TILE_INSET)
         }
-        Layer.FOREGROUND -> paintCrayon(g, size, mono = false, inset = 0.52)
-        Layer.MONO -> paintCrayon(g, size, mono = true, inset = 0.52)
+        Layer.FOREGROUND -> paintMark(g, size, mono = false, inset = IconDesign.ADAPTIVE_INSET)
+        Layer.MONO -> paintMark(g, size, mono = true, inset = IconDesign.ADAPTIVE_INSET)
     }
     g.dispose()
     return image
 }
 
-/** The legacy tile: paper with the crayon on it, for API 24-25. */
+/** The legacy tile: paper with the mark on it, for API 24-25. */
 fun legacyIcon(sizePx: Int): BufferedImage =
     paintLayer(sizePx, Layer.TILE, IconDesign.LEGACY_CORNER_FRACTION)
 
-/** One adaptive layer: the crayon, or its white silhouette. */
+/** One adaptive layer: the mark, or its white silhouette. */
 fun adaptiveLayer(sizePx: Int, argb: Int): BufferedImage {
     if (argb == IconDesign.WHITE) return paintLayer(sizePx, Layer.MONO, 0.0)
     return paintLayer(sizePx, Layer.FOREGROUND, 0.0)
