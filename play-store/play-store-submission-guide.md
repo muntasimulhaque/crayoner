@@ -289,6 +289,12 @@ versionCode 11 is 1.1, and so on. Never reuse a versionCode.
 
 ## Release notes
 
+### Version 0.9 (versionCode 9)
+
+```
+The marks now land exactly under the finger, on every size of screen. A second step sits next to the first on the tray, so a mark taken back can be put back again. The tray's buttons are the same size as the buttons in the top bar, the launcher icon's crayon faces the same way the crayon in the app does, and the little crayon beside the app's name leans the way the icon's does. Nothing was taken away: every picture, every color, every mark saved as before.
+```
+
 ### Version 0.5 (versionCode 5)
 
 ```
