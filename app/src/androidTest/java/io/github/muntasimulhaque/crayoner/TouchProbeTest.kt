@@ -23,6 +23,7 @@ import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
+import io.github.muntasimulhaque.crayoner.ui.CRAYON_TIP_FRACTION
 import io.github.muntasimulhaque.crayoner.ui.CrayonerTheme
 import io.github.muntasimulhaque.crayoner.ui.PlayScreen
 import java.io.File
@@ -81,36 +82,37 @@ class TouchProbeTest {
         settle()
 
         val shot = capture(scenario)
-        val wax = waxBounds(shot)
+        val sheet = sheetBounds(shot)
+        assertTrue("no sheet of paper found in the capture", sheet.found)
+        assertTrue(
+            "the sheet is ${sheet.width.toInt()} by ${sheet.height.toInt()} px, " +
+                "which is not the page's own proportion",
+            kotlin.math.abs(sheet.height / sheet.width - 1.2) < 0.03,
+        )
+
+        val wax = waxBounds(shot, sheet.width)
         assertTrue(
             "the mark is not on the screen at all (the whole capture has no wax in it)",
             wax.found,
         )
 
-        // The mark spans 0.8 of the page's width, so the capture measures the
-        // sheet for us: no assumed size, no assumed layout, no assumed
-        // density, and the same arithmetic in every shape the app has.
-        val sheetWidth = wax.width / (markRight - markLeft)
-        assertTrue(
-            "the wax is ${wax.width} px across, which is not a sheet's width",
-            sheetWidth > shot.width * 0.25,
-        )
-
-        // The paper's top edge, from a column of the sheet the mark does not
-        // cross, so the mark itself cannot move the line it is measured from.
-        val probeX = (wax.left - 0.05 * sheetWidth).toInt()
-        assertTrue("the mark starts at the very edge of the capture", probeX > 0)
-        val paperTop = paperTopAt(shot, probeX, wax.centerY.toInt())
-        assertTrue("no paper above the mark on the sheet", paperTop >= 0)
-
         // Page units are isotropic: the mark's row is [markRow] of the page's
         // own width below the paper's top edge, and nothing else.
-        val landed = (wax.centerY - paperTop) / sheetWidth
+        val landed = (wax.centerY - sheet.top) / sheet.width
         assertTrue(
             "the mark landed at $landed of the page's width, not at $markRow: " +
-                "wax y ${wax.top}..${wax.bottom} px, paper top $paperTop px, " +
-                "sheet width ${sheetWidth.toInt()} px",
+                "wax y ${wax.top}..${wax.bottom} px, paper top ${sheet.top} px, " +
+                "sheet ${sheet.width.toInt()} by ${sheet.height.toInt()} px",
             kotlin.math.abs(landed - markRow) < 0.02,
+        )
+
+        // And the mark is the length it was given: from page x 0.10 to 0.90,
+        // plus the tip's own radius at either end.
+        val tip = sheet.width * CRAYON_TIP_FRACTION
+        val expectedRun = sheet.width * (markRight - markLeft) + tip
+        assertTrue(
+            "the mark is ${wax.width.toInt()} px across, not ${expectedRun.toInt()}",
+            kotlin.math.abs(wax.width - expectedRun) < sheet.width * 0.06,
         )
 
         val out = InstrumentationRegistry.getInstrumentation().targetContext.filesDir
@@ -120,15 +122,92 @@ class TouchProbeTest {
         scenario.close()
     }
 
-    /** The bounding box of the wax in the capture: [found] false when none. */
-    private class WaxBounds {
+    /** A box measured in the capture. */
+    private open class Box {
         var found = false
         var left = Int.MAX_VALUE
         var top = Int.MAX_VALUE
         var right = -1
         var bottom = -1
         val width: Double get() = (right - left + 1).toDouble()
+        val height: Double get() = (bottom - top + 1).toDouble()
         val centerY: Double get() = (top + bottom) / 2.0
+    }
+
+    /** The wax in the capture, as a box. */
+    private class WaxBounds : Box()
+
+    /**
+     * The sheet of paper, found by its own edge rather than by its contents.
+     *
+     * A column through the page can no longer be relied on to find the top:
+     * the pictures have printed lines and clouds above the mark, and a walk up
+     * a column stops on the first one it meets, which held this probe at page
+     * 0.25 of a sheet that was right in front of it.
+     *
+     * The paper is a bright rectangle on the desk, so its own top edge is the
+     * first row of the longest unbroken band of rows that each carry a long
+     * run of paper across them. Contiguity is what separates the sheet from
+     * the coins in the bar and the capsule on the desk: they are the same
+     * color as the paper, and they are separate bands of rows, so the tallest
+     * single band is the sheet and nothing else. No printed line inside a
+     * picture can imitate a run of paper as wide as the sheet.
+     */
+    private fun sheetBounds(shot: Bitmap): Box {
+        data class Row(val y: Int, val start: Int, val end: Int)
+        val paperRows = ArrayList<Row>()
+        val shortest = shot.width * 0.35
+        for (y in 0 until shot.height) {
+            var run = 0
+            var best = 0
+            var start = -1
+            var bestStart = -1
+            var bestEnd = -1
+            for (x in 0 until shot.width) {
+                if (isPaper(shot.getPixel(x, y))) {
+                    if (run == 0) start = x
+                    run++
+                    if (run > best) {
+                        best = run
+                        bestStart = start
+                        bestEnd = x
+                    }
+                } else {
+                    run = 0
+                }
+            }
+            if (best >= shortest) paperRows += Row(y, bestStart, bestEnd)
+        }
+        // The tallest unbroken band of paper rows: the sheet, and not the
+        // bar above it or the capsule below it, which are the same color and
+        // a couple of rows tall each.
+        var bestTop = -1
+        var bestBottom = -1
+        var start = 0
+        while (start < paperRows.size) {
+            var end = start
+            while (end + 1 < paperRows.size && paperRows[end + 1].y == paperRows[end].y + 1) end++
+            val top = paperRows[start].y
+            val bottom = paperRows[end].y
+            if (bestTop < 0 || bottom - top > bestBottom - bestTop) {
+                bestTop = top
+                bestBottom = bottom
+            }
+            start = end + 1
+        }
+        val box = Box()
+        if (bestTop < 0) return box
+        box.found = true
+        box.top = bestTop
+        box.bottom = bestBottom
+        box.left = Int.MAX_VALUE
+        box.right = -1
+        for (row in paperRows) {
+            if (row.y < bestTop || row.y > bestBottom) continue
+            if (row.start < box.left) box.left = row.start
+            if (row.end > box.right) box.right = row.end
+        }
+        return box
     }
 
     /**
@@ -136,50 +215,39 @@ class TouchProbeTest {
      *
      * The window is not empty of wax the way the paper is: the sample button
      * in the bar holds a finished picture, and on the sail page that picture
-     * carries a red hull. Telling the two apart is not a matter of position
-     * (the layout differs in every shape the app has) but of shape: the mark
-     * under test is one straight line 0.8 of the sheet wide, so the rows that
-     * hold it are the only rows in the window with a very long run of wax in
-     * them, and a picture shrunk into a button is nowhere near that long.
+     * carries a red hull, and the capsule below holds the crayon in hand,
+     * which is red here too. Telling them apart is not a matter of position
+     * (the layout differs in every shape the app has) but of length: the mark
+     * is one straight line across most of the sheet, so the rows that hold it
+     * are the only rows in the window with a run of wax near the sheet's own
+     * width, and a picture shrunk into a button is nowhere near that long.
      */
-    private fun waxBounds(shot: Bitmap): WaxBounds {
-        val rows = ArrayList<IntArray>(shot.height)
-        var longestRun = 0
+    private fun waxBounds(shot: Bitmap, sheetWidth: Double): WaxBounds {
+        val bounds = WaxBounds()
+        val shortest = sheetWidth * 0.5
         for (y in 0 until shot.height) {
-            val row = IntArray(shot.width)
             var run = 0
             var best = 0
-            var started = -1
+            var start = -1
             var bestStart = -1
+            var bestEnd = -1
             for (x in 0 until shot.width) {
                 if (isWax(shot.getPixel(x, y))) {
-                    if (run == 0) started = x
+                    if (run == 0) start = x
                     run++
                     if (run > best) {
                         best = run
-                        bestStart = started
+                        bestStart = start
+                        bestEnd = x
                     }
                 } else {
                     run = 0
                 }
             }
-            row[0] = best
-            row[1] = bestStart
-            rows += row
-            if (best > longestRun) longestRun = best
-        }
-        val bounds = WaxBounds()
-        // A row belongs to the mark when its own run is most of the mark's
-        // widest run. Anything shorter is a picture, a printed line or a
-        // stray pixel, and none of them may move the mark's own box.
-        val markRows = longestRun * 0.5
-        for (y in rows.indices) {
-            val run = rows[y][0]
-            if (run < markRows) continue
+            if (best < shortest) continue
             bounds.found = true
-            val start = rows[y][1]
-            if (start < bounds.left) bounds.left = start
-            if (start + run - 1 > bounds.right) bounds.right = start + run - 1
+            if (bestStart < bounds.left) bounds.left = bestStart
+            if (bestEnd > bounds.right) bounds.right = bestEnd
             if (y < bounds.top) bounds.top = y
             if (y > bounds.bottom) bounds.bottom = y
         }
@@ -195,22 +263,6 @@ class TouchProbeTest {
         // and for antialiasing, and narrow enough that no sky, sea, cloud or
         // printed line in the book can be mistaken for it.
         return r > 170 && g < 140 && b > 40 && b < 170 && r - g > 60
-    }
-
-    /** The paper's own top edge, walking up [x] from just above [from]. */
-    private fun paperTopAt(shot: Bitmap, x: Int, from: Int): Int {
-        if (x !in 0 until shot.width) return -1
-        var y = from.coerceIn(0, shot.height - 1)
-        // Up to the paper first, since the column may start on a printed line
-        // or on the mark's own row.
-        var seen = 0
-        while (y > 0 && !isPaper(shot.getPixel(x, y))) {
-            y--
-            seen++
-            if (seen > 400) return -1
-        }
-        while (y > 0 && isPaper(shot.getPixel(x, y - 1))) y--
-        return if (isPaper(shot.getPixel(x, y))) y else -1
     }
 
     /** True when the pixel is the sheet's own paper. */
