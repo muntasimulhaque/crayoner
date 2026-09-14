@@ -45,6 +45,20 @@ data class PageView(
      */
     val key: Int = windowKey(scale, left, top)
 
+    /**
+     * The same window, slid so its own corner moves by ([dx], [dy]) of the
+     * page, with the paper's edge still stopping it (see [left], [top]).
+     *
+     * A closer look at the middle of the page cannot show its corners, and a
+     * closer look that cannot be moved is a closer look at one half of the
+     * picture. Sliding the window is what makes every part of the sheet
+     * reachable, and it moves nothing else: the paper, the print and every
+     * mark on it are page coordinates, and a window is only what a renderer
+     * is looking at.
+     */
+    fun slid(dx: Double, dy: Double): PageView =
+        PageView(scale, Vec2(focus.x + dx, focus.y + dy))
+
     /** Where [p] falls in the window: 0 at the window's left and top edge. */
     fun inWindow(p: Vec2): Vec2 = Vec2((p.x - left) / span, (p.y - top) / span)
 

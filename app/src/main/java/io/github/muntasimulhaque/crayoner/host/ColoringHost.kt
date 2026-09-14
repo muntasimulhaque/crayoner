@@ -293,9 +293,28 @@ class ColoringHost(app: Application) : ViewModel() {
     private fun setView(view: PageView) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        val wanted = if (view.isWhole) PageView.Whole else view
-        if (wanted == s.view) return
-        _screen.value = s.copy(view = wanted)
+        // A whole sheet has no window to move: [PageView] pins the corner at
+        // zero when the span is the whole page, so a pan on a whole sheet
+        // lands back on the same window and nothing happens, which is right.
+        if (view == s.view) return
+        _screen.value = s.copy(view = view)
+    }
+
+    /**
+     * The paper moved under the child's finger: the point of the page they
+     * chose becomes the middle of the window.
+     *
+     * This is how every part of a closer look is reachable. A closer look at
+     * the middle of the page cannot show its corners, so without this the
+     * child could bring the paper closer and then find half the picture out
+     * of reach. Nothing about the work changes: the window is only what the
+     * renderer is looking at, and every mark is a line of page coordinates.
+     */
+    fun moveView(at: Vec2) {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        if (s.view.isWhole) return
+        setView(s.view.slid(at.x - s.view.focus.x, at.y - s.view.focus.y))
     }
 
     /**

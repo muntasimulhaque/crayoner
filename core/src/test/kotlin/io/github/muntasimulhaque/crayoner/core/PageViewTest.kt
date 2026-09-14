@@ -110,4 +110,36 @@ class PageViewTest {
         assertEquals(0.25, view.left, 1e-9)
         assertEquals(0.25, view.top, 1e-9)
     }
+
+    @Test
+    fun aCloserLookCanBeSlidOverTheWholeSheet() {
+        // A closer look at the middle of the page cannot show its corners,
+        // so the window has to be movable or half of every picture is
+        // unreachable. Sliding it is a window moving over fixed paper: the
+        // page point under a page point never changes.
+        val middle = PageView.closeOn(Vec2(0.5, 0.5))
+        val corner = middle.slid(-1.0, -1.0)
+        assertEquals("the window did not move", 0.0, corner.left, 1e-9)
+        assertEquals("the window did not move", 0.0, corner.top, 1e-9)
+        assertEquals("sliding changed the closeness", middle.scale, corner.scale, 1e-9)
+        // Slid as far as it can go, and still paper: the clamp holds both
+        // ways, so a child throwing the paper about cannot see the desk.
+        val beyond = middle.slid(9.0, 9.0)
+        assertEquals(1.0 - middle.span, beyond.left, 1e-9)
+        assertEquals(1.0 - middle.span, beyond.top, 1e-9)
+        // A window that already sits on an edge does not move further out.
+        val pinned = PageView.closeOn(Vec2(0.0, 0.0))
+        assertEquals(pinned.left, pinned.slid(-0.5, 0.0).left, 1e-9)
+        assertEquals(pinned.top, pinned.slid(0.0, -0.5).top, 1e-9)
+    }
+
+    @Test
+    fun aSlideLeavesTheWholePageWhole() {
+        // The whole sheet has nowhere to slide: it already shows all of it.
+        val whole = PageView.Whole
+        val slid = whole.slid(0.3, -0.3)
+        assertEquals(0.0, slid.left, 1e-9)
+        assertEquals(0.0, slid.top, 1e-9)
+        assertTrue(slid.isWhole)
+    }
 }

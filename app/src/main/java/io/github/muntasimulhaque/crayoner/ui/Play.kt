@@ -53,6 +53,7 @@ fun PlayScreen(
     onOpenBox: (Boolean) -> Unit,
     onUndo: () -> Unit,
     onZoom: (Double) -> Unit,
+    onPan: (Vec2) -> Unit,
     onHome: () -> Unit,
     onSound: (Boolean) -> Unit,
     onPeek: (Boolean) -> Unit,
@@ -107,6 +108,7 @@ fun PlayScreen(
                     onErase = onErase,
                     onUndo = onUndo,
                     onZoom = onZoom,
+                    onPan = onPan,
                     modifier = modifier,
                 )
             }
@@ -168,17 +170,17 @@ private val WIDE_AT = 640.dp
 private val BAR_HEIGHT = 66.dp
 
 /** How much room the tools are given under the sheet on a phone. */
-private val TOOLS_HEIGHT = 190.dp
+private val TOOLS_HEIGHT = 172.dp
 
 /** The tool column's width beside the sheet. */
 private val TOOLS_WIDTH = 300.dp
 
 /**
  * The things a hand reaches for while coloring, in one column under (or
- * beside) the sheet: the capsule with the crayon, the rubber and the step
- * back in it, and under that the little chip that brings the paper closer.
- * Both are quiet objects on the desk; the sheet is what the child is here
- * for.
+ * beside) the sheet: the capsule with the step back, the crayon and the
+ * rubber in it, and under that the little chip that brings the paper closer
+ * and moves it about once it is close. Both are quiet objects on the desk;
+ * the sheet is what the child is here for.
  */
 @Composable
 private fun ToolBox(
@@ -188,12 +190,13 @@ private fun ToolBox(
     onErase: (Boolean) -> Unit,
     onUndo: () -> Unit,
     onZoom: (Double) -> Unit,
+    onPan: (Vec2) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         ToolCapsule(
             selected = state.crayon ?: Crayons.RED,
@@ -208,6 +211,7 @@ private fun ToolBox(
         ZoomStrip(
             view = state.view,
             onZoom = onZoom,
+            onPan = onPan,
             onReset = { onZoom(PageView.WHOLE_ZOOM) },
         )
     }

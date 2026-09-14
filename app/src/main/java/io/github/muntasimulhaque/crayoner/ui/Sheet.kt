@@ -18,6 +18,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.muntasimulhaque.crayoner.core.PageView
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
 
@@ -30,19 +31,17 @@ val PaperShape = RoundedCornerShape(2.dp)
  * child's own picture printed on it.
  *
  * It is paper, not a card: real corners, square, the way a sheet torn from a
- * pad has them, and the soft shadow of one lying on a desk. There is no tape
- * at its corners any more, because the sheet is not held down at one fixed
- * size: the child can bring the paper closer (see [ZoomStrip]), and tape
- * that stayed the same size while the paper grew would be the one thing on
- * screen that gave the illusion away.
+ * pad has them, and the soft shadow of one lying on a desk.
  *
- * The sheet owns the one gesture in the app: a finger down starts a mark, a
- * finger moving draws it, a finger up finishes it. There is deliberately no
- * pinch and no double tap here. A pinch is two fingers on a page a small
- * hand is coloring, which is a mistake that ruins the mark under it, and a
- * double tap is what a child making two dots in the same place looks like;
- * neither may move the paper. What brings the paper closer is the chip on
- * the desk below, which is a deliberate act and cannot happen by accident.
+ * A finger on the paper draws, always, whether the sheet is whole or brought
+ * close. Dragging on the paper is how a child colors, and no gesture on the
+ * picture may ever take that away: a pinch is two fingers on a page a small
+ * hand is drawing on, which is the mistake that ruins the mark under it, and
+ * a double tap is what two dots in the same place looks like when a three
+ * year old makes them. What moves the paper is a thing that is not the
+ * picture: the chip on the desk below, which brings it closer and puts it
+ * back, or the two small coins that slide the window across it once it is
+ * close (see [ZoomStrip]).
  */
 @Composable
 internal fun SheetOf(

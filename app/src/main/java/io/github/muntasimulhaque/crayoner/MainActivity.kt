@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenBox = host::setBoxOpen,
                                 onUndo = host::undo,
                                 onZoom = host::setZoom,
+                                onPan = host::moveView,
 
                                 onHome = host::home,
                                 onSound = host::setSound,

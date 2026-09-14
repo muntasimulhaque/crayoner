@@ -165,6 +165,7 @@ class ScreenshotTest {
             onOpenBox = {},
             onUndo = {},
             onZoom = {},
+            onPan = {},
 
             onHome = {},
             onSound = {},
