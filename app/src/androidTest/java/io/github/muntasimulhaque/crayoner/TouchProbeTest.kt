@@ -3,6 +3,8 @@ package io.github.muntasimulhaque.crayoner
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.PixelCopy
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,10 +22,9 @@ import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
-import io.github.muntasimulhaque.crayoner.core.Stroke
+import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
-import io.github.muntasimulhaque.crayoner.ui.CRAYON_TIP_FRACTION
 import io.github.muntasimulhaque.crayoner.ui.CrayonerTheme
 import io.github.muntasimulhaque.crayoner.ui.PlayScreen
 import java.io.File
@@ -34,85 +35,112 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Where the wax lands, measured on a real screen.
+ * Where the wax lands when a real finger draws, measured on a real screen.
  *
- * The pure mapping is held by `core/PagePointTest` with no device. This is
- * the other half of the same rule, and the half a unit test cannot see: a
- * mark drawn through the shipped UI has to sit on the row of the paper it was
- * given, on the real sheet, at the real laid-out size, after the whole
- * Compose tree has had its say.
+ * The pure mapping is held by `core/PagePointTest` with no device, and the
+ * renderer's side of it by the sheets. Neither can see the thing the child
+ * actually sees: a touch on the glass, through the shipped Compose tree, on
+ * the real laid-out sheet, with the real density, in whichever of the app's
+ * two layouts the screen happens to be. That is what this probe measures, and
+ * it measures the only question worth asking about it: a mark drawn by a
+ * finger that moved along one row of the glass must lie on that row.
  *
- * The measurement does not need to find the sheet. One mark is drawn straight
- * across the paper from page x 0.1 to 0.9, so the wax it leaves is exactly
- * 0.8 of the sheet's width long: the capture tells the test how wide the
- * sheet is, and the sheet's own scale then says where the mark's row has to
- * be. The row is checked against the paper's top edge, found by walking up a
- * column of the sheet that the mark does not cross, so the test holds the
- * mark's place on the page and not its place on the screen.
+ * So it does not compute any geometry at all. It puts a finger down at a
+ * known screen position, drags it straight across without changing its row,
+ * lifts it, and then looks for the wax: the wax has to be on the row the
+ * finger was on. It does it twice, at two rows far apart, so no constant
+ * offset and no scale error can hide between the two. The check needs to know
+ * nothing about the page, the sheet's size, the sheet's place or the layout,
+ * which is why it holds in every shape the app has.
+ *
+ * With the bug this was written for (the finger's y divided by the frame's
+ * height and read as a page unit, on a sheet 1.2 times taller than it is
+ * wide), the wax on a phone landed a sixth of the sheet above the finger on
+ * both rows, and the probe fails on both.
  */
 @RunWith(AndroidJUnit4::class)
 class TouchProbeTest {
 
     private val render = mutableStateOf<@Composable () -> Unit>({})
+    private val page: Page = Pages.byId("sail") ?: error("the sail page is gone")
+
+    /**
+     * The whole page's own state, held here rather than in a host, so the
+     * probe drives the shipped callbacks with the domain's own rules and no
+     * ViewModel is needed. The rules are core's, so a mark made here is made
+     * the way the app makes one.
+     */
+    private class Sheet {
+        var draft: Draft = Draft.Empty
+        var crayon: Long? = null
+        var live: io.github.muntasimulhaque.crayoner.core.Stroke? = null
+
+        fun begin(at: Vec2) {
+            crayon = Crayons.RED
+            live = Strokes.dot(Crayons.RED, at)
+        }
+
+        fun move(at: Vec2) {
+            live = live?.let { Strokes.extend(it, at) }
+        }
+
+        fun end() {
+            val mark = live ?: return
+            live = null
+            draft = draft.color(mark.color, mark.points)
+        }
+    }
 
     @Test
-    fun aMarkIsDrawnOnTheRowOfThePaperItWasGiven() {
-        val page: Page = Pages.byId("sail") ?: error("the sail page is gone")
-        val markRow = 0.60
-        val markLeft = 0.10
-        val markRight = 0.90
-        val across = (0..20).map { Vec2(markLeft + it * (markRight - markLeft) / 20.0, markRow) }
-
+    fun aMarkIsDrawnOnTheRowOfTheGlassTheFingerDrewOn() {
         val scenario = launch()
-        scenario.onActivity { activity ->
-            render.value = {
-                PlayScreen(
-                    state = Screen.Coloring(
-                        page = page,
-                        draft = Draft.of(Progress.Empty.with(Stroke(Crayons.RED, across))),
-                        crayon = Crayons.RED,
-                    ),
-                    soundOn = true,
-                    onStrokeStart = {}, onStrokeMove = {}, onStrokeEnd = {},
-                    onPick = {}, onErase = {}, onOpenBox = {}, onUndo = {},
-                    onRedo = {}, onHome = {}, onSound = {}, onPeek = {},
-                )
-            }
-        }
-        settle()
+        val sheet = Sheet()
+        pushState(sheet)
 
         val shot = capture(scenario)
-        val sheet = sheetBounds(shot)
-        assertTrue("no sheet of paper found in the capture", sheet.found)
+        val band = sheetBand(shot)
         assertTrue(
-            "the sheet is ${sheet.width.toInt()} by ${sheet.height.toInt()} px, " +
-                "which is not the page's own proportion",
-            kotlin.math.abs(sheet.height / sheet.width - 1.2) < 0.03,
+            "no sheet of paper found on the screen: the top and the bottom of " +
+                "the page are what the finger has to land on",
+            band.height > shot.height * 0.3,
         )
 
-        val wax = waxBounds(shot, sheet.width)
-        assertTrue(
-            "the mark is not on the screen at all (the whole capture has no wax in it)",
-            wax.found,
+        // Two rows, far apart on the page, both well inside the sheet so the
+        // tip's own width is not clipped by the paper's edge.
+        val rows = listOf(
+            band.top + band.height * 0.30,
+            band.top + band.height * 0.68,
         )
+        val rowsSeen = ArrayList<Double>()
+        for (row in rows) {
+            drawAcross(scenario, sheet, row)
+            val wax = waxRows(capture(scenario), row.toInt(), DRAG_WIDTH_PX)
+            assertTrue(
+                "a finger drew along screen row ${row.toInt()} and no wax was " +
+                    "left anywhere near it",
+                wax.found,
+            )
+            rowsSeen += wax.center
+        }
 
-        // Page units are isotropic: the mark's row is [markRow] of the page's
-        // own width below the paper's top edge, and nothing else.
-        val landed = (wax.centerY - sheet.top) / sheet.width
+        // Every mark on its own row, and the two rows told apart: a constant
+        // offset large enough to matter would move the first one, and a scale
+        // error would collapse the gap between them.
+        for (i in rows.indices) {
+            val off = rowsSeen[i] - rows[i]
+            assertTrue(
+                "the mark was drawn ${off.toInt()} px " +
+                    (if (off < 0) "above" else "below") +
+                    " the finger that drew it: finger row ${rows[i].toInt()}, " +
+                    "wax row ${rowsSeen[i].toInt()}, " +
+                    "sheet rows ${band.top}..${band.bottom}",
+                kotlin.math.abs(off) <= TOLERANCE_PX,
+            )
+        }
         assertTrue(
-            "the mark landed at $landed of the page's width, not at $markRow: " +
-                "wax y ${wax.top}..${wax.bottom} px, paper top ${sheet.top} px, " +
-                "sheet ${sheet.width.toInt()} by ${sheet.height.toInt()} px",
-            kotlin.math.abs(landed - markRow) < 0.02,
-        )
-
-        // And the mark is the length it was given: from page x 0.10 to 0.90,
-        // plus the tip's own radius at either end.
-        val tip = sheet.width * CRAYON_TIP_FRACTION
-        val expectedRun = sheet.width * (markRight - markLeft) + tip
-        assertTrue(
-            "the mark is ${wax.width.toInt()} px across, not ${expectedRun.toInt()}",
-            kotlin.math.abs(wax.width - expectedRun) < sheet.width * 0.06,
+            "the two marks came out ${(rowsSeen[1] - rowsSeen[0]).toInt()} px " +
+                "apart where the fingers were ${(rows[1] - rows[0]).toInt()} px apart",
+            kotlin.math.abs((rowsSeen[1] - rowsSeen[0]) - (rows[1] - rows[0])) <= TOLERANCE_PX,
         )
 
         val out = InstrumentationRegistry.getInstrumentation().targetContext.filesDir
@@ -122,137 +150,188 @@ class TouchProbeTest {
         scenario.close()
     }
 
-    /** A box measured in the capture. */
-    private open class Box {
+    /** How far a mark may sit from the finger that drew it, in pixels. */
+    private companion object {
+        /**
+         * The tip's own half width, a page pixel of rounding, and the wax's
+         * own broken edge. It is deliberately tight: the bug this holds at bay
+         * moved a mark by a sixth of the sheet, which is more than a hundred
+         * pixels on any phone, so a tolerance that has to be measured against
+         * the sheet is the wrong test.
+         */
+        const val TOLERANCE_PX = 12.0
+
+        /** How long the synthetic drag is, in pixels. */
+        const val DRAG_WIDTH_PX = 420
+
+        /** How many move events the drag is made of. */
+        const val DRAG_STEPS = 12
+    }
+
+    /**
+     * Drag a finger straight across the screen on one row, and lift it.
+     *
+     * The touches are dispatched from [ActivityScenario.onActivity], which is
+     * already on the main thread, so the events go in on the same thread the
+     * app reads them on and the drag is one uninterrupted gesture with no
+     * frame boundary in the middle of it.
+     */
+    private fun drawAcross(
+        scenario: ActivityScenario<ComponentActivity>,
+        sheet: Sheet,
+        row: Double,
+    ) {
+        scenario.onActivity { activity ->
+            val decor = activity.window.decorView
+            val cx = decor.width / 2f
+            val y = row.toFloat()
+            val downTime = SystemClock.uptimeMillis()
+            decor.dispatchTouchEvent(
+                event(downTime, downTime, MotionEvent.ACTION_DOWN, cx, y),
+            )
+            for (step in 1..DRAG_STEPS) {
+                val x = cx + (step - 1) * DRAG_WIDTH_PX / DRAG_STEPS
+                decor.dispatchTouchEvent(
+                    event(downTime, downTime + step, MotionEvent.ACTION_MOVE, x, y),
+                )
+            }
+            decor.dispatchTouchEvent(
+                event(downTime, downTime + DRAG_STEPS + 1, MotionEvent.ACTION_UP, cx, y),
+            )
+        }
+        settle()
+        pushState(sheet)
+    }
+
+    private fun event(downTime: Long, at: Long, action: Int, x: Float, y: Float): MotionEvent {
+        val event = MotionEvent.obtain(downTime, at, action, x, y, 0)
+        // The finger's own size, so the app is read with one pointer and no
+        // pressure, exactly as a real touch is.
+        event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN)
+        return event
+    }
+
+    /** Hand the sheet's own marks to the shipped screen. */
+    private fun pushState(sheet: Sheet) {
+        render.value = {
+            PlayScreen(
+                state = Screen.Coloring(
+                    page = page,
+                    draft = sheet.draft,
+                    crayon = sheet.crayon,
+                    live = sheet.live,
+                    marks = sheet.draft.progress.strokes.size.toLong(),
+                ),
+                soundOn = false,
+                onStrokeStart = { sheet.begin(it) },
+                onStrokeMove = { sheet.move(it) },
+                onStrokeEnd = { sheet.end() },
+                onPick = {}, onErase = {}, onOpenBox = {}, onUndo = {},
+                onRedo = {}, onHome = {}, onSound = {}, onPeek = {},
+            )
+        }
+        settle()
+    }
+
+    /** A vertical band of the screen that is not the desk: the sheet. */
+    private class Band {
         var found = false
-        var left = Int.MAX_VALUE
-        var top = Int.MAX_VALUE
-        var right = -1
-        var bottom = -1
-        val width: Double get() = (right - left + 1).toDouble()
+        var top = 0
+        var bottom = 0
         val height: Double get() = (bottom - top + 1).toDouble()
-        val centerY: Double get() = (top + bottom) / 2.0
     }
 
-    /** The wax in the capture, as a box. */
-    private class WaxBounds : Box()
-
     /**
-     * The sheet of paper, found by its own edge rather than by its contents.
+     * The sheet's own rows, found down the middle of the screen.
      *
-     * A column through the page can no longer be relied on to find the top:
-     * the pictures have printed lines and clouds above the mark, and a walk up
-     * a column stops on the first one it meets, which held this probe at page
-     * 0.25 of a sheet that was right in front of it.
-     *
-     * The paper is a bright rectangle on the desk, so its own top edge is the
-     * first row of the longest unbroken band of rows that each carry a long
-     * run of paper across them. Contiguity is what separates the sheet from
-     * the coins in the bar and the capsule on the desk: they are the same
-     * color as the paper, and they are separate bands of rows, so the tallest
-     * single band is the sheet and nothing else. No printed line inside a
-     * picture can imitate a run of paper as wide as the sheet.
+     * The desk is one color and everything a child looks at is not it, so the
+     * longest unbroken run of not-desk rows down the center column is the
+     * sheet: the bar above it holds a picture button but is mostly desk, and
+     * the capsule below it is a row of coins the same way. Nothing about the
+     * page's contents can hide this, because a picture is not desk either.
      */
-    private fun sheetBounds(shot: Bitmap): Box {
-        data class Row(val y: Int, val start: Int, val end: Int)
-        val paperRows = ArrayList<Row>()
-        val shortest = shot.width * 0.35
+    private fun sheetBand(shot: Bitmap): Band {
+        val cx = shot.width / 2
+        var start = -1
+        var bestStart = -1
+        var bestEnd = -1
         for (y in 0 until shot.height) {
-            var run = 0
-            var best = 0
-            var start = -1
-            var bestStart = -1
-            var bestEnd = -1
-            for (x in 0 until shot.width) {
-                if (isPaper(shot.getPixel(x, y))) {
-                    if (run == 0) start = x
-                    run++
-                    if (run > best) {
-                        best = run
-                        bestStart = start
-                        bestEnd = x
-                    }
-                } else {
-                    run = 0
+            if (!isDesk(shot.getPixel(cx, y))) {
+                if (start < 0) start = y
+                if (bestStart < 0 || y - start > bestEnd - bestStart) {
+                    bestStart = start
+                    bestEnd = y
                 }
+            } else {
+                start = -1
             }
-            if (best >= shortest) paperRows += Row(y, bestStart, bestEnd)
         }
-        // The tallest unbroken band of paper rows: the sheet, and not the
-        // bar above it or the capsule below it, which are the same color and
-        // a couple of rows tall each.
-        var bestTop = -1
-        var bestBottom = -1
-        var start = 0
-        while (start < paperRows.size) {
-            var end = start
-            while (end + 1 < paperRows.size && paperRows[end + 1].y == paperRows[end].y + 1) end++
-            val top = paperRows[start].y
-            val bottom = paperRows[end].y
-            if (bestTop < 0 || bottom - top > bestBottom - bestTop) {
-                bestTop = top
-                bestBottom = bottom
-            }
-            start = end + 1
-        }
-        val box = Box()
-        if (bestTop < 0) return box
-        box.found = true
-        box.top = bestTop
-        box.bottom = bestBottom
-        box.left = Int.MAX_VALUE
-        box.right = -1
-        for (row in paperRows) {
-            if (row.y < bestTop || row.y > bestBottom) continue
-            if (row.start < box.left) box.left = row.start
-            if (row.end > box.right) box.right = row.end
-        }
-        return box
+        val band = Band()
+        if (bestStart < 0) return band
+        band.found = true
+        band.top = bestStart
+        band.bottom = bestEnd
+        return band
+    }
+
+    /** True when the pixel is the desk the whole app sits on. */
+    private fun isDesk(pixel: Int): Boolean {
+        val r = (pixel shr 16) and 0xFF
+        val g = (pixel shr 8) and 0xFF
+        val b = pixel and 0xFF
+        // CrayonerColors.Desk is #F6EFE3. The band is narrow: the paper is
+        // #FFFDF8 and the cardboard is #EFE1C6, and both are outside it.
+        return kotlin.math.abs(r - 0xF6) <= 3 &&
+            kotlin.math.abs(g - 0xEF) <= 3 &&
+            kotlin.math.abs(b - 0xE3) <= 3
+    }
+
+    /** Where the wax is, near the row a finger drew on. */
+    private class Wax {
+        var found = false
+        var top = 0
+        var bottom = 0
+        val center: Double get() = (top + bottom) / 2.0
     }
 
     /**
-     * The mark, measured from the capture.
+     * The wax the drag left, found near [row].
      *
-     * The window is not empty of wax the way the paper is: the sample button
-     * in the bar holds a finished picture, and on the sail page that picture
-     * carries a red hull, and the capsule below holds the crayon in hand,
-     * which is red here too. Telling them apart is not a matter of position
-     * (the layout differs in every shape the app has) but of length: the mark
-     * is one straight line across most of the sheet, so the rows that hold it
-     * are the only rows in the window with a run of wax near the sheet's own
-     * width, and a picture shrunk into a button is nowhere near that long.
+     * The window is not empty of the crayon's own color: the sample button
+     * holds a finished picture, and the capsule below holds the crayon in
+     * hand. The search is bounded to a window around the row the finger drew
+     * on, which is what separates the mark from the two pictures, and it
+     * counts only rows that carry a run of wax as long as the drag itself,
+     * which is what separates it from a printed line.
      */
-    private fun waxBounds(shot: Bitmap, sheetWidth: Double): WaxBounds {
-        val bounds = WaxBounds()
-        val shortest = sheetWidth * 0.5
-        for (y in 0 until shot.height) {
+    private fun waxRows(shot: Bitmap, row: Int, runPx: Int): Wax {
+        val wax = Wax()
+        val from = (row - SEARCH_PX).coerceAtLeast(0)
+        val to = (row + SEARCH_PX).coerceAtMost(shot.height - 1)
+        val shortest = (runPx * 0.6).toInt()
+        for (y in from..to) {
             var run = 0
             var best = 0
-            var start = -1
-            var bestStart = -1
-            var bestEnd = -1
             for (x in 0 until shot.width) {
                 if (isWax(shot.getPixel(x, y))) {
-                    if (run == 0) start = x
                     run++
-                    if (run > best) {
-                        best = run
-                        bestStart = start
-                        bestEnd = x
-                    }
+                    if (run > best) best = run
                 } else {
                     run = 0
                 }
             }
             if (best < shortest) continue
-            bounds.found = true
-            if (bestStart < bounds.left) bounds.left = bestStart
-            if (bestEnd > bounds.right) bounds.right = bestEnd
-            if (y < bounds.top) bounds.top = y
-            if (y > bounds.bottom) bounds.bottom = y
+            if (!wax.found) {
+                wax.found = true
+                wax.top = y
+            }
+            wax.bottom = y
         }
-        return bounds
+        return wax
     }
+
+    /** How far around the finger's row the wax is looked for. */
+    private val SEARCH_PX = 140
 
     /** True when the pixel is the book's own red wax, not paper and not ink. */
     private fun isWax(pixel: Int): Boolean {
@@ -261,18 +340,9 @@ class TouchProbeTest {
         val b = pixel and 0xFF
         // Crayons.RED is #EE204D. The band is wide enough for the wax grain
         // and for antialiasing, and narrow enough that no sky, sea, cloud or
-        // printed line in the book can be mistaken for it.
-        return r > 170 && g < 140 && b > 40 && b < 170 && r - g > 60
-    }
-
-    /** True when the pixel is the sheet's own paper. */
-    private fun isPaper(pixel: Int): Boolean {
-        val r = (pixel shr 16) and 0xFF
-        val g = (pixel shr 8) and 0xFF
-        val b = pixel and 0xFF
-        // CrayonerColors.Card is #FFFDF8, and the desk under it is #F6EFE3,
-        // which is a clear step darker on the red channel.
-        return r >= 250 && g >= 248 && b >= 240
+        // printed line in the book can be mistaken for it. The sail page's
+        // own reds are printed lines and a hull, not a band of wax this wide.
+        return r > 170 && g < 140 && b > 40 && b < 175 && r - g > 60
     }
 
     private fun launch(): ActivityScenario<ComponentActivity> {
@@ -310,6 +380,6 @@ class TouchProbeTest {
         val latch = CountDownLatch(1)
         Handler(Looper.getMainLooper()).post { latch.countDown() }
         latch.await(5, TimeUnit.SECONDS)
-        Thread.sleep(900)
+        Thread.sleep(700)
     }
 }
