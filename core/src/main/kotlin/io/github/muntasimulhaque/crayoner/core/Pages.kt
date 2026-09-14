@@ -69,8 +69,31 @@ private fun Page.laidOut(): Page {
         if (isGround(index)) {
             Region(region.id, region.kind, region.fillArgb, listOf(rect(0.0, 0.0, 1.0, Page.ASPECT)))
         } else {
-            region.copy(parts = region.parts.map { it.fitted(Page.ASPECT) })
+            region.copy(parts = region.parts.fitted(Page.ASPECT))
         }
     }
     return Page(id, laid)
+}
+
+/**
+ * One region fitted onto the sheet, then pulled back inside it if the fit
+ * would have cut it off.
+ *
+ * The uniform fit grows a square picture by a fifth, and a full-bleed band (a
+ * sky, a sea, a lawn) is meant to run off the sides and be clipped. A
+ * discrete thing is not: a cloud sliced flat by the edge of the paper reads
+ * as a mistake, not as weather. So anything that is not already a full-width
+ * band is slid back by the least it takes to sit wholly on the sheet, which
+ * moves it by a few hundredths of the page and leaves every picture composed
+ * as drawn.
+ */
+private fun List<Shape>.fitted(scale: Double): List<Shape> {
+    val fitted = map { it.fitted(scale) }
+    val fullWidth = fitted.boundsOrNull()?.let { it.x <= 0.005 && it.right >= 0.995 } == true
+    if (fullWidth) return fitted
+    val b = fitted.boundsOrNull() ?: return fitted
+    var dx = 0.0
+    if (b.x < 0.0) dx = -b.x
+    if (b.right + dx > 1.0) dx = 1.0 - b.right
+    return if (dx == 0.0) fitted else fitted.map { it.moved(dx, 0.0) }
 }

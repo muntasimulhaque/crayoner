@@ -962,3 +962,22 @@ the screenshots, all in the same session.
   hand dragged it. The taller sheet alone makes every element a fifth bigger
   on a phone, and it is what lets the picture take the whole screen.
   Supersedes D-046 and D-049, and with them the whole zoom feature.
+
+- D-061 **A full-bleed band may run off the sheet, a thing may not.** The
+  uniform fit onto the taller sheet grows every picture by a fifth, and a
+  band that was authored edge to edge (a sky, a sea, a lawn) is meant to
+  reach past the paper's own sides and be clipped. A cloud is not: fitting
+  the square by 1.2 sliced the edge clouds of the sail, tree, balloon, kite
+  and rainbow pages flat, which reads as a mistake and not as weather. Every
+  region that is not already a full-width band is now slid back by the least
+  it takes to sit wholly on the sheet, a few hundredths of the page. This
+  was caught by a new test, `noPartOfAPictureIsCutOffByTheSheet`, written
+  after the 0.7 build had already shipped: the review sheet was the only
+  place the cut showed, and the test is what makes it impossible to miss
+  next time. See D-060.
+- D-062 **The top bar is full width on a tablet, and on a rail only on a
+  phone.** Laying the top bar and the capsule on one shared rail is right on
+  a phone, where the two rows are stacked and should line up. On a tablet
+  the sheet and the tools stand side by side and the bar is the full width
+  of the screen, exactly as it always was: a rail there dragged the home
+  button into the middle of the desk. Amends D-058.

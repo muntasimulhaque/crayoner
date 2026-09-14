@@ -249,6 +249,15 @@ internal fun Shape.fitted(scale: Double): Shape = when (this) {
     is Poly -> Poly(points.map { fit(it, scale) })
 }
 
+/** One shape shifted by ([dx], [dy]) of the page, keeping its own size. */
+internal fun Shape.moved(dx: Double, dy: Double): Shape = when (this) {
+    is Circ -> Circ(Vec2(c.x + dx, c.y + dy), r)
+    is Ell -> Ell(Vec2(c.x + dx, c.y + dy), rx, ry, angleDeg)
+    is RRect -> RRect(x + dx, y + dy, w, h, radius, angleDeg)
+    is ArcBand -> ArcBand(Vec2(c.x + dx, c.y + dy), rInner, rOuter, startDeg, endDeg)
+    is Poly -> Poly(points.map { Vec2(it.x + dx, it.y + dy) })
+}
+
 /** One authored point, in the sheet's own units. */
 private fun fit(p: Vec2, scale: Double): Vec2 = Vec2(
     (p.x - 0.5) * scale + 0.5,

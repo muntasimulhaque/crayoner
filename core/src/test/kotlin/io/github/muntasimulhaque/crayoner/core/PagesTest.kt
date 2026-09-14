@@ -114,6 +114,27 @@ class PagesTest {
     }
 
     @Test
+    fun noPartOfAPictureIsCutOffByTheSheet() {
+        // A picture is composed in a square and fitted onto the taller sheet,
+        // which grows it by Page.ASPECT. A full-bleed band (a sky, a sea, a
+        // lawn) is meant to run off the sides and be clipped, but a discrete
+        // thing (a cloud, an apple, a wheel) must never be: a cloud sliced by
+        // the edge of the paper reads as a mistake, not as weather. So every
+        // region that is not a full-width band has to land inside the sheet.
+        for (page in Pages.all) {
+            for (region in page.regions) {
+                val b = region.bounds
+                val fullWidth = b.x <= 0.02 && b.right >= 0.98
+                if (fullWidth) continue
+                assertTrue(
+                    "${page.id}/${region.id} is cut off by the sheet: $b",
+                    b.x >= -1e-6 && b.y >= -1e-6 && b.right <= 1.0 + 1e-6,
+                )
+            }
+        }
+    }
+
+    @Test
     fun everyPointOfPaperIsCovered() {
         val steps = 96
         for (page in Pages.all) {

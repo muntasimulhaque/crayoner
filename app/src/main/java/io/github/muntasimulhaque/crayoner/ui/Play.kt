@@ -78,7 +78,12 @@ fun PlayScreen(
             // This is decided from the real measured size, so it is right on
             // every device rather than on the ones we happened to test.
             val wide = maxWidth >= WIDE_AT && maxWidth > maxHeight * 1.15f
-            val bar: @Composable () -> Unit = {
+            // On a phone the bar and the capsule sit on one rail, so the two
+            // rows of controls line up at both ends. On a tablet the sheet and
+            // the tools stand side by side and the bar is the full width of
+            // the screen, exactly as it always was: a rail there would drag
+            // the home button into the middle of the desk.
+            val bar: @Composable (Modifier) -> Unit = { m ->
                 TopBar(
                     onHome = onHome,
                     soundOn = soundOn,
@@ -86,7 +91,7 @@ fun PlayScreen(
                     onSample = { onPeek(true) },
                     page = state.page,
                     announce = state.progress.strokes.isEmpty(),
-                    modifier = Modifier.widthIn(max = RAIL_WIDTH).fillMaxWidth(),
+                    modifier = m,
                 )
             }
             val sheet: @Composable (Modifier) -> Unit = { modifier ->
@@ -116,7 +121,7 @@ fun PlayScreen(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    bar()
+                    bar(Modifier.fillMaxWidth())
                     Row(Modifier.fillMaxWidth().weight(1f)) {
                         sheet(Modifier.weight(1f).fillMaxSize())
                         Box(
@@ -133,7 +138,7 @@ fun PlayScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    bar()
+                    bar(Modifier.widthIn(max = RAIL_WIDTH).fillMaxWidth())
                     // The sheet is given every pixel the capsule does not
                     // need. It keeps the sheet's own proportion, so a phone
                     // shows a tall page rather than a square with two bands
