@@ -239,12 +239,18 @@ private fun RubberSeat(armed: Boolean, onClick: () -> Unit, size: Dp) {
  * nothing is asked twice, and no press can lose a picture: the marks walk
  * back and forward in the order the hand made them, and the rubber is what
  * changes a whole picture.
+ *
+ * Quieter means a lighter ink, not a ghost: at a third of the ink the two
+ * steps read as washed-out marks beside the crisp crayon and rubber, which
+ * is the difference between a row of buttons and a row of some buttons.
+ * They sit at a little under half, which is quiet enough to say there is
+ * nothing to take back and still solid enough to be a button.
  */
 @Composable
 private fun StepSeat(ready: Boolean, forward: Boolean, onClick: () -> Unit, size: Dp) {
     val label = stringResource(if (forward) R.string.redo else R.string.undo)
     val ink = animateColorAsState(
-        targetValue = if (ready) CrayonerColors.Ink else CrayonerColors.Ink.copy(alpha = 0.32f),
+        targetValue = if (ready) CrayonerColors.Ink else CrayonerColors.Ink.copy(alpha = 0.45f),
         label = if (forward) "redo-ink" else "undo-ink",
     ).value
     CapsuleSeat(onClick = onClick, armed = false, size = size, label = label) {

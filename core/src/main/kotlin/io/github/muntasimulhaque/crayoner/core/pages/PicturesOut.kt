@@ -52,7 +52,7 @@ fun cupcakePage(): Page = Page(
     id = "cupcake",
     regions = listOf(
         area("wall", "wall", Crayons.WISTERIA, rect(0.0, 0.0, 1.0, 1.0)),
-        area("table", "table", Crayons.CHESTNUT, rect(0.0, 0.80, 1.0, 0.20)),
+        area("table", "table", Crayons.CHESTNUT, rect(0.0, 0.80, 1.0, 0.25)),
         area("wrapper", "wrapper", Crayons.BLUE_GREEN, poly(0.35, 0.56, 0.65, 0.56, 0.61, 0.82, 0.39, 0.82)),
         area(
             "frosting", "frosting", Crayons.RED_VIOLET,

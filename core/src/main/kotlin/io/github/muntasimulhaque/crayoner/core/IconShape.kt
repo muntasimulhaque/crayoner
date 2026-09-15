@@ -50,11 +50,18 @@ object AppIcon {
     /**
      * One piece of a mark: a polyline, open or closed, stroked or filled.
      * Stroked is the default, because a mark is a line the app drew.
+     *
+     * [weight] is a share of the mark's own line, for the rare line that is
+     * printed *on* an object rather than outlining it. The rubber's sleeve
+     * rules are the one case: they are the printer's lines on a paper band,
+     * and drawn at the outline's own weight they turned the block into a
+     * ladder. Everything else is 1.
      */
     data class Piece(
         val points: List<Vec2>,
         val closed: Boolean = false,
         val fill: Boolean = false,
+        val weight: Double = 1.0,
     )
 
     /** The pieces of one mark, in paint order. */
@@ -116,21 +123,50 @@ object AppIcon {
     }
 
     /**
-     * The rubber lying on the desk: a squared block on its own edge, with the
-     * two printed rules a wrapped sleeve wears across its near end. The rules
-     * are the whole of what says rubber rather than eraser block, which is why
-     * there are two of them and why neither reaches the block's own edges.
+     * The rubber lying on the desk: a squared block with the two printed rules
+     * a wrapped sleeve wears across it. A real rubber is wider than it is tall
+     * once it is lying down, so the block is drawn that way, with the band
+     * across its upper half, where a hand would hold it, and the bare rubber
+     * end below: that band is the one thing on the object that says rubber
+     * rather than eraser block.
      *
      * It is a line drawing like every other mark in the app: the block is not
      * filled, so a seat that is picked up can show the capsule's own cardboard
      * through it without the object painting itself a second color. Nothing
      * about a rubber changes when a hand picks it up (see D-059).
      */
-    private fun eraser(): List<Piece> = listOf(
-        Piece(block(cx = 0.5, cy = 0.5, len = 0.42, wid = 0.62, angleDeg = -14.0), closed = true),
-        Piece(rule(cx = 0.5, cy = 0.47, len = 0.42, half = 0.86, angleDeg = -14.0)),
-        Piece(rule(cx = 0.5, cy = 0.71, len = 0.42, half = 0.86, angleDeg = -14.0)),
-    )
+    private fun eraser(): List<Piece> {
+        // A rounded block, wider than it is tall, lying at a small angle, with
+        // the sleeve's two printed rules across its near end. The rounding is
+        // what says rubber: a squared block with lines across it is a book or
+        // a battery, and a rubber is the one object on the desk with soft
+        // corners.
+        val block = roundedRect(0.15, 0.26, 0.70, 0.48, 0.12).map {
+            rotateAround(it, Vec2(0.5, 0.5), -20.0)
+        }
+        return listOf(
+            Piece(block, closed = true),
+            Piece(across(0.500, half = 0.20, angleDeg = -20.0), weight = SLEEVE_RULE),
+            Piece(across(0.655, half = 0.20, angleDeg = -20.0), weight = SLEEVE_RULE),
+        )
+    }
+
+    /**
+     * A line across a lying block at [cx]: from its low edge to its high edge,
+     * then turned with the block. The rules of a sleeve run across the object
+     * it is wound around, not along it.
+     */
+    private fun across(cx: Double, half: Double, angleDeg: Double): List<Vec2> = listOf(
+        Vec2(cx, 0.5 - half),
+        Vec2(cx, 0.5 + half),
+    ).map { rotateAround(it, Vec2(0.5, 0.5), angleDeg) }
+
+    /**
+     * How heavy the sleeve's two printed rules are, as a share of the mark's
+     * own line. Lighter than the outline, because they are printed on the
+     * object and not drawn around it.
+     */
+    private const val SLEEVE_RULE = 0.62
 
     /**
      * One step of the walk: an open ring with a wedge riding its own end,
@@ -213,18 +249,6 @@ object AppIcon {
         wid: Double,
         angleDeg: Double,
     ): List<Vec2> = corners(cx, cy, len, wid).map { rotateAround(it, Vec2(cx, cy), angleDeg) }
-
-    /**
-     * One rule across the block, a share of the block's own width in from its
-     * ends, so the two rules sit inside the sleeve rather than on its seams.
-     */
-    private fun rule(cx: Double, cy: Double, len: Double, half: Double, angleDeg: Double): List<Vec2> {
-        val span = len / 2.0 * half
-        return listOf(
-            Vec2(cx - span, cy),
-            Vec2(cx + span, cy),
-        ).map { rotateAround(it, Vec2(cx, cy), angleDeg) }
-    }
 
     /** The four corners of an upright rectangle, in paint order. */
     private fun corners(cx: Double, cy: Double, len: Double, wid: Double): List<Vec2> = listOf(

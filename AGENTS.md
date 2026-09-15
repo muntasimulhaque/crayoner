@@ -1084,8 +1084,12 @@ the screenshots, all in the same session.
   wherever they appear. The steps are an open ring with a wedge whose base
   sits across the stroke it ends, and the step forward is the step back
   reflected point for point, so the pair is one object in two directions.
-  The rubber is a squared block on its own edge with the two rules a wrapped
-  sleeve wears, inset from the flanks so a round cap cannot paint two nubs
+  The rubber is a rounded block lying at a small angle, with the sleeve's
+  two printed rules across its near end: the rounding is what says rubber,
+  because a squared block with lines across it is a book or a battery. The
+  rules are lighter than the outline (a share of the mark's own weight),
+  because they are printed on the object rather than drawn around it, and
+  they stop inside the block's edges so a round cap cannot paint two nubs
   of ink out in the paper beside it. `AppIconTest` holds all of it: every
   mark inside its own box, every mark filling that box, the two steps
   exactly mirrored, the rubber's rules inside the block, and nothing drawn

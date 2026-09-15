@@ -85,7 +85,19 @@ internal fun DrawScope.drawMark(name: AppIcon.Name, color: Color) {
         // A mark is a line the app drew: two points at the very least.
         if (piece.points.size < 2) continue
         val path = pathOf(piece.points, w, h, piece.closed)
-        if (piece.fill) drawPath(path, color) else drawPath(path, color, style = stroke)
+        if (piece.fill) {
+            drawPath(path, color)
+        } else {
+            drawPath(
+                path,
+                color,
+                style = Stroke(
+                    width = (stroke.width * piece.weight.toFloat()).coerceAtLeast(1f),
+                    cap = stroke.cap,
+                    join = stroke.join,
+                ),
+            )
+        }
     }
 }
 

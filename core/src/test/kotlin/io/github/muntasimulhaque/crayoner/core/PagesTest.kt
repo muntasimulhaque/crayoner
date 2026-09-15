@@ -126,17 +126,39 @@ class PagesTest {
         // bounding box, because a region is often a handful of scattered
         // things painted together: a set of raindrops whose leftmost drop
         // hangs off the paper has a bounding box that looks perfectly fine.
+        //
+        // It also holds the other half of the rule: a piece that does leave
+        // the sheet has to leave it by a clear margin ([CLEARANCE]), because
+        // every area is outlined where it is not the ground, and a band that
+        // ends exactly on the paper's own edge prints a line along the very
+        // bottom of the sheet. A stray rule under a sea is not a horizon; it
+        // is a mistake.
         for (page in Pages.all) {
             for (region in page.regions) {
                 if (page.isGround(page.indexOfRegion(region.id))) continue
                 val whole = region.bounds
                 val fullWidth = whole.x <= 0.02 && whole.right >= 0.98
-                if (fullWidth) continue
                 for (part in region.parts) {
                     val b = part.bounds()
+                    val crossesSides = b.x < 0.0 || b.right > 1.0
+                    val crossesBottom = b.bottom > Page.ASPECT
+                    if (!crossesSides && !crossesBottom && b.y >= 0.0) {
+                        // Wholly inside the paper: nothing to check.
+                        assertTrue(
+                            "${page.id}/${region.id} is cut off by the sheet: $b",
+                            b.x >= -1e-6 && b.right <= 1.0 + 1e-6,
+                        )
+                        continue
+                    }
                     assertTrue(
-                        "${page.id}/${region.id} is cut off by the sheet: $b",
-                        b.x >= -1e-6 && b.y >= -1e-6 && b.right <= 1.0 + 1e-6,
+                        "${page.id}/${region.id} leaves the sheet without being a full-width band: $b",
+                        fullWidth,
+                    )
+                    val clearsSides = b.x <= -CLEARANCE || b.right >= 1.0 + CLEARANCE
+                    val clearsBottom = b.bottom >= Page.ASPECT + CLEARANCE
+                    assertTrue(
+                        "${page.id}/${region.id} ends on the paper's own edge, so its outline is printed there: $b",
+                        clearsSides || clearsBottom,
                     )
                 }
             }
@@ -239,6 +261,14 @@ class PagesTest {
             "one crayon covers ${(share * 100).toInt()}% of the book: ${worst?.key?.toString(16)}",
             share <= 0.25,
         )
+    }
+
+    private companion object {
+        /**
+         * How far past the paper.s own edge a piece has to run for its outline
+         * to land off the sheet rather than along it.
+         */
+        const val CLEARANCE = 0.02
     }
 
     /** Which of twelve slices of the wheel a color sits in. */

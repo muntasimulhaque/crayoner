@@ -155,9 +155,16 @@ class AppIconTest {
         }
         // And the two rules do not touch: a pair drawn on top of one another
         // is one rule with a wider line, which says nothing.
-        val a = rules[0].points.first().y
-        val b = rules[1].points.first().y
-        assertTrue("the rules are on top of each other", abs(a - b) > 0.15)
+        fun middle(rule: AppIcon.Piece): Vec2 = Vec2(
+            rule.points.sumOf { it.x } / rule.points.size,
+            rule.points.sumOf { it.y } / rule.points.size,
+        )
+        val a = middle(rules[0])
+        val b = middle(rules[1])
+        assertTrue(
+            "the rules are on top of each other",
+            kotlin.math.hypot(a.x - b.x, a.y - b.y) > 0.12,
+        )
     }
 
     @Test

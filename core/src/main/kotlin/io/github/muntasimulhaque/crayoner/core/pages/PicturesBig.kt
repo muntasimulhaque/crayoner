@@ -38,15 +38,17 @@ fun rocketPage(): Page = Page(
     id = "rocket",
     regions = listOf(
         area("space", "space", Crayons.INDIGO, rect(0.0, 0.0, 1.0, 1.0)),
-        // Big stars, unevenly scattered, none of them near another. A field
-        // of small stars is texture; five stars a child can color are a sky.
+        // Big stars, unevenly scattered, none of them near another, and none
+        // of them near enough to the paper's own edge for the sheet to cut
+        // one. A field of small stars is texture; five stars a child can
+        // color are a sky.
         area(
             "stars", "stars", Crayons.YELLOW,
-            star(0.15, 0.17, 0.070, 0.028, 4),
-            star(0.85, 0.14, 0.076, 0.030, 4),
-            star(0.77, 0.44, 0.055, 0.022, 4),
-            star(0.21, 0.47, 0.050, 0.020, 4),
-            star(0.63, 0.09, 0.042, 0.017, 4),
+            star(0.19, 0.17, 0.068, 0.030, 4),
+            star(0.81, 0.14, 0.072, 0.032, 4),
+            star(0.75, 0.44, 0.058, 0.026, 4),
+            star(0.25, 0.47, 0.054, 0.024, 4),
+            star(0.62, 0.09, 0.050, 0.022, 4),
         ),
         area(
             "flame", "flame", Crayons.ORANGE,

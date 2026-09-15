@@ -76,13 +76,13 @@ object MarkReview {
         val left = cellX(col) + (COIN - ICON) / 2.0
         val top = cellY(row) + (COIN - ICON) / 2.0
         val s = ICON.toDouble()
-        val stroke = BasicStroke(
-            (s * AppIcon.LINE).toFloat().coerceAtLeast(1.4f),
-            BasicStroke.CAP_ROUND,
-            BasicStroke.JOIN_ROUND,
-        )
         g.color = INK
         for (piece in AppIcon.pieces(name)) {
+            val stroke = BasicStroke(
+                (s * AppIcon.LINE * piece.weight).toFloat().coerceAtLeast(1f),
+                BasicStroke.CAP_ROUND,
+                BasicStroke.JOIN_ROUND,
+            )
             val path = Path2D.Double()
             var first = true
             for (p in piece.points) {

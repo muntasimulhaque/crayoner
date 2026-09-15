@@ -90,9 +90,25 @@ fun wavyEdge(y: Double, amp: Double = 0.02, bumps: Int = 3, phase: Int = 0): Lis
         Vec2(i.toDouble() / bumps, y + sign * amp)
     }
 
-/** A band from a smooth left to right edge down to the bottom corners. */
+/**
+ * A band from a smooth left to right edge down past the bottom of the sheet.
+ *
+ * The band ends below the composed square on purpose. A picture is composed
+ * in a square and fitted onto the taller sheet, so a shape that stops at the
+ * square's own bottom edge lands exactly on the paper's edge, and the region
+ * renderer strokes every non-ground area: the band's own bottom line would be
+ * printed along the very bottom of the sheet, a stray rule under a sea or a
+ * lawn that a real coloring page does not have. Running the band past the
+ * paper costs nothing (the canvas clips it) and takes the line with it.
+ */
 fun band(edge: List<Vec2>, samples: Int = 12): Poly =
-    Poly(smoothPoints(edge, samples) + listOf(Vec2(1.0, 1.0), Vec2(0.0, 1.0)))
+    Poly(smoothPoints(edge, samples) + listOf(Vec2(1.0, BAND_BOTTOM), Vec2(0.0, BAND_BOTTOM)))
+
+/**
+ * Where a band ends, in the authored square: past the paper's own bottom
+ * edge, so the band's outline is never printed on the sheet. See [band].
+ */
+const val BAND_BOTTOM = 1.05
 
 /** A smooth closed shape through control points. */
 fun blob(points: List<Vec2>, samples: Int = 12): Poly = smooth(points, samples, closed = true)
