@@ -69,16 +69,23 @@ fun cloud(cx: Double, cy: Double, s: Double = 1.0): List<Shape> = listOf(
     ellipse(cx + 0.010 * s, cy + 0.030 * s, 0.155 * s, 0.045 * s),
 )
 
-/** The petals of one flower: overlapping ovals around a center. */
+/**
+ * The petals of one flower: fat ovals overlapping around a center.
+ *
+ * The petals are round enough to hold a fingertip each: a thin petal reads
+ * as a petal and cannot be colored as one, because the wax a small hand
+ * lays down is wider than the shape it is aiming at. The whole blossom is
+ * still a blossom, and the middle is left open for the flower's own center.
+ */
 fun flowerPetals(cx: Double, cy: Double, r: Double, count: Int = 6): List<Shape> =
     (0 until count).map { i ->
         val a = i * 360.0 / count
         val ar = a.toRadians()
         ellipse(
-            cx + cos(ar) * r * 0.55,
-            cy + sin(ar) * r * 0.55,
-            r * 0.44,
-            r * 0.30,
+            cx + cos(ar) * r * 0.50,
+            cy + sin(ar) * r * 0.50,
+            r * 0.55,
+            r * 0.46,
             a,
         )
     }

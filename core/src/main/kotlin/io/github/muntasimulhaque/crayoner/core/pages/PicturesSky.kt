@@ -43,11 +43,13 @@ fun sailPage(): Page = Page(
     id = "sail",
     regions = listOf(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
-        // One big cloud up on the left and a small wisp lower down on the
+        // One big cloud up on the left and a smaller one lower down on the
         // right: two different clouds, in two different bands of the sky,
-        // which is what moving air looks like.
+        // which is what moving air looks like. The smaller one is still a
+        // cloud a fingertip can color, which is the floor for everything a
+        // child can see on a page.
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.24, 0.14, 0.95)),
-        areaOf("cloud_low", "cloud", Crayons.WHITE, cloud(0.78, 0.34, 0.55)),
+        areaOf("cloud_low", "cloud", Crayons.WHITE, cloud(0.80, 0.30, 0.90)),
         area("sea", "sea", Crayons.BLUE_GREEN, band(wavyEdge(0.66, 0.02, 3, 0))),
         area("sail", "sail", Crayons.WHITE, poly(0.47, 0.15, 0.79, 0.62, 0.47, 0.62)),
         area(
@@ -71,12 +73,13 @@ fun balloonPage(): Page = Page(
     id = "balloon",
     regions = listOf(
         area("sky", "sky", Crayons.CERULEAN, rect(0.0, 0.0, 1.0, 1.0)),
-        // The weather on this page is all below and to the sides of the
-        // balloon: one broad cloud low on the left where the envelope is
-        // not, and one smaller and higher on the right, so the balloon is
-        // the only thing in the middle of the sky.
+        // One broad cloud, low on the left where the envelope is not: the
+        // weather on this page is below and to one side of the balloon, so
+        // the balloon is the only thing in the middle of the sky. The small
+        // second cloud that used to sit high on the right was squeezed into
+        // the corner between the balloon and the paper's own edge, and a
+        // cloud sliced by the envelope reads as a mistake, not as weather.
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.18, 0.82, 1.0)),
-        areaOf("cloud_high", "cloud", Crayons.WHITE, cloud(0.85, 0.24, 0.62)),
         area(
             "envelope", "balloon", Crayons.RED,
             blob(
@@ -111,7 +114,7 @@ fun balloonPage(): Page = Page(
             "basket", "basket", Crayons.TAN,
             poly(0.43, 0.55, 0.452, 0.55, 0.472, 0.755, 0.45, 0.755),
             poly(0.57, 0.55, 0.548, 0.55, 0.528, 0.755, 0.55, 0.755),
-            io.github.muntasimulhaque.crayoner.core.round(0.424, 0.742, 0.152, 0.122, 0.022),
+            io.github.muntasimulhaque.crayoner.core.round(0.415, 0.735, 0.17, 0.135, 0.025),
         ),
     ),
 )
@@ -125,22 +128,23 @@ fun kitePage(): Page = Page(
         // right of the page, so the sky it flies in is crowded on the right
         // and empty on the left: a kite needs moving air, and this is the
         // page where the air shows.
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.865, 0.105, 0.60)),
-        areaOf("cloud_low", "cloud", Crayons.WHITE, cloud(0.135, 0.345, 0.78)),
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.865, 0.105, 0.90)),
+        areaOf("cloud_low", "cloud", Crayons.WHITE, cloud(0.135, 0.345, 0.90)),
         area("kite", "kite", Crayons.RED, poly(0.50, 0.10, 0.73, 0.34, 0.50, 0.58, 0.27, 0.34)),
         area("stripe", "stripe", Crayons.YELLOW, poly(0.50, 0.10, 0.565, 0.34, 0.50, 0.58, 0.435, 0.34)),
-        // The tail's three bows are big enough to see and to aim at: a bow
-        // a child cannot find on the paper is a bow the picture does not
-        // really have.
+        // Two bows on the tail, each a diamond a fingertip can land on, and
+        // a ribbon between them thick enough to trace. The tail used to be
+        // three bows the width of a coin: they read as a tail on the sheet
+        // and could not be colored on the paper, which is the one thing a
+        // picture must never ask of a hand.
         area(
             "tail", "tail", Crayons.VIOLET_RED,
             poly(
-                0.494, 0.58, 0.462, 0.66, 0.424, 0.74, 0.408, 0.82, 0.396, 0.90,
-                0.362, 0.90, 0.374, 0.82, 0.390, 0.74, 0.436, 0.66, 0.474, 0.575,
+                0.494, 0.58, 0.470, 0.66, 0.446, 0.74, 0.430, 0.82, 0.418, 0.90,
+                0.390, 0.90, 0.402, 0.82, 0.418, 0.74, 0.442, 0.66, 0.470, 0.575,
             ),
-            poly(0.466, 0.640, 0.512, 0.678, 0.466, 0.716, 0.420, 0.678),
-            poly(0.420, 0.745, 0.466, 0.783, 0.420, 0.821, 0.374, 0.783),
-            poly(0.400, 0.850, 0.446, 0.888, 0.400, 0.926, 0.354, 0.888),
+            poly(0.462, 0.575, 0.562, 0.673, 0.462, 0.770, 0.362, 0.673),
+            poly(0.432, 0.745, 0.532, 0.843, 0.432, 0.940, 0.332, 0.843),
         ),
     ),
 )
@@ -162,7 +166,7 @@ fun rainbowPage(): Page {
             // are different sizes and sit at different heights, so the pair
             // does not read as a matched set of brackets.
             areaOf("cloud_left", "cloud", Crayons.WHITE, cloud(0.14, 0.22, 0.95)),
-            areaOf("cloud_right", "cloud", Crayons.WHITE, cloud(0.88, 0.34, 0.68)),
+            areaOf("cloud_right", "cloud", Crayons.WHITE, cloud(0.88, 0.34, 0.90)),
         ),
     )
 }

@@ -43,7 +43,10 @@ fun iceCreamPage(): Page = Page(
         area("cone", "cone", Crayons.TAN, poly(0.375, 0.44, 0.625, 0.44, 0.50, 0.885)),
         area("scoop_a", "scoop", Crayons.CARNATION_PINK, circle(0.50, 0.415, 0.15)),
         area("scoop_b", "scoop", Crayons.APRICOT, circle(0.50, 0.255, 0.125)),
-        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.115, 0.062)),
+        // The cherry on top is a cherry a fingertip can pick up: at the size
+        // of a fingertip it is a dot a child can only smear over, which is
+        // the one thing this book must not print.
+        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.115, 0.075)),
     ),
 )
 
@@ -60,7 +63,7 @@ fun cupcakePage(): Page = Page(
             circle(0.50, 0.34, 0.12),
             circle(0.50, 0.25, 0.085),
         ),
-        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.155, 0.058)),
+        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.155, 0.075)),
     ),
 )
 
@@ -72,18 +75,22 @@ fun carPage(): Page = Page(
         // One cloud, up and to the left, behind the car's own roof line: the
         // car is driving out from under it.
         areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.245, 0.135, 0.88)),
-        area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.70, 0.02, 2, 0))),
-        area("road", "road", Crayons.GRAY, band(wavyEdge(0.76, 0.008, 2, 0))),
+        // A road and no grass: the car drives on a road that runs to the
+        // bottom of the sheet. A lawn behind a road is a sliver of green
+        // between two lines, and a child cannot color a sliver; the road is
+        // the thing this page is about, so the road gets the whole bottom.
+        area("road", "road", Crayons.GRAY, band(wavyEdge(0.74, 0.008, 2, 0))),
         area(
             "body", "car", Crayons.RED,
             round(0.12, 0.60, 0.76, 0.17, 0.06),
             round(0.32, 0.48, 0.36, 0.16, 0.05),
         ),
-        // Two windows, each of them wide enough to hold a mark of its own.
+        // Two windows, each of them wide enough to hold a mark of its own,
+        // with a clear pillar between them so the pair never reads as one.
         area(
             "windows", "windows", Crayons.SKY_BLUE,
-            round(0.345, 0.500, 0.145, 0.115, 0.025),
-            round(0.505, 0.500, 0.145, 0.115, 0.025),
+            round(0.335, 0.495, 0.150, 0.135, 0.028),
+            round(0.515, 0.495, 0.150, 0.135, 0.028),
         ),
         // Wheels with real hubs: a wheel the size of a pea is not a wheel a
         // child can color, and two of them are the whole of what makes the
@@ -107,16 +114,13 @@ fun trainPage(): Page = Page(
         areaOf(
             "smoke", "smoke", Crayons.WHITE,
             cloud(0.26, 0.17, 1.15),
-            cloud(0.075, 0.08, 0.7),
+            cloud(0.115, 0.105, 0.9),
         ),
-        area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.74, 0.015, 3, 0))),
-        // A real track with real sleepers: the rails and ties are what make
-        // a train a train, and the ballast under them is a mark of its own
-        // rather than a line the wheels stand on.
-        area(
-            "track", "track", Crayons.BROWN,
-            rect(0.02, 0.775, 0.96, 0.105),
-        ),
+        // A bed of ballast under the train, running to the bottom of the
+        // sheet: one wide brown area a hand can sweep across. There is no
+        // strip of grass squeezed between the ballast and the paper's edge
+        // for a child to hunt for.
+        area("track", "track", Crayons.BROWN, band(wavyEdge(0.775, 0.008, 3, 0))),
         area(
             "engine", "engine", Crayons.RED_ORANGE,
             round(0.14, 0.50, 0.46, 0.26, 0.06),

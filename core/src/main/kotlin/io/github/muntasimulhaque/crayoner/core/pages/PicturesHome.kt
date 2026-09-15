@@ -40,7 +40,7 @@ fun housePage(): Page = Page(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
         // One cloud, high and to the right, with the roof rising toward the
         // left of it: the weather and the house are not in each other's way.
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.80, 0.205, 0.74)),
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.80, 0.205, 0.90)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.78, 0.018, 3, 0))),
         area("wall", "wall", Crayons.PEACH, round(0.26, 0.44, 0.48, 0.34, 0.02)),
         area("roof", "roof", Crayons.RED, poly(0.20, 0.465, 0.50, 0.205, 0.80, 0.465)),
@@ -62,7 +62,7 @@ fun treePage(): Page = Page(
         // weather, which is what keeps any of them from being wallpaper.
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.78, 0.02, 3, 1))),
-        area("trunk", "trunk", Crayons.BROWN, poly(0.452, 0.42, 0.548, 0.42, 0.558, 0.80, 0.442, 0.80)),
+        area("trunk", "trunk", Crayons.BROWN, poly(0.44, 0.42, 0.56, 0.42, 0.585, 0.80, 0.415, 0.80)),
         area(
             "crown", "leaves", Crayons.YELLOW_GREEN,
             circle(0.50, 0.33, 0.185),
@@ -73,13 +73,15 @@ fun treePage(): Page = Page(
         ),
         // Four apples, all large enough to be picked out with a fingertip,
         // and unevenly spaced: an orchard of four identical dots in a ring
-        // is an ornament, not fruit.
+        // is an ornament, not fruit. Each one has to hold a finger of its
+        // own: a basket of four apples where three are wide passes an audit
+        // that measures the basket and fails the child who wants the fourth.
         area(
             "apples", "apples", Crayons.SCARLET,
-            circle(0.42, 0.30, 0.052),
-            circle(0.615, 0.395, 0.050),
-            circle(0.545, 0.205, 0.046),
-            circle(0.352, 0.455, 0.044),
+            circle(0.42, 0.30, 0.070),
+            circle(0.615, 0.395, 0.068),
+            circle(0.545, 0.205, 0.068),
+            circle(0.352, 0.455, 0.066),
         ),
     ),
 )
@@ -117,11 +119,11 @@ fun mushroomPage(): Page = Page(
         // heights, one tucked in and one out at the cap's edge.
         area(
             "spots", "spots", Crayons.WHITE,
-            circle(0.355, 0.395, 0.062),
-            circle(0.635, 0.335, 0.058),
-            circle(0.505, 0.295, 0.050),
-            circle(0.250, 0.490, 0.048),
-            circle(0.745, 0.545, 0.052),
+            circle(0.355, 0.395, 0.078),
+            circle(0.645, 0.325, 0.074),
+            circle(0.50, 0.285, 0.070),
+            circle(0.235, 0.500, 0.068),
+            circle(0.745, 0.545, 0.072),
         ),
     ),
 )
@@ -133,20 +135,20 @@ fun flowersPage(): Page = Page(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
         // One small cloud, high and to the right, well clear of both
         // blossoms: the flowers are what this page is about.
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.17, 0.115, 0.58)),
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.17, 0.115, 0.90)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.76, 0.02, 3, 0))),
         area(
             "stems", "stems", Crayons.GREEN,
             poly(0.345, 0.76, 0.362, 0.38, 0.378, 0.38, 0.392, 0.76),
             poly(0.625, 0.76, 0.642, 0.30, 0.658, 0.30, 0.672, 0.76),
-            ellipse(0.430, 0.615, 0.070, 0.034, -32.0),
-            ellipse(0.292, 0.660, 0.070, 0.034, 32.0),
-            ellipse(0.704, 0.575, 0.064, 0.031, -32.0),
-            ellipse(0.578, 0.620, 0.064, 0.031, 32.0),
+            ellipse(0.430, 0.615, 0.095, 0.060, -32.0),
+            ellipse(0.292, 0.660, 0.095, 0.060, 32.0),
+            ellipse(0.704, 0.575, 0.088, 0.056, -32.0),
+            ellipse(0.578, 0.620, 0.088, 0.056, 32.0),
         ),
-        areaOf("petals_a", "petals", Crayons.CARNATION_PINK, flowerPetals(0.36, 0.44, 0.17)),
-        area("center_a", "flower_center", Crayons.YELLOW, circle(0.36, 0.44, 0.062)),
-        areaOf("petals_b", "petals", Crayons.VIOLET, flowerPetals(0.64, 0.36, 0.14)),
-        area("center_b", "flower_center", Crayons.YELLOW, circle(0.64, 0.36, 0.058)),
+        areaOf("petals_a", "petals", Crayons.CARNATION_PINK, flowerPetals(0.36, 0.44, 0.20)),
+        area("center_a", "flower_center", Crayons.YELLOW, circle(0.36, 0.44, 0.068)),
+        areaOf("petals_b", "petals", Crayons.VIOLET, flowerPetals(0.64, 0.36, 0.19)),
+        area("center_b", "flower_center", Crayons.YELLOW, circle(0.64, 0.36, 0.068)),
     ),
 )
