@@ -181,7 +181,7 @@ external links reachable by a child, no ads.
 
 **Version 1.0 (versionCode 10) was built by CI from commit 4bc2ee3 and
 signed with the Crayoner upload key**, and its AAB is in `play-store/aab/`
-awaiting submission (sha256 f1a9a2ec). It reads versionCode 10, versionName
+awaiting submission (sha256 478ed275). It reads versionCode 10, versionName
 1.0, package io.github.muntasimulhaque.crayoner, target 37, with no
 permission beyond the androidx core private receiver, which the CI run
 checks against the built APK's own manifest.
