@@ -14,16 +14,12 @@ import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
  * The host performs what the domain decides. It owns which screen is up,
  * which crayon is in hand, and what the page shows. The rules themselves
- * (geometry, wax, strokes, the window, saving) live in :core and are tested
- * there.
+ * (geometry, wax, strokes, saving) live in :core and are tested there.
  *
  * A finger draws. Down starts a mark, moving draws it, up finishes it, and
  * every finished mark is saved a fraction of a second later, so a phone
@@ -77,10 +73,8 @@ class ColoringHost(app: Application) : ViewModel() {
      */
     val soundOn: State<Boolean> = derivedStateOf { _shelf.value.soundOn }
 
-    /** Draft writes are conflated and slightly delayed, never per mark. */
-    private val drafts = MutableSharedFlow<DraftWrite>(extraBufferCapacity = 1)
-
-    private class DraftWrite(val pageId: String, val text: String)
+    /** The page's own marks, kept in memory and written a moment later. */
+    private val drafts = DraftSaver(viewModelScope, store)
 
     init {
         viewModelScope.launch {
@@ -97,12 +91,6 @@ class ColoringHost(app: Application) : ViewModel() {
                 ShelfState(loaded = true)
             } else {
                 ShelfState(saved.drafts, saved.soundOn, loaded = true)
-            }
-        }
-        viewModelScope.launch {
-            drafts.collectLatest { draft ->
-                delay(DRAFT_SETTLE_MS)
-                runCatching { store.saveDraft(draft.pageId, draft.text) }
             }
         }
     }
@@ -392,7 +380,7 @@ class ColoringHost(app: Application) : ViewModel() {
         val progress = draft.progress
         val text = if (progress.isEmpty) "" else progress.serialize()
         _shelf.value = _shelf.value.remembering(page.id, text)
-        drafts.tryEmit(DraftWrite(page.id, text))
+        drafts.save(page.id, text)
     }
 
     /** The effects, unless the sound switch is off. */
@@ -402,9 +390,5 @@ class ColoringHost(app: Application) : ViewModel() {
 
     override fun onCleared() {
         soundBoard.release()
-    }
-
-    private companion object {
-        const val DRAFT_SETTLE_MS = 250L
     }
 }
