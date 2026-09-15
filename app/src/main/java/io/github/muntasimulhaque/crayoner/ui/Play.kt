@@ -176,10 +176,10 @@ fun PlayScreen(
         if (state.boxOpen) {
             CrayonBoxSheet(
                 selected = state.crayon ?: Crayons.RED,
-                onPick = { argb ->
-                    onPick(argb)
-                    onOpenBox(false)
-                },
+                // Picking a color takes the crayon and closes the lid in one
+                // act, so the box is never left open over a hand that is
+                // already drawing.
+                onPick = onPick,
                 onDismiss = { onOpenBox(false) },
             )
         }

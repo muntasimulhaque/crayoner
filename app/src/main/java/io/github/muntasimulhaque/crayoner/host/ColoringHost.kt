@@ -8,7 +8,6 @@ import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
-import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import kotlinx.coroutines.delay
@@ -18,74 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
-/** Where in the book we are. Home is the shelf; tap a picture and color. */
-sealed interface Screen {
-    data object Home : Screen
-
-    data class Coloring(
-        val page: Page,
-        /** The paper: every mark on it, and the one step back. */
-        val draft: Draft,
-        /** The crayon in hand; null until the child picks one up. */
-        val crayon: Long? = null,
-        /**
-         * True while the rubber is in hand: the next mark takes wax off the
-         * paper instead of putting it on. It never touches the printed line,
-         * because on paper the print is under the wax.
-         */
-        val erasing: Boolean = false,
-        /** The box of colors, held up over the page. */
-        val boxOpen: Boolean = false,
-        /**
-         * The mark under the finger right now. It is drawn with the finished
-         * ones and saved the moment the finger lifts, so what the child sees
-         * while drawing is what they get.
-         */
-        val live: Stroke? = null,
-        /** The sample held up big, while the child looks closely. */
-        val peeking: Boolean = false,
-        /**
-         * True while the child is being asked whether to keep the picture
-         * they are leaving. It is raised only when there is work on the page
-         * and the child presses Home, and it is answered by [keepIt] or by
-         * [startFresh]; there is no third answer and no way to be stuck in
-         * it, because the system's own Back also puts the question away.
-         */
-        val asking: Boolean = false,
-        /**
-         * Counts the marks the hand has finished. It is what the one-shot
-         * answers (the haptic, and the flattened layer of marks) read, so a
-         * mark that lands over paper already colored still answers like a
-         * mark. Stepping back and forward both bump it, because both change
-         * the paper.
-         */
-        val marks: Long = 0L,
-    ) : Screen {
-        /** The marks on the paper, for anything that only draws them. */
-        val progress: Progress get() = draft.progress
-
-        /** True while there is a mark the child can take back. */
-        val canUndo: Boolean get() = draft.canUndo
-
-        /** True while there is a step back the child can put forward. */
-        val canRedo: Boolean get() = draft.canRedo
-    }
-}
-
-/** What the shelf needs to draw itself. */
-data class ShelfState(
-    /** The marks of the page still being worked on, by page id. */
-    val drafts: Map<String, String> = emptyMap(),
-    val soundOn: Boolean = true,
-    /**
-     * False until the saved shelf has been read (or its read has failed).
-     * The shelf waits for it, so nothing it holds is drawn before it is
-     * known. The screenshot harness hosts states directly and leaves it
-     * true.
-     */
-    val loaded: Boolean = true,
-)
 
 /**
  * The host performs what the domain decides. It owns which screen is up,
@@ -153,18 +84,22 @@ class ColoringHost(app: Application) : ViewModel() {
             draft = Draft.of(saved),
             crayon = null,
         )
+        // A sheet comes off the wall and lands on the desk: paper being
+        // handled, so it rustles like every other sheet in the app.
+        play(Sfx.RUSTLE)
     }
 
     /**
      * Pick a crayon up. Its color is the only thing a mark can be drawn in,
-     * and picking one up in a box of colors puts the rubber back down.
+     * and picking one up in a box of colors puts the rubber back down and
+     * closes the lid behind the hand.
      */
     fun pickCrayon(argb: Long) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
         if (!Crayons.exists(argb)) return
         if (s.crayon == argb && !s.erasing) return
-        _screen.value = s.copy(crayon = argb, erasing = false)
+        _screen.value = s.copy(crayon = argb, erasing = false, boxOpen = false)
         play(Sfx.RUSTLE)
     }
 
@@ -183,6 +118,7 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s !is Screen.Coloring) return
         if (s.boxOpen == on) return
         _screen.value = s.copy(boxOpen = on)
+        play(Sfx.RUSTLE)
     }
 
     /**
@@ -318,7 +254,12 @@ class ColoringHost(app: Application) : ViewModel() {
     /** Look at the sample closely, or put it back down. */
     fun setPeek(on: Boolean) {
         val s = _screen.value
-        if (s is Screen.Coloring) _screen.value = s.copy(peeking = on, boxOpen = false)
+        if (s !is Screen.Coloring) return
+        if (s.peeking == on) return
+        // Lifting the finished sheet and laying it back down is paper being
+        // handled, so it rustles like the crayon and the lid do.
+        _screen.value = s.copy(peeking = on, boxOpen = false)
+        play(Sfx.RUSTLE)
     }
 
     /**
@@ -382,11 +323,26 @@ class ColoringHost(app: Application) : ViewModel() {
     fun setSound(on: Boolean) {
         _shelf.value = _shelf.value.copy(soundOn = on)
         viewModelScope.launch { runCatching { store.setSound(on) } }
+        // The switch is the one control that has to answer with the thing it
+        // governs: a parent who turns sound back on should hear it land.
+        // Turning it off is silent, because the app has just been told to
+        // stop making noise, and the icon already says so.
+        if (on) play(Sfx.RUSTLE)
     }
 
+    /**
+     * Puts a finished draft where the shelf can see it, in memory and then
+     * on disk: the mark is saved a quarter of a second later, and the
+     * in-memory shelf is what [open] reads when the child comes back to the
+     * page before the write lands. Updating only the disk was a bug: a
+     * child who kept a picture and reopened it saw blank paper, because the
+     * shelf still held the map it was born with.
+     */
     private fun rememberDraft(page: Page, draft: Draft) {
         val progress = draft.progress
-        drafts.tryEmit(DraftWrite(page.id, if (progress.isEmpty) "" else progress.serialize()))
+        val text = if (progress.isEmpty) "" else progress.serialize()
+        _shelf.value = _shelf.value.remembering(page.id, text)
+        drafts.tryEmit(DraftWrite(page.id, text))
     }
 
     /** The effects, unless the sound switch is off. */

@@ -7,6 +7,8 @@ import io.github.muntasimulhaque.crayoner.core.Progress
 import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
+import io.github.muntasimulhaque.crayoner.host.ShelfState
+import io.github.muntasimulhaque.crayoner.host.remembering
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -98,6 +100,24 @@ class HostRulesTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun aKeptPictureIsThePictureTheShelfHandsBack() {
+        // Keep it just as it is is a promise about the next visit, and the
+        // shelf is the thing that answers. The draft has to be in the shelf
+        // the moment it is remembered, not only on the disk a quarter of a
+        // second later: a child who keeps a picture and opens it again saw
+        // blank paper, because the shelf still held an empty map.
+        val shelf = ShelfState(loaded = true)
+        val kept = shelf.remembering("sail", "FF0000(0.5,0.5)")
+        assertEquals("FF0000(0.5,0.5)", kept.drafts["sail"])
+        // And starting fresh lets it go in the same breath.
+        assertFalse(kept.remembering("sail", "").drafts.containsKey("sail"))
+        // Another page's draft is never disturbed by either answer.
+        val two = kept.remembering("tree", "00FF00(0.2,0.2)")
+        assertEquals("FF0000(0.5,0.5)", two.drafts["sail"])
+        assertEquals("00FF00(0.2,0.2)", two.drafts["tree"])
     }
 
     @Test
