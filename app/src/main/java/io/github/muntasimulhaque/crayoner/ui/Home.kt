@@ -1,6 +1,5 @@
 package io.github.muntasimulhaque.crayoner.ui
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -90,51 +89,49 @@ fun HomeScreen(
 }
 
 /**
- * The wall's own nameplate: the name, and the brand's mark in the app's own
+ * The wall's own nameplate: the brand's mark, and the name in the app's own
  * hand.
  *
- * The mark leans the way the launcher icon's crayon leans, and it is the very
- * same mark: one crayon, at one angle, with one set of proportions, drawn by
- * one piece of code. A mark that stood bolt upright in the app and leaned in
- * the launcher would be two crayons, and the wall is the first place a child
- * meets the app, so it is the place the two would be seen side by side.
+ * The mark comes first, the way a crayon is picked up before anything is
+ * written with it: the crayon is the thing a child of three can read, and the
+ * word beside it is for the grown-up. It is the very same mark the launcher
+ * icon draws, at the same angle, with the same proportions, from the same
+ * code: a mark that stood bolt upright in the app and leaned in the launcher
+ * would be two crayons, and the wall is the first place a child meets the
+ * app.
  *
- * It sits after the word, the way a crayon is set down beside what it has
- * just written, and it is drawn in its own box rather than in a wide, short
- * one: a crayon is measured from its own length, and a box that is not the
- * shape's own proportion stretches it. The box is the leaning mark's own
- * bounds ([CrayonShape.turnedBounds]), so the stick fills the space it is
- * given without a corner of the wrapper being clipped off.
- *
- * There is no rule under the word and no switch beside it. The crayon-drawn
- * line that used to underline the name has been taken off: it read as a
- * scoreboard rail on a wall that deliberately keeps no score.
+ * It is sized to sit beside the name rather than above it. The name is set in
+ * type and the mark is a drawing, so the two can never match to the pixel;
+ * what they can do is stand the same height, which is what makes one line of
+ * a wordmark instead of a drawing next to a heading. The mark's own box is
+ * measured from the leaning crayon itself ([CrayonShape.turnedBounds]), so
+ * the stick is as large as the line of type it stands beside without a corner
+ * of its wrapper being clipped, and it is drawn a touch shorter than the
+ * name's own height rather than a touch taller: a mark set that way reads as
+ * part of the word, and one set taller reads as a badge beside it.
  */
 @Composable
 private fun ShelfHeader() {
-    Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 6.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.displaySmall,
-                color = CrayonerColors.Ink,
-            )
-            Spacer(Modifier.width(10.dp))
-            // The brand's mark, at the app's own lean: the same crayon, at
-            // the same angle, drawn by the same code as the launcher icon.
-            // The box is the leaning mark's own bounds, so nothing about it
-            // is cropped or stretched.
-            CrayonGlyph(
-                color = CrayonerColors.Coral,
-                leanDeg = CrayonShape.MARK_LEAN,
-                modifier = Modifier.size(width = MarkBox.WIDTH, height = MarkBox.HEIGHT),
-            )
-        }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // The brand's mark, at the app's own lean: the same crayon, at the
+        // same angle, drawn by the same code as the launcher icon and the
+        // seat on the capsule.
+        CrayonGlyph(
+            color = CrayonerColors.Coral,
+            leanDeg = CrayonShape.MARK_LEAN,
+            modifier = Modifier.size(width = MarkBox.WIDTH, height = MarkBox.HEIGHT),
+        )
+        Spacer(Modifier.width(MarkBox.GAP))
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.displaySmall,
+            color = CrayonerColors.Ink,
+        )
     }
 }
 
@@ -143,16 +140,21 @@ private fun ShelfHeader() {
  *
  * The lean is the app's own mark's ([CrayonShape.MARK_LEAN]), which the
  * launcher icon draws too, so the crayon a child taps on the home screen and
- * the crayon beside the app's name are the same object at the same angle. The
- * box is measured from the turned shape itself, so the stick is as large as
- * the line of type it stands beside without a corner of it being clipped by
- * the box it is drawn in.
+ * the crayon beside the app's name are the same object at the same angle.
  */
 private object MarkBox {
     private val bounds = CrayonShape.turnedBounds(CrayonShape.MARK_TURN)
 
-    /** How long the crayon itself is drawn, in dp: a step above the type. */
-    private const val LENGTH_DP = 58f
+    /**
+     * How long the crayon itself is drawn, in dp. The name is set at 37 sp,
+     * which stands about 44 dp tall on a screen, so the stick beside it is
+     * drawn to land just under that: close enough to stand in the same line
+     * as the word, and short enough that it never towers over it.
+     */
+    private const val LENGTH_DP = 42f
+
+    /** The air between the mark and the word it belongs to. */
+    val GAP: Dp = 12.dp
 
     val WIDTH: Dp = (LENGTH_DP * bounds.w / CrayonShape.LENGTH).dp
     val HEIGHT: Dp = (LENGTH_DP * bounds.h / CrayonShape.LENGTH).dp
@@ -243,8 +245,14 @@ private fun rememberNameFontSize(names: List<String>, textWidth: Dp): TextUnit {
 }
 
 /**
- * One picture on the wall: a sheet of paper, taped at its top edge, with the
- * picture on it and the name under it.
+ * One picture on the wall: a sheet of paper with the picture on it and the
+ * name under it.
+ *
+ * The card is a sheet lying flat on the desk, the same sheet the child will
+ * color, drawn with the same corners and the same shadow. Nothing is stuck
+ * over it: no tape and no pin, because the picture is the thing and a strip
+ * of tape across its top edge is one more thing to look past. Pictures on a
+ * wall are held up by being on the wall; the wall is the app's own desk.
  *
  * The whole card is one button: a small hand never has to find the picture
  * inside the plate, and wherever it lands on the card it opens the same
@@ -274,11 +282,10 @@ private fun HungPicture(
                 .background(CrayonerColors.Card)
                 .clickable(role = Role.Button, onClick = onOpen)
                 .semantics { contentDescription = name }
-                // A taller top margin, so the tape crosses the mount's own
-                // paper and only kisses the picture's top edge. The picture
-                // is the reason the card exists and no art may hide behind
-                // the thing that holds it up.
-                .padding(start = 6.dp, end = 6.dp, top = 17.dp, bottom = 6.dp),
+                // A plate of paper, even on all four sides: the picture is
+                // the reason the card exists, and the mount around it is the
+                // width of a hand's worth of blank margin and no more.
+                .padding(6.dp),
         ) {
             Box(
                 modifier = Modifier
@@ -293,11 +300,6 @@ private fun HungPicture(
             ) {
                 SamplePlate(page = page)
             }
-            WashiTape(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 4.dp),
-            )
         }
         Spacer(Modifier.height(6.dp))
         Text(
@@ -315,17 +317,6 @@ private fun tiltFor(id: String): Float {
     val hash = abs(id.hashCode())
     val steps = (hash % 7) - 3 // -3 .. 3
     return steps * 0.6f
-}
-
-/**
- * The strip of tape holding a picture to the wall. It is the app's one roll
- * of tape, drawn by the same hand as the tape on the coloring sheet.
- */
-@Composable
-private fun WashiTape(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.width(46.dp).height(15.dp)) {
-        drawWallTape(size.width, size.height)
-    }
 }
 
 /** The sample picture filling the card's sheet. */

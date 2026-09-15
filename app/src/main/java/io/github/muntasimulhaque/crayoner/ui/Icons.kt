@@ -4,125 +4,96 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.muntasimulhaque.crayoner.core.AppIcon
+import io.github.muntasimulhaque.crayoner.core.Vec2
 
 /**
- * The app's own icon set, drawn as geometry: a house for the shelf, a
- * speaker for the sound switch, a rubber, a step back. No icon fonts, no
- * third party packs: same hand, same weights, everywhere.
+ * The app's marks, drawn from the geometry in [AppIcon].
  *
- * The whole set shares one weight, and that is the point of [IconLine]. A
- * row of buttons is read as one object, so a round mark drawn with a hair
- * line beside one drawn with a marker looks like two different apps. Every
- * outline mark in the app is struck at the same fraction of its own box, and
- * the fraction is chosen for the smallest size the mark is ever drawn at: a
- * mark that reads at 24 dp reads at 26 dp too, and the other way round is
- * not true.
+ * There is no drawing here to speak of: every mark's shape lives in :core, as
+ * a list of points, and this file only walks those points onto a canvas. That
+ * is the same arrangement the pictures use, and for the same reason: a mark
+ * that is described in one place can be measured by a test, drawn by the
+ * review sheets, and read by a person, and it cannot come out different in
+ * two places.
+ *
+ * Every mark is [IconSize] and every line is [AppIcon.LINE] of the mark's own
+ * box, so the bar and the capsule are one row of controls in two places
+ * rather than two sets of buttons that happen to be on one screen.
  */
-
-/**
- * The one line weight for an outline icon, as a fraction of the icon's own
- * box. A mark has to read at the size of a fingertip, which is where a
- * lighter line stops being a line at all.
- */
-private const val ICON_LINE = 0.098f
-
-/**
- * The stroke every outline icon is drawn with: one weight, one set of caps,
- * scaled to the box it is drawn in.
- */
-internal fun iconStroke(w: Float): Stroke = Stroke(
-    width = (w * ICON_LINE).coerceAtLeast(1.4f),
-    cap = StrokeCap.Round,
-    join = StrokeJoin.Round,
-)
-
 @Composable
-fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) {
-    GeoIcon(modifier, color, size) { w, h ->
-        val line = iconStroke(w)
-        val roof = Path().apply {
-            moveTo(w * 0.16f, h * 0.48f)
-            lineTo(w * 0.50f, h * 0.18f)
-            lineTo(w * 0.84f, h * 0.48f)
-        }
-        drawPath(roof, color, style = line)
-        val body = Path().apply {
-            moveTo(w * 0.26f, h * 0.44f)
-            lineTo(w * 0.26f, h * 0.82f)
-            lineTo(w * 0.74f, h * 0.82f)
-            lineTo(w * 0.74f, h * 0.44f)
-        }
-        drawPath(body, color, style = line)
-        // One little door, so the mark reads as a home and not a tent.
-        drawRoundRect(
-            color,
-            topLeft = Offset(w * 0.43f, h * 0.60f),
-            size = Size(w * 0.14f, h * 0.22f),
-            cornerRadius = CornerRadius(w * 0.05f),
-            style = line,
-        )
-    }
-}
-
-@Composable
-fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp = IconSize) {
-    GeoIcon(modifier, color, size) { w, h ->
-        val line = iconStroke(w)
-        val cone = Path().apply {
-            moveTo(w * 0.15f, h * 0.40f)
-            lineTo(w * 0.30f, h * 0.40f)
-            lineTo(w * 0.49f, h * 0.19f)
-            lineTo(w * 0.49f, h * 0.81f)
-            lineTo(w * 0.30f, h * 0.60f)
-            lineTo(w * 0.15f, h * 0.60f)
-            close()
-        }
-        drawPath(cone, color, style = line)
-        if (on) {
-            wave(color, line.width, w, h, radius = 0.175f, halfAngleDeg = 52f)
-            wave(color, line.width, w, h, radius = 0.315f, halfAngleDeg = 58f)
-        } else {
-            val arm = w * 0.105f
-            val cx = w * 0.755f
-            val cy = h * 0.5f
-            drawLine(color, Offset(cx - arm, cy - arm), Offset(cx + arm, cy + arm), line.width, line.cap)
-            drawLine(color, Offset(cx + arm, cy - arm), Offset(cx - arm, cy + arm), line.width, line.cap)
-        }
-    }
-}
-
-private fun DrawScope.wave(color: Color, strokeW: Float, w: Float, h: Float, radius: Float, halfAngleDeg: Float) {
-    val r = w * radius
-    drawArc(
-        color,
-        startAngle = -halfAngleDeg,
-        sweepAngle = 2f * halfAngleDeg,
-        useCenter = false,
-        topLeft = Offset(w * 0.49f - r, h * 0.5f - r),
-        size = Size(r * 2f, r * 2f),
-        style = Stroke(width = strokeW, cap = StrokeCap.Round),
-    )
-}
-
-@Composable
-private fun GeoIcon(
-    modifier: Modifier,
+fun MarkIcon(
+    name: AppIcon.Name,
     color: Color,
-    size: Dp,
-    content: DrawScope.(Float, Float) -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = IconSize,
 ) {
     Canvas(modifier = modifier.size(size)) {
-        content(this.size.width, this.size.height)
+        drawMark(name, color)
     }
+}
+
+/** The house: back to the pictures. */
+@Composable
+fun HomeIcon(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) =
+    MarkIcon(AppIcon.Name.HOME, color, modifier, size)
+
+/** The sound switch, in the state it is in: waves out, or crossed through. */
+@Composable
+fun SoundIcon(modifier: Modifier = Modifier, on: Boolean, color: Color, size: Dp = IconSize) =
+    MarkIcon(if (on) AppIcon.Name.SOUND_ON else AppIcon.Name.SOUND_OFF, color, modifier, size)
+
+/** The step back: one mark comes off the paper. */
+@Composable
+fun UndoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) =
+    MarkIcon(AppIcon.Name.UNDO, color, modifier, size)
+
+/** The step forward: the mark the step back took off comes back. */
+@Composable
+fun RedoGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) =
+    MarkIcon(AppIcon.Name.REDO, color, modifier, size)
+
+/** The rubber, lying on the desk the way a real one does. */
+@Composable
+fun EraserGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) =
+    MarkIcon(AppIcon.Name.ERASER, color, modifier, size)
+
+/** Keep this picture: the tick on the save question's first answer. */
+@Composable
+fun TickGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) =
+    MarkIcon(AppIcon.Name.TICK, color, modifier, size)
+
+/** Start it fresh: the cross on the save question's second answer. */
+@Composable
+fun CrossGlyph(modifier: Modifier = Modifier, color: Color, size: Dp = IconSize) =
+    MarkIcon(AppIcon.Name.CROSS, color, modifier, size)
+
+/** Paints one mark of the app into this scope, at one weight. */
+internal fun DrawScope.drawMark(name: AppIcon.Name, color: Color) {
+    val w = size.width
+    val h = size.height
+    if (w <= 0f || h <= 0f) return
+    val stroke = Stroke(width = (w * AppIcon.LINE).toFloat().coerceAtLeast(1.4f))
+    for (piece in AppIcon.pieces(name)) {
+        // A mark is a line the app drew: two points at the very least.
+        if (piece.points.size < 2) continue
+        val path = pathOf(piece.points, w, h, piece.closed)
+        if (piece.fill) drawPath(path, color) else drawPath(path, color, style = stroke)
+    }
+}
+
+/** One mark's points as a path in this scope's own box. */
+private fun pathOf(points: List<Vec2>, w: Float, h: Float, closed: Boolean): Path = Path().apply {
+    moveTo((points[0].x * w).toFloat(), (points[0].y * h).toFloat())
+    for (i in 1 until points.size) {
+        lineTo((points[i].x * w).toFloat(), (points[i].y * h).toFloat())
+    }
+    if (closed) close()
 }

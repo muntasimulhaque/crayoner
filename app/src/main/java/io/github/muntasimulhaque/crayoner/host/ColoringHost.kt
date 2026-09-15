@@ -46,6 +46,14 @@ sealed interface Screen {
         /** The sample held up big, while the child looks closely. */
         val peeking: Boolean = false,
         /**
+         * True while the child is being asked whether to keep the picture
+         * they are leaving. It is raised only when there is work on the page
+         * and the child presses Home, and it is answered by [keepIt] or by
+         * [startFresh]; there is no third answer and no way to be stuck in
+         * it, because the system's own Back also puts the question away.
+         */
+        val asking: Boolean = false,
+        /**
          * Counts the marks the hand has finished. It is what the one-shot
          * answers (the haptic, and the flattened layer of marks) read, so a
          * mark that lands over paper already colored still answers like a
@@ -230,7 +238,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun beginStroke(p: Vec2) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        if (s.peeking || s.boxOpen) return
+        if (s.peeking || s.boxOpen || s.asking) return
         val at = clamp(p)
         if (s.erasing) {
             _screen.value = s.copy(live = Strokes.eraseDot(at))
@@ -245,7 +253,7 @@ class ColoringHost(app: Application) : ViewModel() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
         val live = s.live ?: return
-        if (s.peeking || s.boxOpen) return
+        if (s.peeking || s.boxOpen || s.asking) return
         val grown = Strokes.extend(live, clamp(p))
         if (grown !== live) _screen.value = s.copy(live = grown)
     }
@@ -255,7 +263,7 @@ class ColoringHost(app: Application) : ViewModel() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
         val live = s.live ?: return
-        if (s.peeking || s.boxOpen) {
+        if (s.peeking || s.boxOpen || s.asking) {
             _screen.value = s.copy(live = null)
             return
         }
@@ -272,7 +280,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun colorArea(index: Int) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        if (s.peeking || s.boxOpen) return
+        if (s.peeking || s.boxOpen || s.asking) return
         val region = s.page.region(index) ?: return
         val hand = s.crayon ?: region.fillArgb
         val scribble = Strokes.scribble(region, hand)
@@ -313,11 +321,62 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s is Screen.Coloring) _screen.value = s.copy(peeking = on, boxOpen = false)
     }
 
-    /** Back to the shelf. Nothing is lost: the marks are already saved. */
+    /**
+     * Back to the shelf, with one question if there is anything to keep.
+     *
+     * A page with marks on it asks first, because a child pressing Home in
+     * the middle of a picture should get the chance to say that the picture
+     * is theirs to keep; a bare page goes straight home, because there is
+     * nothing there a question could be about. It costs one press and both
+     * answers are safe: nothing here can lose a coloring.
+     */
     fun home() {
         val s = _screen.value
-        if (s is Screen.Coloring) rememberDraft(s.page, s.draft)
+        if (s !is Screen.Coloring) return
+        if (s.progress.strokes.isEmpty()) {
+            _screen.value = Screen.Home
+            return
+        }
+        // The marks are already on the desk where the hand left them, so the
+        // question can be answered at leisure: nothing has to be written for
+        // the answer to be safe.
+        rememberDraft(s.page, s.draft)
+        _screen.value = s.copy(asking = true, peeking = false, boxOpen = false)
+    }
+
+    /** Keep the picture: the child is done looking, and the work stays. */
+    fun keepIt() {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        rememberDraft(s.page, s.draft)
         _screen.value = Screen.Home
+    }
+
+    /**
+     * Start this picture fresh: the marks come off the sheet and the save is
+     * cleared, so the next visit opens on blank paper.
+     *
+     * It is the only place the app ever removes work, and it happens only
+     * after two deliberate presses by two different intentions: Home, and
+     * the cross. The rubber is still the way to change a picture.
+     */
+    fun startFresh() {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        _shelf.value = _shelf.value.copy(drafts = _shelf.value.drafts - s.page.id)
+        rememberDraft(s.page, Draft.Empty)
+        _screen.value = Screen.Home
+    }
+
+    /**
+     * Put the question away and stay on the page. It is what the system's own
+     * Back does, and it is the one answer that changes nothing at all.
+     */
+    fun dismissAsk() {
+        val s = _screen.value
+        if (s !is Screen.Coloring) return
+        if (!s.asking) return
+        _screen.value = s.copy(asking = false)
     }
 
     fun setSound(on: Boolean) {

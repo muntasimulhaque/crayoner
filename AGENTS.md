@@ -34,9 +34,10 @@ than one machine; never build on a stale head.
    this rule, and every page's spots and sprinkles are placed off center so
    no arrangement can read as eyes. There is also no sun: a sun in the
    corner of every outdoor page is the oldest cliché in children's books,
-   and sixteen pages of it is wallpaper. Weather is clouds, and each page's
-   clouds sit differently, so the sky tells you which picture you are
-   looking at.
+   and sixteen pages of it is wallpaper. Weather is clouds, and not every
+   page has any: the pages that do put them in different corners, at
+   different sizes and different heights, so no two skies in the book are
+   the same sky. See D-069.
 3. **Zero manifest permissions.** This underpins the Data safety
    declaration and the Families listing. No `INTERNET`, no exceptions. Do
    not add one without the owner signing off in this file first. (androidx
@@ -119,8 +120,12 @@ Sixteen pictures. Tap one and color it.
   whole card is one button, nothing on it is locked, and nothing on it
   carries a mark of what the child has or has not done.
 - A page opens as bare outlines on paper, with the capsule of things a hand
-  holds below it, and the finished picture in the bar as one more round
-  button. Look at the sample, look at the page, color.
+  holds under it on a phone and standing in a column at the desk's left
+  edge on any screen that is wide and sideways, and the finished picture in
+  the bar as one more round button. Look at the sample, look at the page,
+  color. The bar itself is full width in both shapes: Home sits in the top
+  left corner and the sound switch in the top right, where a hand already
+  knows to look. See D-071.
 - **The child colors with their own hand.** A finger on the paper draws a
   crayon mark that follows the finger; nothing is filled in for them. A
   touch starts a mark, moving grows it, lifting finishes it, and every
@@ -139,23 +144,30 @@ Sixteen pictures. Tap one and color it.
   and every mark uses it. A three year old's first act must never end in
   nothing happening.
 - **The tray is one capsule with four seats, and the order runs the way
-  the hand works: step back, step forward, crayon, rubber.** A three year
-  old does not choose between thirty two crayons, they pick one up and draw.
-  The two steps sit together at the left, out of the way, because they are
-  the two things on the capsule that move the paper rather than draw on it
-  and because they are one pair: a child who walked a mistake out has to be
-  able to walk it back without hunting for the other end of the row. The
-  crayon sits next, in the working part of the row where a thumb naturally
-  lands, and the rubber sits last, at the right end. Every seat is the same
-  coin the bar above uses, and the rail is measured from those coins, so the
-  two rows line up at both ends by construction. See D-064. The capsule and
-  the top bar share one rail, so the two rows of round controls line up at
-  both ends and the phone reads as one object. See D-058.
+  the hand works: crayon, rubber, step back, step forward.** A three year
+  old does not choose between thirty two crayons, they pick one up and
+  draw. The crayon comes first, because it is what the child picks up a
+  hundred times and a hand reaches for the near end of a row before it
+  reaches across it. The rubber sits beside it, the other thing that is
+  held and laid down. The two steps take the far end as one pair, so a
+  child who walked a mistake out has to pass the crayon to reach them (a
+  thing worth meaning) and finds the other end of the pair immediately next
+  door rather than at the far side of the screen. Every seat is the same
+  coin the bar above uses, and the rail is measured from those coins. See
+  D-064 and D-066.
 - **Every mark in the app is the same size, and every seat the same coin.**
-  The house and the speaker in the bar, the step back, the step forward, the
-  rubber and the crayon's own height on the capsule: one `IconSize`, so no
-  row of buttons reads as a row of different apps, and one `CoinSize` under
-  all of them. See D-052 and D-064.
+  The house and the speaker in the bar, the crayon, the rubber and the two
+  steps on the capsule: one `IconSize`, so no row of buttons reads as a row
+  of different apps, and one `CoinSize` under all of them. Every round
+  control is the same `CoinPlate`, with the same shadow and the same press,
+  whether it floats in the bar or sits in the capsule. See D-052, D-064 and
+  D-066.
+- **Every mark is drawn from one set of geometry.** The house, the speaker,
+  the rubber, the two steps, the tick and the cross are data in
+  `core/AppIcon.kt`, and every renderer walks the same points: they cannot
+  drift apart, they can be measured by a test, and a mark can be reviewed on
+  a sheet before it reaches a screen. `AppIconTest` holds them to their own
+  box, to one weight, and to each other. See D-066.
 - **A seat that is picked up wears the capsule's own cardboard.** One
   selection language for every seat, the same plate, the same color, the
   same lift: a plate under the thing in hand and nothing else. Nothing on
@@ -195,13 +207,15 @@ Sixteen pictures. Tap one and color it.
   three year old will not find or aim at a map. A page that is only ever
   whole cannot hide a corner of the picture, and a hand resting on the paper
   can never move it. See D-060.
-- **The sheet is a sheet of paper, and it is not taped down.** Square
-  corners, a soft shadow, and the tape is gone from its four corners: a
-  sheet on a desk is a sheet nobody taped to a desk. It is taller than it
-  is wide ([Page.ASPECT], 1.2), the way a page in a coloring pad is, so the
-  picture gets the whole of a phone's screen instead of a square with two
-  bands of empty desk above and below it. The tape stays where it belongs,
-  on the wall the pictures are hung from. See D-046 and D-060.
+- **The sheet is a sheet of paper, and nothing is taped down.** Square
+  corners, a soft shadow, and no tape on the sheet or on the wall. It is
+  taller than it is wide ([Page.ASPECT], 1.2), the way a page in a coloring
+  pad is, so the picture gets the whole of a phone's screen instead of a
+  square with two bands of empty desk above and below it. The wall's
+  pictures are sheets too, and they are not taped either: a strip of tape
+  across the top of a picture is one more thing to look past, and what holds
+  a picture up on this wall is that it is on the wall. See D-046, D-060 and
+  D-067.
 - **No mark is ever answered.** There is no sparkle, no outline pulse, no
   ink ring, no count: the app has no opinion about where a color went. A
   color the picture does not ask for lands exactly like one it does.
@@ -209,6 +223,14 @@ Sixteen pictures. Tap one and color it.
 - Every mark is saved to DataStore 250 ms after it is finished, so Home, a
   phone call, a rotation or a process death cost at most the mark in flight.
   Only one draft is kept: the page last worked on.
+- **The app asks one question, and only about work that exists.** Leaving a
+  page that has marks on it raises one short question with two big answers:
+  keep the picture, or start that one fresh. Both answers are safe (keeping
+  it costs nothing, because the marks are already saved; starting fresh only
+  means the next visit opens on a clean sheet), the system's own Back puts
+  the question away without changing anything, and a bare sheet never raises
+  it at all. This is the only place the app ever removes work, and it takes
+  two deliberate presses to do it: Home, and then the cross. See D-068.
 - **Nothing measures the work, and nothing marks it.** The app does not
   count areas, does not track what has been colored, and has no finished
   state anywhere: not a stamp, not a seal, not a row of done pictures. A
@@ -220,7 +242,7 @@ Sixteen pictures. Tap one and color it.
 ```
 core/     its own Gradle module, pure Kotlin, zero Android imports:
           shapes, geometry, the crayon box, the sixteen pages, wax grain,
-          the crayon's own geometry, strokes and progress
+          the crayon's own geometry, the control marks, strokes and progress
 :app      Android: host (ViewModel, DataStore, SoundPool), ui (Compose)
 :tools    offline asset generators: picture sheets, icons, store art, sounds
 ```
@@ -264,9 +286,8 @@ them is a bug this project already shipped once.
   every word. Coral `#EE204D`, the sailboat's red, is the brand. The capsule
   is card over the desk with the crayon's own color on its seats, and its
   armed seat is `#EFE1C6`, deeper than the table so pale crayons read on it.
-  The tape is cream `#EFD9A8`, lighter than the desk and deeper than the
-  paper, with its own edge drawn: the shelf's pictures are taped to a wall,
-  and a strip of tape you cannot see is not holding anything up.
+  There is no tape in the palette at all: nothing in the app is taped down.
+  See D-067.
 - **The box is thirty two real crayon colors**, the ones in a real thirty
   two count box, in that box's own order, at their printed hexes and with
   nothing softened: the pigment a crayon lays down is the stick's own color,
@@ -278,33 +299,41 @@ them is a bug this project already shipped once.
   words and the pictures come from the same hand, and the words are painted
   with wax (`WaxInkBrush`) rather than filled flat.
 - **The launcher icon is the app's whole sentence in two strokes: a crayon
-  standing on its point, and the band of wax it has just laid down.** A
-  child of three cannot read the word Crayoner, and a crayon alone says
-  writing tool, not coloring book; a crayon whose own tip sits in a swath of
-  wax says the whole thing at a glance, and the swath is a line of wax, not
-  a slab: the drag one crayon leaves behind, running out from the tip that
-  made it. The crayon is the app's own object at the app's own lean
-  (`CrayonShape.MARK_TURN`), in the crayon's real material: the wax color of
-  the stick, the cone a shade deeper, the wrapper in the wax's own hue, and
-  the two dark rules a real wrapper wears. A dark cone tip or a pale sleeve
-  turns a crayon into a pencil, and this app must never show a pencil. The
-  crayon's geometry lives once, in `core/CrayonShape`,
-  its four colors once, in `core/CrayonInk`, and its one drawing lives in
-  `IconDesign.paintCrayon` in `:tools`; it serves the launcher icon, the
-  store icon, the shelf header and the capsule through `CrayonGlyph` on the
-  device. **Nothing is drawn around the wax**: a real crayon has no line
-  around it, and at the size of a tray seat the line is most of what the eye
-  reads, which is what turns a drawing of a crayon into a diagram of one.
-  **The launcher icon is that same mark at that same lean**, the crayon the
-  app itself draws, so the mark on the home screen and the mark in the
-  child's hand are one object. See D-053 and D-065.
+  standing on its point at the end of the line it has just drawn.** A child
+  of three cannot read the word Crayoner, and a crayon alone says writing
+  tool, not coloring book; a crayon whose own tip is standing in the wax it
+  just put down says the whole thing at a glance, and that wax is a line,
+  not a slab: the drag one crayon leaves behind, running back to the left
+  from the tip that made it. The crayon is at the **far end** of its own
+  line. The other way round (the crayon at the near end, the wax running
+  away from it) reads as a crayon held above a scratch rather than as one
+  that has just drawn it; the line also grows a little as it goes, the way
+  wax really builds up. The crayon is the app's own object at the app's own
+  lean (`CrayonShape.MARK_TURN`), in the crayon's real material: the wax
+  color of the stick, the cone a shade deeper, the wrapper in the wax's own
+  hue, and the two dark rules a real wrapper wears, stopped short of the
+  wax's own flanks so a round cap cannot paint two nubs of ink out in the
+  paper beside the stick. A dark cone tip or a pale sleeve turns a crayon
+  into a pencil, and this app must never show a pencil. The crayon's
+  geometry lives once, in `core/CrayonShape`, its four colors once, in
+  `core/CrayonInk`, and its one drawing lives in `IconDesign.paintMark` in
+  `:tools`; it serves the launcher icon, the store icon, the shelf header
+  and the capsule through `CrayonGlyph` on the device. **Nothing is drawn
+  around the wax**: a real crayon has no line around it, and at the size of
+  a tray seat the line is most of what the eye reads, which is what turns a
+  drawing of a crayon into a diagram of one. **The launcher icon is that
+  same mark at that same lean**, the crayon the app itself draws, so the
+  mark on the home screen and the mark in the child's hand are one object.
+  See D-053, D-065 and D-070.
 - **The shelf is a wall of pictures, not a record.** Every card is the
   finished sample with the picture's name under it, and nothing on the wall
-  says which picture was opened, colored or left alone. See D-041.
+  says which picture was opened, colored or left alone. The cards are not
+  taped and not pinned: what holds a picture up on this wall is that it is
+  on the wall. See D-041 and D-067.
 - **The sheet is a sheet of paper.** Square corners and a soft shadow. It
   is taller than it is wide, the way a page in a coloring pad is, and it is
-  always whole on screen. It is not taped down: the tape belongs to the wall
-  the pictures hang on. See D-060.
+  always whole on screen. It is not taped down, and neither is anything
+  else. See D-060 and D-067.
 - **Every plate in the app is one sheet of paper** (the peek, the box of
   colors), drawn with the same corners and the same shadow, so the picture
   the child copies and the paper they copy it onto are visibly the same kind
@@ -335,8 +364,9 @@ feature that may regress.
   the color of a crayon is spoken as its name. The rubber says what it is
   and, in the box, which color is in hand. Undo says what it takes back, and
   pressing it again keeps taking marks back one at a time.
-- Touch targets are comfortably above the 48 dp minimum, and the three seats
-  of the capsule on a phone land at 62 dp or more.
+- Touch targets are comfortably above the 48 dp minimum: every round
+  control in the app is one `CoinSize` of 52 dp, and a seat never shrinks
+  below 48 dp even on the narrowest desk. See D-064 and D-066.
 
 ## The one renderer, in two languages
 
@@ -403,6 +433,8 @@ export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"   # not on PATH
 ./gradlew :app:assembleRelease
 ./gradlew :tools:makeSheets      # every page, sample and line art, for review
 ./gradlew :tools:makeIcons :tools:makeSounds :tools:makeArt
+./gradlew :tools:reviewMarks     # every control mark at coin size, for review
+./gradlew :tools:reviewLean      # the app's crayon at four leans, for review
 ./gradlew :tools:cropProbe "-PcropArgs=in.png out.png x y w h zoom"
                                  # crop and enlarge any PNG, for close review
 ```
@@ -413,7 +445,7 @@ plays one effect and the raw folder holds one file.
 CI is the loop: `build.yml` gates every push to `main` on tests, lint, asset
 pins, then signs and publishes the AAB and APK to the `latest-build` GitHub
 release. `screenshots.yml` recaptures the store screenshots whenever UI files
-change: seven captures per form factor (phone, 7", 10"), 21 in all, pinned
+change: eight captures per form factor (phone, 7", 10"), 24 in all, pinned
 to API 35.
 
 The asset pins refuse a hand-edited or stale asset. `checkSounds` is exact:
@@ -543,7 +575,8 @@ the screenshots, all in the same session.
   640 dp of width, side by side at or above it *and* in landscape. A portrait
   tablet is wide but stacking is still right there, because standing the
   tools beside the sheet steals half the page's size. Decided from
-  `BoxWithConstraints`, never from a device guess.
+  `BoxWithConstraints`, never from a device guess. See D-071 for which side
+  the tools stand on and which way the capsule runs.
 - D-021 The box sizes itself in three shapes (four, six, or four columns),
   with the crayon's width capped so a very wide tablet draws crayon-sized
   crayons rather than ribbons. Superseded by D-034: the box is a lid that
@@ -1037,3 +1070,125 @@ the screenshots, all in the same session.
   band a fifth of the crayon long read as a painted swoosh beside the stick
   rather than as the drag the stick made. Supersedes the mirror half of
   D-040, amends D-029, D-052 in part.
+
+- D-066 **The control marks are one drawing, and the capsule runs from the
+  crayon.** Three things about the row of round buttons, fixed together
+  because they were one complaint: the floating capsule did not look like
+  the bar. First, the marks themselves. The house and the speaker were line
+  drawings at one weight; the steps were a swooping cubic with a fat wedge
+  jammed on it; the rubber was a filled parallelogram with a sleeve painted
+  in a second surface, and at the size of a seat it read as a bow tie. They
+  are now one set, in `core/AppIcon.kt`: data, in a unit box, sampled into
+  polylines so every renderer walks the same points, struck at one weight
+  (`AppIcon.LINE`, 0.098 of the mark's own box), and drawn at `IconSize`
+  wherever they appear. The steps are an open ring with a wedge whose base
+  sits across the stroke it ends, and the step forward is the step back
+  reflected point for point, so the pair is one object in two directions.
+  The rubber is a squared block on its own edge with the two rules a wrapped
+  sleeve wears, inset from the flanks so a round cap cannot paint two nubs
+  of ink out in the paper beside it. `AppIconTest` holds all of it: every
+  mark inside its own box, every mark filling that box, the two steps
+  exactly mirrored, the rubber's rules inside the block, and nothing drawn
+  as a solid blob. Second, the seats. Every round control in the app is now
+  the same `CoinPlate`: the same coin, the same shadow, the same dip under a
+  press, the same ink ripple, whether it is floating in the bar or lying in
+  the capsule, so a row of buttons is one object even when it is two rows.
+  Third, the order, which the owner asked for directly: the capsule now runs
+  **crayon, rubber, step back, step forward**. The crayon is what a child
+  picks up a hundred times and it now sits at the near end of the row; the
+  rubber, the other thing that is held and put down, sits beside it; and the
+  two steps take the far end as the pair they are, so a child who walked a
+  mistake out has to pass the crayon to reach them. Supersedes the seat
+  order of D-050 and D-064. See D-065 (one lean), D-047 (nothing around the
+  wax), D-051 and D-059 (one selection plate).
+- D-067 **Nothing in the app is taped down.** The shelf's pictures were
+  held to the wall with a strip of washi tape, and the tape was cream with
+  its own edge drawn, because tape you cannot see is not holding anything
+  up. The owner's word: no tape. So the tape is gone whole, from the four
+  corners of the wall's pictures, from the palette (`CrayonerColors.Tape`,
+  `TapeEdge`, `TapeFiber`), and from the code (`ui/Tape.kt` is deleted,
+  because a material nothing paints with is a material the next change
+  reaches for by accident). What holds a picture up on this wall is that it
+  is on the wall: the cards are still sheets of paper with a soft shadow and
+  a small hand-placed tilt, and the picture is the thing. Supersedes the
+  tape half of D-019 and the sentence in D-046 that kept the tape on the
+  shelf.
+- D-068 **The app asks one question: keep this picture, or start that one
+  fresh.** Every mark is saved as it is made, so nothing here was ever lost
+  by leaving a page, and for two versions the app simply kept the work and
+  said nothing. The owner asked for a choice when leaving a page mid
+  coloring, and the version that fits this app is one short question, asked
+  only when the page has marks on it: two big coins, a tick on the capsule's
+  cardboard for keeping it and a cross on plain paper for starting over.
+  Both answers are safe. Keeping it costs nothing, because the marks are
+  already saved; starting fresh only means the next visit opens on a clean
+  sheet, which is a thing a child may well want. The system's own Back and a
+  press on the scrim both put the question away and leave every mark where
+  it was, so the only way out of a question is never into one of its
+  answers, and a bare sheet never raises it at all. This is the one place
+  the app ever removes work, and it takes two deliberate presses to do it:
+  Home, and then the cross. Amends the "nothing anywhere confirms anything"
+  of D-045 and the "no start over" of D-044, which are now true of
+  everything except this one question.
+- D-069 **A page is allowed to have no weather, and nothing is too small to
+  color.** Two rules about the pictures, both from looking at the book
+  rather than reading it. First, clouds: every outdoor page had one in the
+  same corner at the same size, which is the sun's old wallpaper habit
+  wearing a different hat, and the owner said so. Now some pages carry
+  weather and some do not; the ones that do put their clouds in different
+  corners, at different heights and different sizes, and a page with an
+  empty sky is a page whose sky is a big field to color. Second, and
+  enforced: every area of every picture must contain a circle of at least
+  `FingerTest.FLOOR` (0.070 of the page's own width) across, because a
+  fingertip that lands in a space as wide as the wax it lays down has
+  colored that part of the picture. The measure is exact, by a squared
+  distance transform over the area's outline, and it is held by
+  `FingerTest` plus a second test that holds the ruler itself to shapes
+  whose answer can be worked out by hand. The sprinkles went: a sprinkle
+  wide enough to hit is not a sprinkle. The stars, apples, cherries, window
+  circles, stripes, raindrops, track and pole all grew until the smallest
+  thing in the book is a fingertip's width. `noPartOfAPictureIsCutOffByThe
+  Sheet` was also strengthened from region bounds to every piece of every
+  region, because a region is often several scattered things painted
+  together and the raindrops it was hiding were being sliced by the edge of
+  the paper.
+- D-070 **The launcher mark puts the crayon at the end of its own line.**
+  The icon's crayon used to stand at the near end of the wax band with the
+  band running away to the right, and the owner read it, correctly, as a
+  crayon held above a scratch rather than one that has just drawn it. The
+  crayon now stands at the far end with the line trailing back to the left
+  and growing a little as it goes, the way wax really builds up, and the
+  crayon's own tip is in the line it made. The lean came up from 20 to 26
+  degrees at the same time (`CrayonShape.MARK_LEAN`), because at 20 the
+  stick stood to attention beside the app's name and read as a stick rather
+  than as a crayon in a hand; the angle is now the held stance of a hand
+  that is drawing, everywhere the mark appears. The wrapper's two rules also
+  stopped short of the wax's own flanks (`CrayonShape.RULE_END_INSET`),
+  because a round cap reaches half a stroke past the point it is given, and
+  rules drawn flank to flank painted two nubs of ink out in the paper beside
+  the crayon at the smallest launcher sizes. The launcher icon, the store
+  icon, the wall's nameplate and the capsule's crayon are still one object
+  at one angle. Amends D-065 (the lean and the band's direction) and D-054
+  (the rules' insets).
+- D-071 **The tools stand on the left, and the bar runs edge to edge.** Two
+  layout corrections the owner asked for together, both about where a hand
+  already expects to find things. First: on a sideways screen the capsule
+  stood on the right, in a three hundred dp column, and the paper sat to its
+  left; that is backwards. A page reads left to right and a child's tools
+  belong on the side the line starts from, which is also the side the hand
+  coloring a page comes from. The capsule now stands at the desk's left
+  edge, and it turns on its own side to do it: the four seats run top to
+  bottom in the same order they run left to right on a phone, so the tool a
+  hand wants is always in the first seat and the row always grows away from
+  the corner the hand comes from. The column is 74 dp wide, which is the
+  capsule's own thickness and its shadow, so the paper gets back most of the
+  300 dp the old column took. Second: the top bar. When the capsule's rail
+  was measured from its own coins (D-064), the bar was still laid on that
+  same rail, so on a phone it became a narrow row floating in the middle of
+  the desk with the Home button more than a hand's width in from the corner.
+  The bar is now full width in both shapes, with a ten dp margin, so Home is
+  in the top left corner and the sound switch is in the top right, which is
+  where they were before the rail and where a thumb looks without asking.
+  The capsule keeps its own measured width and stays centered under the
+  sheet on a phone. Supersedes the shared rail of D-058 and the "rail only
+  on a phone" half of D-062.

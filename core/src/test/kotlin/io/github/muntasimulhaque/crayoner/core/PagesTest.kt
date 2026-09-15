@@ -118,18 +118,27 @@ class PagesTest {
         // A picture is composed in a square and fitted onto the taller sheet,
         // which grows it by Page.ASPECT. A full-bleed band (a sky, a sea, a
         // lawn) is meant to run off the sides and be clipped, but a discrete
-        // thing (a cloud, an apple, a wheel) must never be: a cloud sliced by
-        // the edge of the paper reads as a mistake, not as weather. So every
-        // region that is not a full-width band has to land inside the sheet.
+        // thing (a cloud, an apple, a wheel, a raindrop) must never be: a
+        // cloud sliced by the edge of the paper reads as a mistake, not as
+        // weather.
+        //
+        // The check walks every piece of every region, not the region's own
+        // bounding box, because a region is often a handful of scattered
+        // things painted together: a set of raindrops whose leftmost drop
+        // hangs off the paper has a bounding box that looks perfectly fine.
         for (page in Pages.all) {
             for (region in page.regions) {
-                val b = region.bounds
-                val fullWidth = b.x <= 0.02 && b.right >= 0.98
+                if (page.isGround(page.indexOfRegion(region.id))) continue
+                val whole = region.bounds
+                val fullWidth = whole.x <= 0.02 && whole.right >= 0.98
                 if (fullWidth) continue
-                assertTrue(
-                    "${page.id}/${region.id} is cut off by the sheet: $b",
-                    b.x >= -1e-6 && b.y >= -1e-6 && b.right <= 1.0 + 1e-6,
-                )
+                for (part in region.parts) {
+                    val b = part.bounds()
+                    assertTrue(
+                        "${page.id}/${region.id} is cut off by the sheet: $b",
+                        b.x >= -1e-6 && b.y >= -1e-6 && b.right <= 1.0 + 1e-6,
+                    )
+                }
             }
         }
     }

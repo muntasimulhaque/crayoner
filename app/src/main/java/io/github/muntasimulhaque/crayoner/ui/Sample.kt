@@ -277,7 +277,6 @@ internal fun areaNameRes(kind: String): Int = when (kind) {
     "cone" -> R.string.area_cone
     "scoop" -> R.string.area_scoop
     "cherry" -> R.string.area_cherry
-    "sprinkles" -> R.string.area_sprinkles
     "table" -> R.string.area_table
     "wrapper" -> R.string.area_wrapper
     "frosting" -> R.string.area_frosting

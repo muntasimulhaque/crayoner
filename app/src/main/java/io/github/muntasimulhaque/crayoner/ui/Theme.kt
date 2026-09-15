@@ -43,16 +43,6 @@ object CrayonerColors {
     /** The crayon box, and the one seat of the capsule that is in hand:
      *  toasted cardboard, the one surface that is neither desk nor paper. */
     val Cardboard = Color(0xFFEFE1C6)
-    /**
-     * The tape holding paper down. It is cream, lighter than the desk and
-     * deeper than the paper, with a real edge: tape you cannot see is not
-     * holding anything, and the whole reason the strip is there is to say
-     * this sheet is lying on a table.
-     */
-    val Tape = Color(0xE0EFD9A8)
-    /** The edge of the roll, and the fiber running through it. */
-    val TapeEdge = Color(0x4D9C7F45)
-    val TapeFiber = Color(0x59B08F52)
     /** One scrim for every layer that stands the world back. */
     val Scrim = Ink.copy(alpha = 0.62f)
     /** The whisper of a shadow under coins, cards and pages. */

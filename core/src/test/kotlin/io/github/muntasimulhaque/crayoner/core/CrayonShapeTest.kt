@@ -151,7 +151,7 @@ class CrayonShapeTest {
         // up and to the right: the way a right hand holds a crayon to draw a
         // line running away to the right. The launcher icon wears the same
         // number, which is why this one is pinned.
-        assertEquals(200.0, CrayonShape.MARK_TURN, 1e-9)
+        assertEquals(206.0, CrayonShape.MARK_TURN, 1e-9)
         val tip = CrayonShape.turned(Vec2(0.5, 0.0), CrayonShape.MARK_TURN)
         val base = CrayonShape.turned(Vec2(0.5, CrayonShape.LENGTH), CrayonShape.MARK_TURN)
         assertTrue("the tip is not to the left of the base", tip.x < base.x)

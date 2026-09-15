@@ -22,6 +22,9 @@ import kotlin.math.ceil
  * The banner's left side is a real coloring page from the book (the
  * sailboat), half finished: the child's own view of the app, in the app's
  * own colors, with the wax laid down by the same code the app colors with.
+ * Under the name stands the app's own mark, the crayon at the end of the
+ * line it has just drawn, in paper white: the banner and the launcher icon
+ * carry one sentence between them, drawn by one piece of code.
  *
  * Outputs (never hand-edited; regenerate with :tools:makeArt):
  *   play-store/feature-graphic-1024x500.png
@@ -30,6 +33,7 @@ import kotlin.math.ceil
 object MakeArt {
 
     private val BRAND: Int = Crayons.RED.toInt()
+    private val CARD: Int = 0xFFFFFDF8.toInt()
 
     /** The 1024 x 500 feature graphic: the mark, the name, one line. */
     fun featureGraphic(rootDir: File): BufferedImage {
@@ -47,20 +51,16 @@ object MakeArt {
         // scribble from the same code the app draws with, so the banner shows
         // the app and not an artist's idea of the app. The plate keeps the
         // page's own proportion, taller than it is wide, the way a sheet in
-        // the pad is, so the banner shows the shape of the thing the child
-        // really colors.
-        val plateW = 300
+        // the pad is, and it wears the same soft shadow a sheet wears on the
+        // desk in the app, so the banner's sheet and the child's sheet are
+        // visibly the same kind of object.
+        val plateW = 292
         val plateH = (plateW * 1.2).toInt()
-        val px = 74
+        val px = 78
         val py = (h - plateH) / 2
-        g.color = Color(0xFFFFFDF8.toInt(), true)
-        g.fill(
-            RoundRectangle2D.Double(
-                px.toDouble() - 14, py.toDouble() - 14,
-                plateW.toDouble() + 28, plateH.toDouble() + 28,
-                6.0, 6.0,
-            ),
-        )
+        sheetShadow(g, px.toDouble(), py.toDouble(), plateW.toDouble(), plateH.toDouble())
+        g.color = Color(CARD, true)
+        g.fill(Rectangle2D.Double(px.toDouble(), py.toDouble(), plateW.toDouble(), plateH.toDouble()))
         val plateG = g.create(px, py, plateW, plateH) as Graphics2D
         val page = Pages.byId("sail") ?: error("the sail page is gone")
         // Everything printed, and then the child's own hand: the sky, the
@@ -68,7 +68,7 @@ object MakeArt {
         // still bare lines waiting for next time. The wax is the same wax the
         // app lays down, so the banner shows the app and not an artist's
         // idea of it.
-        val started = setOf("sky", "cloud", "cloud_high", "sea")
+        val started = setOf("sky", "cloud", "cloud_low", "sea")
             .mapNotNull { id -> page.indexOfRegion(id).takeIf { it >= 0 } }
         val half = page.regions.indices
             .filter { it in started }
@@ -76,19 +76,56 @@ object MakeArt {
         RenderKit.renderPage(plateG, page, plateW.toDouble(), half)
         plateG.dispose()
 
-        drawCleanString(g, "Crayoner", "chewy.ttf", 124f, 0xFFFFFDF8.toInt(), 470f, 250f, rootDir)
+        // The wordmark: the name, and one line under it. The name is set to
+        // fill its half of the banner without ever reaching the plate or the
+        // edge, and the line under it is short enough to end well before
+        // either.
+        drawCleanString(g, "Crayoner", "chewy.ttf", 108f, CARD, 448f, 208f, rootDir)
         drawCleanString(
             g,
             "Color the picture, just like the book.",
             "chewy.ttf",
-            30f,
+            29f,
             0xFFF7DCD7.toInt(),
-            490f,
-            312f,
+            454f,
+            274f,
             rootDir,
         )
+        // The app's own mark, in paper white on the coral: the same crayon at
+        // the same lean, standing at the end of the same line, drawn from the
+        // same geometry as the launcher icon and rendered as one flat white
+        // silhouette, because at this size four shades of white on a coral
+        // ground read as a smudge and the shape alone reads as the app. It
+        // stands under the wordmark, where the eye lands last and finds the
+        // sentence the icon says without any words at all.
+        val mark = g.create(544, 298, 210, 194) as Graphics2D
+        paintMark(mark, 194, inset = 0.94, palette = MarkPalette.MONO)
+        mark.dispose()
         g.dispose()
         return image
+    }
+
+    /**
+     * A sheet's own shadow, on the banner's ground: the same soft lift a sheet
+     * wears on the desk in the app, so a sheet reads as a sheet and not as a
+     * rectangle pasted on the banner.
+     */
+    private fun sheetShadow(g: Graphics2D, x: Double, y: Double, w: Double, h: Double) {
+        for (step in 1..5) {
+            val spread = step * 5.0
+            val alpha = (0.05 * (6 - step)).coerceAtLeast(0.02)
+            g.color = Color(0, 0, 0, (alpha * 255).toInt())
+            g.fill(
+                RoundRectangle2D.Double(
+                    x - spread * 0.35,
+                    y + spread * 0.35,
+                    w + spread * 0.7,
+                    h + spread * 0.7,
+                    spread,
+                    spread,
+                ),
+            )
+        }
     }
 
     /** The 512 x 512 store icon: the launcher tile, full bleed. */

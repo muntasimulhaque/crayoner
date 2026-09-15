@@ -111,7 +111,7 @@ class ScreenshotTest {
     }
 
     /**
-     * The seven store captures. The set leads with the wall, walks the page
+     * The eight store captures. The set leads with the wall, walks the page
      * from bare lines to a finished picture, and shows the two things a hand
      * holds: the box of colors, and the rubber at work.
      */
@@ -140,6 +140,9 @@ class ScreenshotTest {
         shot(scenario, outDir, "07_whole") {
             play(wholeState("icecream", crayon = Crayons.CARNATION_PINK))
         }
+        shot(scenario, outDir, "08_keep") {
+            play(coloredState("tree", crayon = Crayons.GREEN).copy(asking = true))
+        }
         scenario.close()
     }
 
@@ -160,6 +163,9 @@ class ScreenshotTest {
             onHome = {},
             onSound = {},
             onPeek = {},
+            onKeep = {},
+            onStartFresh = {},
+            onDismissAsk = {},
         )
     }
 

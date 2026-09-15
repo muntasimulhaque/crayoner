@@ -82,6 +82,20 @@ object CrayonShape {
      */
     const val RULE_INSET = 0.12
 
+    /**
+     * How far in from the crayon's own flanks each rule stops, in units of
+     * the thickness.
+     *
+     * A rule is drawn with a round cap, and a round cap reaches half a stroke
+     * past the point it is given, so a rule drawn from flank to flank paints
+     * two little nubs of ink out in the paper beside the crayon. A real
+     * wrapper's rules are printed inside its edges anyway: the line is on the
+     * paper wound around the stick, and the paper stops short of the wax.
+     * This inset is the rule's own half-width plus a hair of margin, so the
+     * cap lands inside the wax at every size.
+     */
+    const val RULE_END_INSET = 0.045
+
     /** The paper collar a held crayon wears: its top and its height. */
     const val COLLAR_TOP = LENGTH * 0.48
     const val COLLAR_HEIGHT = LENGTH * 0.16
@@ -191,8 +205,16 @@ object CrayonShape {
      * How far the app's own mark leans from point down, in degrees. It is the
      * launcher icon's own lean, and it is the one angle every standing crayon
      * in the app is drawn at.
+     *
+     * The angle is a held crayon's, not a laid-down one. At a small lean the
+     * stick stands to attention beside the name, which reads as a stick and
+     * not as a crayon in a hand; at a large one it lies almost on its side
+     * and reads as a stick that has fallen over. This is the lean of the hand
+     * that is holding it: enough that the tip trails the base the way a
+     * crayon does while it is being drawn with, and not so much that the
+     * crayon stops standing up.
      */
-    const val MARK_LEAN = 20.0
+    const val MARK_LEAN = 26.0
 
     /**
      * The turn the app's mark is drawn at: held, and leaning [MARK_LEAN] to

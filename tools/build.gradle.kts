@@ -83,3 +83,21 @@ tasks.register<JavaExec>("cropProbe") {
         .split(" ")
         .filter { it.isNotBlank() }
 }
+
+// A review tool, not a generator: draws the app's own control marks from
+// :core at the size a coin really draws them, for judging by eye.
+tasks.register<JavaExec>("reviewMarks") {
+    group = "tools"
+    description = "Draw the app's control marks at coin size, into build/marks.png."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass = "io.github.muntasimulhaque.crayoner.tools.MarkReview"
+}
+
+// A review tool: the app's own crayon at four leans, at every size a person
+// meets it, for judging the angle by eye.
+tasks.register<JavaExec>("reviewLean") {
+    group = "tools"
+    description = "Draw the app's crayon at four leans, into build/lean.png."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass = "io.github.muntasimulhaque.crayoner.tools.LeanReview"
+}

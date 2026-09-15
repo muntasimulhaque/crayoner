@@ -5,16 +5,14 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,20 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
 import io.github.muntasimulhaque.crayoner.core.CrayonShape
-import io.github.muntasimulhaque.crayoner.ui.IconSize
 
 /**
  * One capsule on the desk, holding the four things a hand reaches for while
- * coloring: the step back, the crayon it is drawing with, the step forward,
- * and the rubber.
+ * coloring: the crayon it is drawing with, the rubber, and the two steps that
+ * walk the paper back and forward.
  *
  * They are one object on purpose. Four separate coins put four separate
  * shadows on the desk and ask a three year old to find the small gap between
@@ -45,29 +38,28 @@ import io.github.muntasimulhaque.crayoner.ui.IconSize
  * the child is here for, and the tools are one object lying below it rather
  * than a row of them.
  *
- * The order runs the way the hand works and the way the two steps belong
- * together. The step back and the step forward sit at the left as one pair,
- * out of the way, because they are the two things on the capsule that move
- * the paper rather than draw on it and a child should have to mean them; and
- * because they are a pair, they are next to each other, so a child who steps
- * back over a mark they did not mean can step forward again without hunting
- * for the other end of the row. The crayon sits next, in the working part of
- * the row where a thumb naturally lands, because it is the thing they pick up
- * a hundred times, and the rubber sits last, at the right end: draw with the
- * crayon, change the whole picture with the rubber.
+ * The order runs the way the hand works: the two things that touch the paper
+ * first, and the two that move it after them. The crayon comes first, because
+ * it is what a child picks up a hundred times and a hand reaches for the near
+ * end of a row before it reaches across it. The rubber sits beside it, the
+ * other thing that is held and laid down. The step back and the step forward
+ * take the far end as one pair, so a child who walked a mistake out has to
+ * pass the crayon to reach them (a thing worth meaning) and finds the other
+ * end of the pair immediately next door rather than at the far side of the
+ * screen.
+ *
+ * On a phone the capsule lies flat under the paper and on a sideways screen
+ * it stands up beside it ([vertical]), which is the same four seats in the
+ * same order either way: the tool a hand wants is in the first seat, and the
+ * row grows away from the corner a hand comes from.
  *
  * Every seat is [CoinSize] and every mark in it is [IconSize], the bar's own
- * two numbers. A row of round controls is read as one object, so the capsule
- * and the bar above it are the same coins with the same marks in them, and
- * the capsule is exactly as wide as its four coins need ([RAIL_WIDTH], which
- * is measured from the coin and not chosen): the two rows line up at both
- * ends, and the capsule is the size of the things it holds rather than a
- * pill stretched to fill the desk. A capsule with its own larger marks and
- * its own larger seats was tried, and it read as a second, louder object
- * lying under the picture.
- *
- * The crayon is drawn the way a real crayon is held (point down) and the
- * rubber the way a real rubber sits on a desk.
+ * two numbers, and every seat is the same [CoinPlate] the bar's buttons wear.
+ * A row of round controls is read as one object, so the capsule and the bar
+ * are the same coins with the same marks in them, and the capsule is exactly
+ * as wide (or as tall) as its four coins need: the two rows line up at both
+ * ends, and the capsule is the size of the things it holds rather than a pill
+ * stretched to fill the desk.
  */
 @Composable
 fun ToolCapsule(
@@ -81,31 +73,34 @@ fun ToolCapsule(
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     modifier: Modifier = Modifier,
+    vertical: Boolean = false,
 ) {
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        // The capsule is as wide as its own four coins need, and no wider:
-        // the bar and the capsule share [RAIL_WIDTH], so adding the step
-        // forward made the whole rail a coin wider rather than squeezing the
-        // seats. On a desk too narrow for that (a small phone, or the tool
-        // column beside the sheet on a short landscape screen) the pad and
+        // The capsule is as long as its own four coins need, and no longer:
+        // the bar and the capsule share [RAIL_WIDTH] on a phone, so adding a
+        // seat makes the whole rail a coin wider rather than squeezing the
+        // others. On a desk too narrow for that (a small phone) the pad and
         // the air between the seats give way first, and the coins themselves
         // stop shrinking at [MIN_REACH], the smallest target a fingertip is
         // owed: a narrow screen gets smaller gaps, never smaller buttons.
-        val rail = minOf(maxWidth, RAIL_WIDTH)
+        val extent = if (vertical) maxHeight else maxWidth
+        val rail = minOf(extent, RAIL_WIDTH)
         val slack = (rail - MIN_REACH * SEATS).coerceAtLeast(0.dp)
         val pad = minOf(RAIL_PAD, slack / 2)
         val gap = minOf(SEAT_GAP, (slack - pad * 2) / (SEATS - 1))
         val reach = minOf(CoinSize, (rail - pad * 2 - gap * (SEATS - 1)) / SEATS)
-        Row(
-            modifier = Modifier
-                .width(rail)
-                .buttonShadow(RoundedCornerShape(reach * 0.62f), elevation = 5.dp)
-                .clip(RoundedCornerShape(reach * 0.62f))
-                .background(CrayonerColors.Card)
-                .padding(horizontal = pad, vertical = reach * 0.07f),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        val seats: @Composable () -> Unit = {
+            CrayonSeat(
+                selected = selected,
+                boxing = boxOpen,
+                onClick = { onOpenBox(!boxOpen) },
+                size = reach,
+            )
+            RubberSeat(
+                armed = erasing,
+                onClick = { onErase(!erasing) },
+                size = reach,
+            )
             StepSeat(
                 ready = canUndo,
                 forward = false,
@@ -118,32 +113,32 @@ fun ToolCapsule(
                 onClick = onRedo,
                 size = reach,
             )
-            CapsuleSeat(
-                onClick = { onOpenBox(!boxOpen) },
-                armed = boxOpen,
-                size = reach,
-                label = stringResource(crayonNameRes(selected)) +
-                    ", " + stringResource(R.string.pick_color),
+        }
+        if (vertical) {
+            Column(
+                modifier = Modifier
+                    .buttonShadow(RoundedCornerShape(reach * 0.62f), elevation = 5.dp)
+                    .clip(RoundedCornerShape(reach * 0.62f))
+                    .background(CrayonerColors.Card)
+                    .padding(horizontal = reach * 0.07f, vertical = pad),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // The color in hand, drawn the way the app's own mark is
-                // drawn: the same crayon, at the same lean, in the shape's
-                // own proportions, so the crayon on the capsule is the same
-                // object as the crayon beside the app's name and the one on
-                // the launcher. Its box is [IconSize], the same box the
-                // rubber, the two steps and the bar's own marks are drawn
-                // in, so the shaped mark is fitted to the size of its
-                // neighbors and cannot come out taller than they are.
-                CrayonGlyph(
-                    color = Color(selected),
-                    leanDeg = CrayonShape.MARK_LEAN,
-                    modifier = Modifier.size(IconSize),
-                )
+                seats()
             }
-            RubberSeat(
-                armed = erasing,
-                onClick = { onErase(!erasing) },
-                size = reach,
-            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .width(rail)
+                    .buttonShadow(RoundedCornerShape(reach * 0.62f), elevation = 5.dp)
+                    .clip(RoundedCornerShape(reach * 0.62f))
+                    .background(CrayonerColors.Card)
+                    .padding(horizontal = pad, vertical = reach * 0.07f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                seats()
+            }
         }
     }
 }
@@ -166,11 +161,11 @@ private val SEAT_GAP = 12.dp
 private val MIN_REACH = 48.dp
 
 /**
- * How far the outer seats sit from the capsule's own edge. The capsule and
- * the top bar share it, so the first seat and the home button share a left
- * edge and the last seat and the sound switch share a right one.
+ * How far the outer seats sit from the capsule's own edge. It is a hair
+ * inside the coin, so the first and last seat sit on the capsule's own
+ * cardboard rather than in the middle of a pool of it.
  */
-private val RAIL_PAD = 14.dp
+private val RAIL_PAD = 8.dp
 
 /**
  * The width of the rail the bar and the capsule both stand on, measured from
@@ -183,17 +178,52 @@ internal val RAIL_WIDTH =
     RAIL_PAD * 2 + CoinSize * SEATS + SEAT_GAP * (SEATS - 1)
 
 /**
+ * The crayon's seat: the color in hand, and the lid to the box of colors.
+ *
+ * The crayon is drawn at the app's own lean ([CrayonShape.MARK_LEAN]), the
+ * same angle the launcher icon, the wall's nameplate and the crayon beside
+ * the app's name wear, so the crayon a child taps on the home screen and the
+ * crayon they hold on the page are one object. Its box is [IconSize], the
+ * same box the rubber and the two steps are drawn in, so the shaped mark is
+ * fitted to the size of its neighbors and cannot come out taller than they
+ * are.
+ */
+@Composable
+private fun CrayonSeat(
+    selected: Long,
+    boxing: Boolean,
+    onClick: () -> Unit,
+    size: Dp,
+) {
+    val label = stringResource(crayonNameRes(selected)) +
+        ", " + stringResource(R.string.pick_color)
+    CapsuleSeat(
+        onClick = onClick,
+        armed = boxing,
+        size = size,
+        label = label,
+    ) {
+        CrayonGlyph(
+            color = Color(selected),
+            leanDeg = CrayonShape.MARK_LEAN,
+            modifier = Modifier.size(IconSize),
+        )
+    }
+}
+
+/**
  * The rubber's seat. Press it and the crayon becomes an eraser: the next
  * mark rubs wax off the paper. Press it again and the crayon comes back.
  *
  * The rubber itself looks the same whether it is picked up or lying down:
- * the seat's own plate is the whole selection mark (see [CapsuleSeat]).
+ * the seat's own plate is the whole selection mark (see [CapsuleSeat]), and
+ * a rubber is one object whatever its owner is doing with it.
  */
 @Composable
 private fun RubberSeat(armed: Boolean, onClick: () -> Unit, size: Dp) {
     val label = stringResource(if (armed) R.string.eraser_on else R.string.eraser_off)
     CapsuleSeat(onClick = onClick, armed = armed, size = size, label = label) {
-        EraserGlyph(modifier = Modifier.size(IconSize))
+        EraserGlyph(color = CrayonerColors.Ink, size = IconSize)
     }
 }
 
@@ -227,14 +257,14 @@ private fun StepSeat(ready: Boolean, forward: Boolean, onClick: () -> Unit, size
 }
 
 /**
- * One seat in the capsule: the round plate a child presses, lifted a little
- * on its spring when the thing it holds is in hand.
+ * One seat in the capsule: the same coin the bar's buttons wear, lifted a
+ * little on its spring when the thing it holds is in hand.
  *
- * [armed] is the one selection language in the app, and it is the same one
- * on every seat: the plate under the thing in hand takes the capsule's own
+ * [armed] is the one selection language in the app, and it is the same one on
+ * every seat: the plate under the thing in hand takes the capsule's own
  * cardboard, so which tool is picked up reads at a glance and no seat means
  * anything different from any other. The plate is not the button, so it is
- * drawn behind the glyph and never as a ring around it.
+ * drawn behind the mark and never as a ring around it.
  */
 @Composable
 private fun CapsuleSeat(
@@ -252,19 +282,22 @@ private fun CapsuleSeat(
         ),
         label = "seat-lift",
     ).value
-    Box(
+    androidx.compose.foundation.layout.Box(
         modifier = Modifier
-            .size(size)
-            .offset(y = -(size * 0.045f) * lift)
-            .clip(CircleShape)
-            .background(if (armed) CrayonerColors.Cardboard else Color.Transparent)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics {
-                contentDescription = label
-                selected = armed
-            },
-        contentAlignment = Alignment.Center,
+            .offset(y = -(size * 0.045f) * lift),
     ) {
-        content()
+        CoinPlate(
+            background = if (armed) CrayonerColors.Cardboard else Color.Transparent,
+            size = size,
+            label = label,
+            selected = armed,
+            // Inside the capsule the plate is a mark of what is in hand, not a
+            // second floating object: the capsule already carries the shadow
+            // for everything on it.
+            elevation = 0.dp,
+            onClick = onClick,
+        ) {
+            content()
+        }
     }
 }

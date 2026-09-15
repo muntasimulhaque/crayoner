@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -28,11 +27,16 @@ import io.github.muntasimulhaque.crayoner.host.Screen
 /**
  * The coloring screen: the sheet, and the things a hand reaches for.
  *
- * The sheet takes the room it can: on a phone the capsule of tools sits
- * under it, on anything wide and sideways it stands beside it. There is no
- * picture above the page, because the picture lives in the bar as one more
- * round button the same size and shape as the rest: look at it any time, and
- * one tap holds it up big.
+ * On a phone the bar sits above the paper and the capsule of tools below it,
+ * the two rows on one rail so the screen reads as one object. On anything
+ * wide and sideways the capsule stands on the left and the sheet takes the
+ * rest: a column of tools costs the paper its own width and the eye nothing,
+ * because the hand coloring the page reaches past them once, and the picture
+ * it is coloring is what every pixel of the screen is for.
+ *
+ * There is no picture above the page, because the picture lives in the bar as
+ * one more round button the same size and shape as the rest: look at it any
+ * time, and one tap holds it up big.
  *
  * Nothing here counts anything. There is no line of progress to watch and no
  * score to keep: the child colors, and the only thing that ever changes on
@@ -57,6 +61,9 @@ fun PlayScreen(
     onSound: (Boolean) -> Unit,
     onPeek: (Boolean) -> Unit,
     onColorArea: (Int) -> Unit = {},
+    onKeep: () -> Unit = {},
+    onStartFresh: () -> Unit = {},
+    onDismissAsk: () -> Unit = {},
 ) {
     val haptics = rememberHaptics()
     // One answer per finished mark, and only one: the small touch of wax that
@@ -79,11 +86,6 @@ fun PlayScreen(
             // This is decided from the real measured size, so it is right on
             // every device rather than on the ones we happened to test.
             val wide = maxWidth >= WIDE_AT && maxWidth > maxHeight * 1.15f
-            // On a phone the bar and the capsule sit on one rail, so the two
-            // rows of controls line up at both ends. On a tablet the sheet and
-            // the tools stand side by side and the bar is the full width of
-            // the screen, exactly as it always was: a rail there would drag
-            // the home button into the middle of the desk.
             val bar: @Composable (Modifier) -> Unit = { m ->
                 TopBar(
                     onHome = onHome,
@@ -117,22 +119,27 @@ fun PlayScreen(
                     onUndo = onUndo,
                     onRedo = onRedo,
                     modifier = modifier,
+                    vertical = wide,
                 )
             }
             if (wide) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
+                // Sideways: the tools stand in a column at the left edge of
+                // the desk and the paper takes everything else. A column of
+                // controls beside a sheet costs the sheet a column's width
+                // and not a row's, and the paper keeps the whole height of
+                // the screen above its tools. The bar still runs across the
+                // top of everything, because the way home should not move
+                // when the phone turns over.
+                Column(Modifier.fillMaxSize()) {
                     bar(Modifier.fillMaxWidth())
                     Row(Modifier.fillMaxWidth().weight(1f)) {
-                        sheet(Modifier.weight(1f).fillMaxSize())
                         Box(
-                            modifier = Modifier.width(TOOLS_WIDTH).fillMaxSize(),
+                            modifier = Modifier.width(TOOLS_COLUMN).fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            tools(Modifier.padding(horizontal = 12.dp))
+                            tools(Modifier)
                         }
+                        sheet(Modifier.weight(1f).fillMaxSize())
                     }
                 }
             } else {
@@ -141,7 +148,13 @@ fun PlayScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    bar(Modifier.widthIn(max = RAIL_WIDTH).fillMaxWidth())
+                    // The bar runs the whole width of the screen on a phone:
+                    // Home lands in the top left corner and the sound switch
+                    // in the top right, where a hand already knows to look,
+                    // and the picture sits between them. Nothing is inset
+                    // from the screen's own edge, because a bar inset from
+                    // the edge reads as a panel dropped onto the desk.
+                    bar(Modifier.fillMaxWidth())
                     // The sheet is given every pixel the capsule does not
                     // need. It keeps the sheet's own proportion, so a phone
                     // shows a tall page rather than a square with two bands
@@ -151,7 +164,7 @@ fun PlayScreen(
                         modifier = Modifier.fillMaxWidth().height(TOOLS_HEIGHT),
                         contentAlignment = Alignment.Center,
                     ) {
-                        tools(Modifier.padding(horizontal = 16.dp))
+                        tools(Modifier)
                     }
                 }
             }
@@ -170,6 +183,19 @@ fun PlayScreen(
                 onDismiss = { onOpenBox(false) },
             )
         }
+        // The one question the app ever asks. It comes up only when a child
+        // with work on the page presses Home, it is two big answers and no
+        // words to read, and either answer is safe: keeping the picture costs
+        // nothing, and starting fresh only means the next visit opens on a
+        // clean sheet. The app never asks this on a bare page, because there
+        // is nothing there to keep.
+        if (state.asking) {
+            SaveQuestion(
+                onKeep = onKeep,
+                onStartFresh = onStartFresh,
+                onDismiss = onDismissAsk,
+            )
+        }
     }
 }
 
@@ -182,14 +208,11 @@ fun PlayScreen(
 private val WIDE_AT = 640.dp
 
 /**
- * The one width the bar and the capsule share, and the caps at which the two
- * rows of controls stop growing on a wide screen: a control row stretched
- * across a tablet is a fence. It is measured in the capsule's own file
- * ([RAIL_WIDTH]), from the coins the capsule holds, so the two rows can never
- * drift apart: the bar holds the home button, the sample and the sound switch,
- * the capsule holds the step back, the crayon, the step forward and the
- * rubber, and both rows stand on the same rail at both ends.
+ * How much room the tool column takes beside the sheet. It is the capsule's
+ * own thickness and its shadow, so the column is the object on it rather than
+ * a panel around it.
  */
+private val TOOLS_COLUMN = 74.dp
 
 /** How tall the bar is, in both shapes. Home, the sample, the sound switch. */
 private val BAR_HEIGHT = 66.dp
@@ -201,12 +224,14 @@ private val BAR_HEIGHT = 66.dp
  */
 private val TOOLS_HEIGHT = 84.dp
 
-/** The tool column's width beside the sheet. */
-private val TOOLS_WIDTH = 300.dp
-
 /**
- * Home on the left, then the sample and the sound switch. One size, one
- * shape and one shadow, so a small hand learns the row once.
+ * Home at the left edge, the sample and the sound switch at the right.
+ *
+ * The bar is the full width of the screen and its two ends sit on the
+ * screen's own corners: Home is the first thing a hand finds without looking,
+ * and a sound switch hidden in from the edge is a switch a parent has to hunt
+ * for. The picture stands between them, one step in from the sound switch so
+ * the two round buttons on the right are two targets and not one.
  */
 @Composable
 private fun TopBar(
@@ -221,9 +246,9 @@ private fun TopBar(
     Row(
         modifier = modifier
             .height(BAR_HEIGHT)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = BAR_PAD),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(BAR_GAP),
     ) {
         CircleButton(
             onClick = onHome,
@@ -245,3 +270,12 @@ private fun TopBar(
         }
     }
 }
+
+/**
+ * How far the bar's own buttons sit from the edge of the screen, and the air
+ * between the two at the right. The pad is the screen's own margin, not the
+ * rail's: the bar is the one row that runs edge to edge, and its ends are the
+ * corners a hand aims at.
+ */
+private val BAR_PAD = 10.dp
+private val BAR_GAP = 12.dp

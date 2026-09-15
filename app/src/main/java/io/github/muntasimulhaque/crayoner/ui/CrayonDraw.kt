@@ -160,11 +160,15 @@ private fun DrawScope.drawWrapperRules(
 ) {
     val line = Stroke((unit * 0.055f).coerceAtLeast(0.7f), cap = StrokeCap.Round)
     // Derived from the band itself, not from a pixel count: a real wrapper's
-    // rules sit inside its own ends by a fixed share of the band.
-    val near = band.h * 0.12
+    // rules sit inside its own ends by a fixed share of the band, and inside
+    // the crayon's own flanks by a fixed share of its thickness, because a
+    // round cap reaches half a stroke past the point it is given and a rule
+    // drawn flank to flank paints two nubs out in the paper beside the stick.
+    val near = band.h * CrayonShape.RULE_INSET
+    val inset = CrayonShape.RULE_END_INSET
     for (y in listOf(band.y + near, band.bottom - near)) {
-        val a = px(Vec2(band.x, y))
-        val b = px(Vec2(band.right, y))
+        val a = px(Vec2(band.x + inset, y))
+        val b = px(Vec2(band.right - inset, y))
         drawPath(
             Path().apply {
                 moveTo(a.x, a.y)

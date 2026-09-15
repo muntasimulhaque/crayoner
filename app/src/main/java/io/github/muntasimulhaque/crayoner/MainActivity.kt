@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                             // open.
                             BackHandler(enabled = true) {
                                 when {
+                                    s.asking -> host.dismissAsk()
                                     s.boxOpen -> host.setBoxOpen(false)
                                     s.peeking -> host.setPeek(false)
                                     else -> host.home()
@@ -88,6 +89,9 @@ class MainActivity : ComponentActivity() {
                                 onSound = host::setSound,
                                 onPeek = host::setPeek,
                                 onColorArea = host::colorArea,
+                                onKeep = host::keepIt,
+                                onStartFresh = host::startFresh,
+                                onDismissAsk = host::dismissAsk,
                             )
                         }
                     }

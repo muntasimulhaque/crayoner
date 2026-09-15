@@ -21,23 +21,34 @@ import io.github.muntasimulhaque.crayoner.core.wavyEdge
  * inanimate, all on one warm palette, and no sun in any of these skies, so
  * one page's weather never repeats the page before it.
  *
+ * These four are the book's one neighborhood, and each of them has its own
+ * weather instead of the same two puffs in the same two corners: the house
+ * has a cloud moving off to the right, the tree has one low cloud the crown
+ * stands beside, the mushroom has none at all, and the flowers have a small
+ * one high up where the stems are not. A row of pages that each open with an
+ * identical cloud is a row of the same picture.
+ *
  * The greens are the box's own three: green for grass and leaves, yellow
  * green for the apple tree's young crown, green yellow where the rainbow
  * picks up the light.
  */
 
-/** House: sky, two clouds, grass, wall, roof, door, window. */
+/** House: sky, one cloud, grass, wall, roof, door, window. */
 fun housePage(): Page = Page(
     id = "house",
     regions = listOf(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.18, 0.16, 0.85)),
-        areaOf("cloud_high", "cloud", Crayons.WHITE, cloud(0.82, 0.12, 0.6)),
+        // One cloud, high and to the right, with the roof rising toward the
+        // left of it: the weather and the house are not in each other's way.
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.80, 0.205, 0.74)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.78, 0.018, 3, 0))),
         area("wall", "wall", Crayons.PEACH, round(0.26, 0.44, 0.48, 0.34, 0.02)),
         area("roof", "roof", Crayons.RED, poly(0.20, 0.465, 0.50, 0.205, 0.80, 0.465)),
-        area("window", "window", Crayons.SKY_BLUE, circle(0.355, 0.555, 0.055)),
-        area("door", "door", Crayons.BROWN, round(0.44, 0.58, 0.13, 0.20, 0.05)),
+        // The window is a real circle a child can aim at, not a dot: at this
+        // book's smallest, a fingertip needs somewhere to land, and a
+        // painted-on window the width of a crayon is not a place to color.
+        area("window", "window", Crayons.SKY_BLUE, circle(0.345, 0.555, 0.072)),
+        area("door", "door", Crayons.BROWN, round(0.435, 0.575, 0.14, 0.205, 0.05)),
     ),
 )
 
@@ -45,10 +56,13 @@ fun housePage(): Page = Page(
 fun treePage(): Page = Page(
     id = "tree",
     regions = listOf(
+        // No weather on this page. The crown is the whole top of the picture
+        // and a cloud behind it reads as a second bush, so the tree stands
+        // against open sky; the pages around it are the ones that carry
+        // weather, which is what keeps any of them from being wallpaper.
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.16, 0.15, 0.8)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.78, 0.02, 3, 1))),
-        area("trunk", "trunk", Crayons.BROWN, poly(0.462, 0.42, 0.538, 0.42, 0.548, 0.80, 0.452, 0.80)),
+        area("trunk", "trunk", Crayons.BROWN, poly(0.452, 0.42, 0.548, 0.42, 0.558, 0.80, 0.442, 0.80)),
         area(
             "crown", "leaves", Crayons.YELLOW_GREEN,
             circle(0.50, 0.33, 0.185),
@@ -57,12 +71,15 @@ fun treePage(): Page = Page(
             circle(0.40, 0.235, 0.115),
             circle(0.60, 0.235, 0.115),
         ),
+        // Four apples, all large enough to be picked out with a fingertip,
+        // and unevenly spaced: an orchard of four identical dots in a ring
+        // is an ornament, not fruit.
         area(
             "apples", "apples", Crayons.SCARLET,
-            circle(0.42, 0.30, 0.038),
-            circle(0.60, 0.40, 0.038),
-            circle(0.53, 0.21, 0.035),
-            circle(0.36, 0.45, 0.032),
+            circle(0.42, 0.30, 0.052),
+            circle(0.615, 0.395, 0.050),
+            circle(0.545, 0.205, 0.046),
+            circle(0.352, 0.455, 0.044),
         ),
     ),
 )
@@ -71,8 +88,10 @@ fun treePage(): Page = Page(
 fun mushroomPage(): Page = Page(
     id = "mushroom",
     regions = listOf(
+        // No weather on this page at all. Three of the four pages in this
+        // corner of the book used to carry the same cloud; this one's empty
+        // sky is what makes the others' clouds weather rather than wallpaper.
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.17, 0.15, 0.8)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.75, 0.02, 3, 0))),
         area("stem", "stem", Crayons.PEACH, round(0.43, 0.50, 0.14, 0.27, 0.05)),
         area(
@@ -90,13 +109,19 @@ fun mushroomPage(): Page = Page(
                 ),
             ),
         ),
+        // Five spots, none smaller than a fingertip, and no two of them
+        // sitting opposite each other at the same height: two round spots
+        // facing each other across a cap read as eyes, and this book has no
+        // faces. The three across the top are at three different heights and
+        // unevenly spaced, and the two low ones sit at clearly different
+        // heights, one tucked in and one out at the cap's edge.
         area(
             "spots", "spots", Crayons.WHITE,
-            circle(0.36, 0.40, 0.05),
-            circle(0.62, 0.375, 0.055),
-            circle(0.50, 0.30, 0.042),
-            circle(0.26, 0.50, 0.038),
-            circle(0.74, 0.50, 0.038),
+            circle(0.355, 0.395, 0.062),
+            circle(0.635, 0.335, 0.058),
+            circle(0.505, 0.295, 0.050),
+            circle(0.250, 0.490, 0.048),
+            circle(0.745, 0.545, 0.052),
         ),
     ),
 )
@@ -106,20 +131,22 @@ fun flowersPage(): Page = Page(
     id = "flowers",
     regions = listOf(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.18, 0.15, 0.85)),
+        // One small cloud, high and to the right, well clear of both
+        // blossoms: the flowers are what this page is about.
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.17, 0.115, 0.58)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.76, 0.02, 3, 0))),
         area(
             "stems", "stems", Crayons.GREEN,
             poly(0.345, 0.76, 0.362, 0.38, 0.378, 0.38, 0.392, 0.76),
             poly(0.625, 0.76, 0.642, 0.30, 0.658, 0.30, 0.672, 0.76),
-            ellipse(0.425, 0.615, 0.062, 0.030, -32.0),
-            ellipse(0.298, 0.660, 0.062, 0.030, 32.0),
-            ellipse(0.700, 0.575, 0.056, 0.028, -32.0),
-            ellipse(0.582, 0.620, 0.056, 0.028, 32.0),
+            ellipse(0.430, 0.615, 0.070, 0.034, -32.0),
+            ellipse(0.292, 0.660, 0.070, 0.034, 32.0),
+            ellipse(0.704, 0.575, 0.064, 0.031, -32.0),
+            ellipse(0.578, 0.620, 0.064, 0.031, 32.0),
         ),
         areaOf("petals_a", "petals", Crayons.CARNATION_PINK, flowerPetals(0.36, 0.44, 0.17)),
-        area("center_a", "flower_center", Crayons.YELLOW, circle(0.36, 0.44, 0.051)),
+        area("center_a", "flower_center", Crayons.YELLOW, circle(0.36, 0.44, 0.062)),
         areaOf("petals_b", "petals", Crayons.VIOLET, flowerPetals(0.64, 0.36, 0.14)),
-        area("center_b", "flower_center", Crayons.YELLOW, circle(0.64, 0.36, 0.042)),
+        area("center_b", "flower_center", Crayons.YELLOW, circle(0.64, 0.36, 0.058)),
     ),
 )

@@ -12,6 +12,10 @@
     <string name="close_box">Put the crayons away</string>
     <string name="undo">Take back the last mark</string>
     <string name="redo">Put the last mark back</string>
+    <string name="keep_picture">Keep this picture?</string>
+    <string name="keep_it">Keep it just as it is</string>
+    <string name="start_fresh">Start this one fresh</string>
+    <string name="keep_coloring">Keep coloring</string>
 
     <string name="crayon_red">Red</string>
     <string name="crayon_scarlet">Scarlet</string>
@@ -93,7 +97,6 @@
     <string name="area_cone">Cone</string>
     <string name="area_scoop">Ice cream scoop</string>
     <string name="area_cherry">Cherry</string>
-    <string name="area_sprinkles">Sprinkles</string>
     <string name="area_table">Table</string>
     <string name="area_wrapper">Wrapper</string>
     <string name="area_frosting">Frosting</string>

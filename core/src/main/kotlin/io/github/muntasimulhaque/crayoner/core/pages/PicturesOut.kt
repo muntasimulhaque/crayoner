@@ -7,7 +7,6 @@ import io.github.muntasimulhaque.crayoner.core.areaOf
 import io.github.muntasimulhaque.crayoner.core.band
 import io.github.muntasimulhaque.crayoner.core.circle
 import io.github.muntasimulhaque.crayoner.core.cloud
-import io.github.muntasimulhaque.crayoner.core.ellipse
 import io.github.muntasimulhaque.crayoner.core.poly
 import io.github.muntasimulhaque.crayoner.core.rect
 import io.github.muntasimulhaque.crayoner.core.round
@@ -20,6 +19,20 @@ import io.github.muntasimulhaque.crayoner.core.wavyEdge
  * The two sweets teach the two warm flesh tones the box carries: apricot and
  * peach are the ice cream, melon is the wall behind it, and the cupcake lives
  * on a wisteria wall over a chestnut table.
+ *
+ * The sprinkles are gone from both sweets, and that is a deliberate loss.
+ * A sprinkle is a part of a picture a child would want to color on its own,
+ * and there is no such thing as a sprinkle wide enough for that: at the size
+ * one has to be to read as a sprinkle, it is narrower than the crayon the
+ * child is holding and smaller than the fingertip holding it, so the only
+ * thing a child can do with one is color over it. An area of a picture that
+ * cannot be hit is not an area, it is printed texture, and a page is better
+ * without it than with a part that answers nothing. The scoop and the
+ * frosting are whole areas now, which is what a small hand wanted anyway.
+ *
+ * Two of these pages have weather and two do not. The car drives under a
+ * cloud that is moving away from it, the train has no cloud but its own
+ * smoke, and the two sweets are indoors where the sky is a wall.
  */
 
 /** Ice cream: two scoops on a cone, with a cherry and sprinkles. */
@@ -30,16 +43,7 @@ fun iceCreamPage(): Page = Page(
         area("cone", "cone", Crayons.TAN, poly(0.375, 0.44, 0.625, 0.44, 0.50, 0.885)),
         area("scoop_a", "scoop", Crayons.CARNATION_PINK, circle(0.50, 0.415, 0.15)),
         area("scoop_b", "scoop", Crayons.APRICOT, circle(0.50, 0.255, 0.125)),
-        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.125, 0.045)),
-        area(
-            "sprinkles", "sprinkles", Crayons.ORANGE,
-            ellipse(0.505, 0.400, 0.019, 0.008, 12.0),
-            ellipse(0.400, 0.440, 0.017, 0.007, -14.0),
-            ellipse(0.600, 0.445, 0.017, 0.007, 14.0),
-            // One dash only, low on the top scoop and off center. Two dashes
-            // opposite each other read as eyes, and this book has no faces.
-            ellipse(0.442, 0.330, 0.017, 0.007, -18.0),
-        ),
+        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.115, 0.062)),
     ),
 )
 
@@ -56,16 +60,7 @@ fun cupcakePage(): Page = Page(
             circle(0.50, 0.34, 0.12),
             circle(0.50, 0.25, 0.085),
         ),
-        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.175, 0.042)),
-        area(
-            "sprinkles", "sprinkles", Crayons.YELLOW,
-            ellipse(0.425, 0.435, 0.017, 0.007, 25.0),
-            ellipse(0.575, 0.400, 0.017, 0.007, -25.0),
-            ellipse(0.560, 0.275, 0.015, 0.006, 20.0),
-            // One dash only on the top swirl, off center, for the same
-            // reason the ice cream has one: no two dots may read as eyes.
-            ellipse(0.445, 0.320, 0.015, 0.006, -10.0),
-        ),
+        area("cherry", "cherry", Crayons.RED, circle(0.50, 0.155, 0.058)),
     ),
 )
 
@@ -74,7 +69,9 @@ fun carPage(): Page = Page(
     id = "car",
     regions = listOf(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
-        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.16, 0.15, 0.8)),
+        // One cloud, up and to the left, behind the car's own roof line: the
+        // car is driving out from under it.
+        areaOf("cloud", "cloud", Crayons.WHITE, cloud(0.245, 0.135, 0.88)),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.70, 0.02, 2, 0))),
         area("road", "road", Crayons.GRAY, band(wavyEdge(0.76, 0.008, 2, 0))),
         area(
@@ -82,15 +79,19 @@ fun carPage(): Page = Page(
             round(0.12, 0.60, 0.76, 0.17, 0.06),
             round(0.32, 0.48, 0.36, 0.16, 0.05),
         ),
+        // Two windows, each of them wide enough to hold a mark of its own.
         area(
             "windows", "windows", Crayons.SKY_BLUE,
-            round(0.35, 0.505, 0.13, 0.10, 0.025),
-            round(0.51, 0.505, 0.13, 0.10, 0.025),
+            round(0.345, 0.500, 0.145, 0.115, 0.025),
+            round(0.505, 0.500, 0.145, 0.115, 0.025),
         ),
+        // Wheels with real hubs: a wheel the size of a pea is not a wheel a
+        // child can color, and two of them are the whole of what makes the
+        // shape read as a car rather than as a loaf.
         area(
             "wheels", "wheels", Crayons.GRAY,
-            circle(0.30, 0.77, 0.055),
-            circle(0.70, 0.77, 0.055),
+            circle(0.29, 0.775, 0.082),
+            circle(0.71, 0.775, 0.082),
         ),
     ),
 )
@@ -100,25 +101,35 @@ fun trainPage(): Page = Page(
     id = "train",
     regions = listOf(
         area("sky", "sky", Crayons.SKY_BLUE, rect(0.0, 0.0, 1.0, 1.0)),
+        // The only weather on this page is the train's own smoke, which is
+        // what smoke is: it climbs away behind the engine and thins as it
+        // goes.
         areaOf(
             "smoke", "smoke", Crayons.WHITE,
-            cloud(0.20, 0.16, 1.15),
-            cloud(0.36, 0.09, 0.65),
+            cloud(0.26, 0.17, 1.15),
+            cloud(0.075, 0.08, 0.7),
         ),
         area("ground", "grass", Crayons.GREEN, band(wavyEdge(0.74, 0.015, 3, 0))),
-        area("track", "track", Crayons.BROWN, rect(0.04, 0.80, 0.92, 0.055)),
+        // A real track with real sleepers: the rails and ties are what make
+        // a train a train, and the ballast under them is a mark of its own
+        // rather than a line the wheels stand on.
+        area(
+            "track", "track", Crayons.BROWN,
+            rect(0.02, 0.775, 0.96, 0.105),
+        ),
         area(
             "engine", "engine", Crayons.RED_ORANGE,
             round(0.14, 0.50, 0.46, 0.26, 0.06),
             round(0.60, 0.40, 0.24, 0.36, 0.04),
-            round(0.20, 0.36, 0.10, 0.16, 0.03),
+            round(0.20, 0.36, 0.11, 0.16, 0.03),
         ),
-        area("window", "window", Crayons.SKY_BLUE, round(0.645, 0.455, 0.15, 0.12, 0.03)),
+        area("window", "window", Crayons.SKY_BLUE, round(0.640, 0.450, 0.16, 0.13, 0.03)),
+        // Three wheels, each of them a circle a fingertip can find.
         area(
             "wheels", "wheels", Crayons.BLACK,
-            circle(0.24, 0.755, 0.058),
-            circle(0.38, 0.755, 0.058),
-            circle(0.68, 0.755, 0.058),
+            circle(0.23, 0.755, 0.072),
+            circle(0.39, 0.755, 0.072),
+            circle(0.68, 0.755, 0.072),
         ),
     ),
 )
