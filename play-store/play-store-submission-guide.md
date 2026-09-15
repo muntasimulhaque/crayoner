@@ -180,12 +180,19 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 1.0 (versionCode 10) was built by CI from commit 4bc2ee3 and
-signed with the Crayoner upload key**, and its AAB is in `play-store/aab/`
-awaiting submission (sha256 478ed275). It reads versionCode 10, versionName
-1.0, package io.github.muntasimulhaque.crayoner, target 37, with no
-permission beyond the androidx core private receiver, which the CI run
-checks against the built APK's own manifest.
+**Version 1.0 (versionCode 10) was submitted for Play review on 15 Sep
+2026.** It was built by CI from commit 4bc2ee3, signed with the Crayoner
+upload key, and reads versionCode 10, versionName 1.0, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked against the built APK's own manifest
+with `aapt2 dump permissions`). The AAB was sha256 478ed275 and has been
+DELETED from `play-store/aab/` now that it is submitted, so a stale build can
+never be uploaded twice. The next build to upload will be 1.1.
+
+Submitted with: Game / Educational, paid once, target audience 5 and under,
+Ads No, Advertising ID No, Data safety nothing collected, the privacy policy
+at https://muntasimulhaque.github.io/crayoner/privacy.html, and the three
+screenshot folders from the 24 CI captures of 15 Sep 2026.
 
 1.0 is the round the owner asked for after living with 0.9, and every one of
 its nine changes came from using the app rather than from reading it. The
