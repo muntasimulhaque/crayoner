@@ -13,8 +13,8 @@ android {
         applicationId = "io.github.muntasimulhaque.crayoner"
         minSdk = 24
         targetSdk = 37
-        versionCode = 11
-        versionName = "1.1"
+        versionCode = 12
+        versionName = "1.2"
 
         // The emulator screenshot capture uses AndroidX's runner.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
