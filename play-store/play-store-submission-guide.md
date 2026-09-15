@@ -180,6 +180,45 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 1.2 (versionCode 12) is built and waiting for Play review.** It
+was built by CI from commit 1c22e1f, signed with the Crayoner upload key,
+and reads versionCode 12, versionName 1.2, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked against the built APK's own manifest
+with `aapt2 dump permissions`). The AAB was sha256 f8a1a403 and sits in
+`play-store/aab/` waiting to be uploaded; it is deleted from there the moment
+it is submitted, so a stale build can never be uploaded twice.
+
+1.2 is the round where nothing between the glass and the paper is allowed to
+wait, and it came from the owner using 1.1. Two bugs were behind it. The
+store of rendered pages was keyed by a class that compares by identity, so
+every look-up built a fresh key and every look-up missed: the wall's prewarm
+rendered sixteen pictures no card could find, every card drew its own copy
+again, the coin in the bar redrew its thumbnail on every visit, and the sheet
+redrew its own print whenever it was composed. The key is a data class now
+and the store does what it says, with the wall's pictures kept in their own
+share of it and everything else let go first. And a card whose picture was
+not ready yet drew the whole wax page live on every frame of a scroll, which
+is what a stutter is made of: a card waiting for its picture now draws the
+page's own print, never the wax, and the one background render runs at a time
+so the picture a card is waiting for is drawn before the wall's own march
+reaches the pages after it. Beside those, a wax tile was cached under the size
+it was drawn at, although a tile does not depend on that size, so the book's
+ninety six areas were generated four times over; and the tile's own walk over
+its lattice paid for a power, a rounding and two remainders for every pixel.
+It is four times faster now and the same tile to the last pixel, pinned by a
+hash in `WaxTest`. The mark under the finger left the screen's state too: it
+has its own state, the one canvas that paints it asks for it inside the draw,
+and the screen's state is Compose's own rather than a flow, so a touch and the
+wax it leaves land in the same frame. Every point the system batched into one
+event is walked now, a mark that has spent its nine hundred points is thinned
+rather than frozen, and a gesture cut off in the middle keeps the mark it had
+already made. The capture harness looks at a scene until two copies in a row
+match, so a screenshot can never catch a half drawn wall. The 24 store
+captures of 15 Sep 2026 in these folders were made from this build, and the
+feature graphic was regenerated with `:tools:makeArt` so the banner shows the
+sailboat the book prints today.
+
 **Version 1.1 (versionCode 11) was submitted for Play review on 15 Sep
 2026.** It was built by CI from commit 0e5bb97, signed with the Crayoner
 upload key, and reads versionCode 11, versionName 1.1, package
@@ -421,17 +460,20 @@ submitted, and 0.2 superseded it.
 
 - The review email from Play (usually a few days for a paid app in the
   Families program).
-- 1.0 lands on top of 0.9 on the same closed track. Anyone already testing
+- 1.2 lands on top of 1.1 on the same closed track. Anyone already testing
   gets the update; no new invitations are needed.
 - If Play asks anything, the answers are all in this file: category, the
   questionnaire, the data safety declaration, and the target audience.
 - Nothing in the app needs to change for review; it is complete and tested.
-- The first thing worth looking at after updating is the row of buttons
-  under the page, because that is most of what this release is: the crayon
-  is the first seat now, then the rubber, then the two steps, and every
-  round button in the app is the same coin with the same shadow and the
-  same press. Compare it against the bar above it; the two rows should read
-  as one hand's work.
+- The first thing worth looking at after updating is the picture wall, because
+  that is most of what this release is: open the app and scroll straight away,
+  while the pictures are still being made, and again after they are all there.
+  Nothing should hitch, no card should ever be seen drawing itself, and a
+  card that is still waiting shows the page's own outlines for that moment
+  rather than a hole. Then open a picture and draw: the wax should sit under
+  the fingertip in the same frame the finger moves, a quick flick should
+  leave the whole line it drew, and a long scribble should never stop
+  following the hand.
 - Tapping Home in the middle of a picture now asks one short question, keep
   it or start that one fresh. Nothing is lost by either answer, Back on the
   phone puts the question away and leaves every mark where it was, and a
@@ -456,7 +498,8 @@ submitted, and 0.2 superseded it.
 
 `versionName` steps 0.1 per release, in lockstep with `versionCode`:
 versionCode 1 is 0.1, versionCode 2 is 0.2, versionCode 10 is 1.0,
-versionCode 11 is 1.1, and so on. Never reuse a versionCode.
+versionCode 11 is 1.1, versionCode 12 is 1.2, and so on. Never reuse a
+versionCode.
 
 ## Release notes
 
@@ -466,6 +509,12 @@ The notes for 0.6, 0.7 and 0.8 were handed over in their own sessions and
 are not recorded here; what each of those builds changed is in the Status
 section above, and the version walk below is what keeps the numbering
 right. The 0.9 notes are the ones submitted on 14 Sep 2026.
+
+### Version 1.2 (versionCode 12)
+
+```
+Coloring is smoother in every way a hand can feel. The wall scrolls without a stutter: every picture is made before a finger reaches it, and no card ever draws itself while you scroll. A picture opens at once, and so does the sample. The wax lands under the fingertip in the very frame the finger moves, a quick flick draws the whole line it made, and a long stroke keeps following your hand to the end. Nothing was taken away: every picture, every color, every mark saved as before.
+```
 
 ### Version 1.1 (versionCode 11)
 
