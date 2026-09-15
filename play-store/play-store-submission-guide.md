@@ -180,6 +180,47 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 1.1 (versionCode 11) is the build waiting in `play-store/aab/`.**
+It was built by CI from commit 0e5bb97, signed with the Crayoner upload
+key, and reads versionCode 11, versionName 1.1, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked against the built APK's own manifest
+with `aapt2 dump permissions`). The AAB is sha256 572f2604 and sits in
+`play-store/aab/` until it is submitted, then the folder is emptied again.
+The next build to upload after this one will be 1.2.
+
+1.1 is the round where the app stops making the hand wait, and it came from
+the owner using 1.0. The picture wall's prewarm measured the grid cell while
+every card asks for its own inset width, so no card ever found a prewarmed
+picture: every card rendered its own again, the cache held two sets for one
+wall, and the wall scrolled like work. The prewarm now measures the card's
+own width and each card is laid out at exactly the size of the picture on
+it. The page's layer of finished marks grows by the one new mark instead of
+re-rendering every mark under it at each lift, a live mark no longer builds
+two native shaders every frame, and a sheet reads its own width on every
+pointer event and adds the point the finger lifted at to the line, so a
+resize cannot pull the wax off the fingertip and a quick flick ends where
+the hand really stopped. `TouchProbeTest` now taps three points and measures
+each dot's own center in x and y, not only its row. The castle lost its
+face: the two matching tower roofs over a centered door are replaced by an
+asymmetric crenellated keep and wall, one door off the center line and no
+windows at all. `FingerTest` was rewritten to measure every visible
+connected piece of every region instead of each region once, which is how
+four apples hiding behind the largest one, the mushroom spots, the kite tail
+bows, the flower petals, the raindrops, the star sparkles and two slivers of
+lawn between the road and the paper's own edge were all found; the ice
+cream's cherry is a cherry a fingertip can color now. Keep it just as it is
+really keeps the picture: the in-memory shelf was never updated, so a kept
+picture reopened blank. The one rustle now answers every paper action (a
+crayon, the rubber, the lid, the sample, the wall, and the switch turned
+back on) and stays silent for the two steps, Home and the keep question.
+The screenshot harness had a bug of its own, worth recording because it
+produced the store set: it waited on the main thread for a PixelCopy that
+answers on the main thread, so every capture timed out and the first scene
+came back transparent; it now waits off the main thread and falls back to a
+software draw of the view tree. The 24 store captures of 15 Sep 2026 in
+these folders were made by that fixed harness from this build.
+
 **Version 1.0 (versionCode 10) was submitted for Play review on 15 Sep
 2026.** It was built by CI from commit 4bc2ee3, signed with the Crayoner
 upload key, and reads versionCode 10, versionName 1.0, package
@@ -425,6 +466,12 @@ The notes for 0.6, 0.7 and 0.8 were handed over in their own sessions and
 are not recorded here; what each of those builds changed is in the Status
 section above, and the version walk below is what keeps the numbering
 right. The 0.9 notes are the ones submitted on 14 Sep 2026.
+
+### Version 1.1 (versionCode 11)
+
+```
+The shelf is smoother now, and every picture is ready before a finger reaches it. The castle no longer looks like a face. Every part of every picture is big enough for a small finger to color. The wax lands exactly under the fingertip. One quiet rustle answers a crayon, the rubber, the lid, the sample and the wall. And Keep it as it is now really keeps the picture.
+```
 
 ### Version 1.0 (versionCode 10)
 
