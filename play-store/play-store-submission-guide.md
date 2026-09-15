@@ -180,14 +180,14 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 1.2 (versionCode 12) is built and waiting for Play review.** It
-was built by CI from commit 1c22e1f, signed with the Crayoner upload key,
-and reads versionCode 12, versionName 1.2, package
+**Version 1.2 (versionCode 12) was submitted for Play review on 15 Sep
+2026.** It was built by CI from commit 1c22e1f, signed with the Crayoner
+upload key, and reads versionCode 12, versionName 1.2, package
 io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
 androidx core private receiver (checked against the built APK's own manifest
-with `aapt2 dump permissions`). The AAB was sha256 f8a1a403 and sits in
-`play-store/aab/` waiting to be uploaded; it is deleted from there the moment
-it is submitted, so a stale build can never be uploaded twice.
+with `aapt2 dump permissions`). The AAB was sha256 f8a1a403 and has been
+DELETED from `play-store/aab/` now that it is submitted, so a stale build can
+never be uploaded twice. The next build to upload will be 1.3.
 
 1.2 is the round where nothing between the glass and the paper is allowed to
 wait, and it came from the owner using 1.1. Two bugs were behind it. The
