@@ -126,8 +126,8 @@ declaration it makes, no data collected, is exactly true of the app.)
 
 All three sets live under `play-store/screenshots/`, one subfolder per form
 factor (`phone/`, `tablet7/`, `tablet10/`), captured by CI whenever UI files
-change and refreshed into those same subfolders in the same session. Seven
-captures per form factor, 21 in all. Upload each subfolder's PNGs to its Play
+change and refreshed into those same subfolders in the same session. Eight
+captures per form factor, 24 in all. Upload each subfolder's PNGs to its Play
 Console slot, in filename order:
 
 ```
@@ -138,6 +138,7 @@ Console slot, in filename order:
 05_rubbed        the rubber in hand, wax rubbed away and the printed line kept
 06_peek          the sample held up large, a sheet of paper like the page
 07_whole         a picture colored all the way, in the child's own colors
+08_keep          leaving a page with work on it, the one question
 ```
 
 To look at every picture before a content change, run `:tools:makeSheets`,
