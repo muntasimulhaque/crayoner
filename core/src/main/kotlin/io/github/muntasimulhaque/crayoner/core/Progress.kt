@@ -64,14 +64,35 @@ object Strokes {
 
     /**
      * [stroke] with [p] appended, or the same stroke when the finger has
-     * barely moved, or when the stroke is full. A full stroke keeps drawing
-     * its mark but stops growing: the child's mark is never taken away.
+     * barely moved. A stroke that has used all of its points is thinned
+     * rather than frozen: the mark keeps following the hand, keeps its own
+     * ends and keeps its budget, so the crayon never comes off the paper
+     * while the child is still pressing it down.
      */
     fun extend(stroke: Stroke, p: Vec2): Stroke {
-        if (stroke.points.size >= MAX_POINTS) return stroke
         val last = stroke.points.lastOrNull()
         if (last != null && hypot(p.x - last.x, p.y - last.y) < MIN_STEP) return stroke
-        return stroke.plus(p)
+        if (stroke.points.size < MAX_POINTS) return stroke.plus(p)
+        return thin(stroke).plus(p)
+    }
+
+    /**
+     * The same line with half the points in its older half.
+     *
+     * The ends stay exactly where the hand put them and the middle of a mark
+     * that is already thousands of points long gives up a fraction of its
+     * shape, which on a scribble is a fraction of a pixel. What it buys is
+     * room for the next point: a mark that stopped growing under a moving
+     * finger would be the crayon leaving the paper without the child lifting
+     * it, and no save is worth that.
+     */
+    private fun thin(stroke: Stroke): Stroke {
+        val points = stroke.points
+        val older = points.size / 2
+        val out = ArrayList<Vec2>(points.size)
+        for (i in 0 until older) if (i % 2 == 0) out += points[i]
+        for (i in older until points.size) out += points[i]
+        return stroke.copy(points = out)
     }
 
     /** The mark a first touch leaves, before the finger has moved at all. */

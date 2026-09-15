@@ -95,6 +95,40 @@ class WaxTest {
     }
 
     @Test
+    fun theWaxIsTheVeryWaxEveryPictureWasDrawnWith() {
+        // The material's numbers are held above; this holds the pixels. Every
+        // tile the book is made of, each at its own angle and seed, comes out
+        // of one hash: the store captures, the launcher art and the pictures
+        // on the screen were all made of these tiles, so a change to the
+        // generator's arithmetic is a change to the art, and it has to be a
+        // decision rather than a side effect of making the walk over the
+        // lattice cheaper. It was made cheaper once, and this number did not
+        // move.
+        var hash = 0xcbf29ce484222325uL
+        fun mix(pixels: IntArray) {
+            for (p in pixels) {
+                hash = (hash xor (p.toULong() and 0xFFFFFFFFuL)) * 0x100000001b3uL
+            }
+        }
+        var areas = 0
+        for (page in Pages.all) {
+            for (region in page.regions) {
+                mix(Wax.surface(region.fillArgb, 96, Wax.angleDeg(region), 0, Wax.seed(region)))
+                // And the fine tile a mark is made of, which is the same paper
+                // at the scale of a line rather than of an area.
+                mix(Wax.surface(region.fillArgb, 96, -24.0, 0, 0x5A17, fine = true))
+                areas++
+            }
+        }
+        assertTrue("the book lost its areas", areas > 90)
+        assertEquals(
+            "the wax tiles are not the ones the pictures were drawn with",
+            0xb027c0588f287325uL,
+            hash,
+        )
+    }
+
+    @Test
     fun theSurfaceIsWaxNotAVeil() {
         // The wax surface has to be mostly down and honestly uneven: an
         // average near opaque, with real variation, so a colored area reads

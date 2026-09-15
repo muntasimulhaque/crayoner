@@ -27,7 +27,7 @@ import io.github.muntasimulhaque.crayoner.core.Wax
 internal fun DrawScope.drawWaxFill(region: Region?, outline: Path, color: Color) {
     if (region == null) return
     val side = size.width
-    val surface = waxBrush(region, color, side)
+    val surface = waxBrush(region, color)
     clipPath(outline) {
         if (surface != null) {
             drawRect(brush = surface)
@@ -49,12 +49,19 @@ internal fun DrawScope.drawWaxFill(region: Region?, outline: Path, color: Color)
 }
 
 /**
- * The wax tiles, one per area, color and page size, built once and kept.
+ * The wax tiles, one per area and color, built once and kept.
  *
  * A tile is a small square of pixels and there are a few dozen of them at
- * most, but they are held in a bounded map all the same: a picture drawn at
- * a size never seen before asks for a new tile, and a cache that only ever
- * grows is a leak with extra steps.
+ * most, but they are held in a bounded map all the same: a cache that only
+ * ever grows is a leak with extra steps.
+ *
+ * A tile's own pixels do not depend on the size a picture is drawn at: the
+ * tooth, the mottle and the drag are the same 96 pixels whatever the page is
+ * laid out at, and the tile repeats at its own scale in whatever frame it is
+ * used in. Keying by the drawing size as well was a real cost and not a
+ * subtle one: every size a picture is ever drawn at (the wall's card, the
+ * sample button, the peek, the sheet) built its own copy of the whole box,
+ * so a picture cost its wax over and over, and a wax tile is not cheap.
  */
 private object WaxTileCache {
     private const val LIMIT = 192
@@ -73,12 +80,25 @@ private object WaxTileCache {
 }
 
 /**
- * The area's own wax as a repeating brush. Keyed by page, area and color, so
- * a picture drawn at two sizes shares one surface, and a picture never
- * rebuilds its wax on a redraw.
+ * The shaders over those tiles, one per area and color, kept for the same
+ * reason and one more: a shader is a native object, and a tile that is found
+ * in the cache is not a reason to build a new one. Building it per draw was
+ * a per-frame cost on every live redraw of the sheet.
  */
-private fun waxBrush(region: Region, color: Color, side: Float): ShaderBrush? {
-    val key = "${region.id}|${argbOf(color)}|${side.toInt()}"
+private val waxBrushes = object : LinkedHashMap<String, ShaderBrush>(32, 0.75f, true) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ShaderBrush>?): Boolean =
+        size > 192
+}
+
+/**
+ * The area's own wax as a repeating brush, keyed by area and color: the same
+ * surface wherever the area is drawn, and never rebuilt while it is in use.
+ */
+private fun waxBrush(region: Region, color: Color): ShaderBrush? {
+    val key = "${region.id}|${argbOf(color)}"
+    synchronized(waxBrushes) {
+        waxBrushes[key]?.let { return it }
+    }
     val tile = WaxTileCache[key] ?: runCatching {
         val pixels = Wax.surface(
             argb = argbOf(color),
@@ -92,7 +112,9 @@ private fun waxBrush(region: Region, color: Color, side: Float): ShaderBrush? {
     }.getOrNull() ?: return null
     return runCatching {
         ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated))
-    }.getOrNull()
+    }.getOrNull()?.also { brush ->
+        synchronized(waxBrushes) { waxBrushes[key] = brush }
+    }
 }
 
 /**

@@ -190,7 +190,7 @@ private fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
         LaunchedEffect(cardWidthPx, pages) {
             if (cardWidthPx <= 0) return@LaunchedEffect
             withContext(Dispatchers.Default) {
-                prewarmPageImages(pages, ::sampleFills, cardWidthPx)
+                prewarmPageImages(pages, ::sampleFills, cardWidthPx, keep = true)
             }
         }
 
@@ -348,10 +348,14 @@ private fun SamplePlate(page: Page, widthPx: Int, heightPx: Int) {
             fills = remember(page) { sampleFills(page) },
             widthPx = widthPx,
             heightPx = heightPx,
-            // A card never stalls a frame: until its picture is rendered,
-            // it draws itself live, and the shelf renders every card off
-            // the main thread as soon as it knows how wide one is.
+            // A card never stalls a frame: until its picture is rendered it
+            // draws the page's own print, and the shelf renders every card
+            // off the main thread as soon as it knows how wide one is. Its
+            // picture is then kept where a page can never push it out, so
+            // the wall does not have to draw itself again on the way back
+            // from a coloring.
             blocking = false,
+            keep = true,
             modifier = Modifier.fillMaxSize(),
         )
     }

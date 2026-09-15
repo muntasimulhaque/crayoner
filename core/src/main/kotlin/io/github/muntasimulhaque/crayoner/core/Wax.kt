@@ -174,14 +174,10 @@ object Wax {
         // across, so the broad blotches that read as a hand in a big area
         // would read as gloss on a stroke, and they are laid at the scale of
         // the hand that drew the line instead.
+        val mottle = if (fine) MARK_BROAD_CELLS else BROAD_CELLS
         val tooth = blur(noise(size, TOOTH_CELLS, TOOTH_CELLS, seed))
         val drag = dragField(size, angleDeg, seed + 101)
-        val broad = noise(
-            size,
-            if (fine) MARK_BROAD_CELLS else BROAD_CELLS,
-            if (fine) MARK_BROAD_CELLS else BROAD_CELLS,
-            seed + 977,
-        )
+        val broad = noise(size, mottle, mottle, seed + 977)
         val cover = if (fine) MARK_COVERAGE else COVERAGE
         val swing = if (fine) MARK_COVERAGE_SWING else COVERAGE_SWING
         // The drag leans hard on both: the streak is what says a hand went
@@ -193,6 +189,9 @@ object Wax {
         val broadWeight = if (fine) MARK_BROAD_WEIGHT else COVERAGE_BROAD_WEIGHT
         val rgb = (argb and 0xFFFFFF).toInt()
         val out = IntArray(size * size)
+        // [phase] slides the tile so two areas of one picture do not share a
+        // texture; it is a rotation of the finished pixels and nothing else.
+        val turn = (phase % out.size).coerceAtLeast(0)
         for (i in out.indices) {
             val s =
                 (tooth[i] - 0.5) * toothWeight +
@@ -200,11 +199,35 @@ object Wax {
                     (broad[i] - 0.5) * broadWeight
             // The middle of the range is held back and the extremes pushed:
             // wax is mostly down, with places it skipped and places it piled.
-            val c = (cover + s * swing).coerceIn(0.0, 1.0).pow(COVERAGE_CURVE)
+            val c = coverageCurve((cover + s * swing).coerceIn(0.0, 1.0))
             val alpha = (c * 255.0).toInt().coerceIn(0, 255)
-            out[(i + phase) % out.size] = (alpha shl 24) or rgb
+            val j = i + turn
+            out[if (j >= out.size) j - out.size else j] = (alpha shl 24) or rgb
         }
         return out
+    }
+
+    /**
+     * The coverage curve, read off a table rather than a `pow` per pixel.
+     *
+     * A tile is ninety thousand pixels and the curve is smooth, so a table of
+     * this many segments is the same curve to well under a ten-thousandth of
+     * an alpha level: what it saves is a transcendental call in the middle of
+     * the one loop that runs for every pixel of every area of every picture.
+     * The old table's worth of `pow` calls was a measurable part of a picture.
+     */
+    private fun coverageCurve(coverage: Double): Double {
+        val at = coverage * CURVE_STEPS
+        val whole = at.toInt()
+        if (whole >= CURVE_STEPS) return CURVE[CURVE_STEPS]
+        val low = CURVE[whole]
+        return low + (CURVE[whole + 1] - low) * (at - whole)
+    }
+
+    private const val CURVE_STEPS = 4096
+
+    private val CURVE = DoubleArray(CURVE_STEPS + 1) { i ->
+        (i.toDouble() / CURVE_STEPS).pow(COVERAGE_CURVE)
     }
 
     /**
@@ -273,24 +296,45 @@ object Wax {
             return ((state ushr 8) and 0xFFFF) / 65535.0
         }
         val lattice = DoubleArray(cx * cy) { next() }
-        val out = DoubleArray(size * size)
+        // Every pixel of a row reads the same two cells of the lattice with
+        // the same weight, and every pixel of a column does the same the other
+        // way, so both are worked out once per tile instead of twice per
+        // pixel. The arithmetic is untouched: the cells and the weights are
+        // the ones the pixel-by-pixel walk would have found.
+        val ax = IntArray(size)
+        val bx = IntArray(size)
+        val tx = DoubleArray(size)
+        for (x in 0 until size) {
+            val fx = x.toDouble() * cx / size
+            val cell = fx.toInt() % cx
+            ax[x] = cell
+            bx[x] = (cell + 1) % cx
+            tx[x] = smooth(fx - fx.toInt())
+        }
+        val ay = IntArray(size)
+        val by = IntArray(size)
+        val ty = DoubleArray(size)
         for (y in 0 until size) {
             val fy = y.toDouble() * cy / size
-            val y0 = fy.toInt() % cy
-            val y1 = (y0 + 1) % cy
-            val ty = smooth(fy - fy.toInt())
+            val cell = fy.toInt() % cy
+            ay[y] = cell
+            by[y] = (cell + 1) % cy
+            ty[y] = smooth(fy - fy.toInt())
+        }
+        val out = DoubleArray(size * size)
+        for (y in 0 until size) {
+            val topRow = ay[y] * cx
+            val bottomRow = by[y] * cx
+            val across = ty[y]
+            var i = y * size
             for (x in 0 until size) {
-                val fx = x.toDouble() * cx / size
-                val x0 = fx.toInt() % cx
-                val x1 = (x0 + 1) % cx
-                val tx = smooth(fx - fx.toInt())
-                val a = lattice[y0 * cx + x0]
-                val b = lattice[y0 * cx + x1]
-                val c = lattice[y1 * cx + x0]
-                val d = lattice[y1 * cx + x1]
-                val top = a + (b - a) * tx
-                val bottom = c + (d - c) * tx
-                out[y * size + x] = top + (bottom - top) * ty
+                val a = lattice[topRow + ax[x]]
+                val b = lattice[topRow + bx[x]]
+                val c = lattice[bottomRow + ax[x]]
+                val d = lattice[bottomRow + bx[x]]
+                val top = a + (b - a) * tx[x]
+                val bottom = c + (d - c) * tx[x]
+                out[i++] = top + (bottom - top) * across
             }
         }
         return out
@@ -325,6 +369,10 @@ object Wax {
     /**
      * One smear: the base field sampled [taps] times along [angleDeg] and
      * averaged, each sample taken with wraparound indexing.
+     *
+     * The sample offsets are whole pixels and they are the same nine for
+     * every pixel of the tile, so they are worked out once: the rounding and
+     * the wrap inside the loop were most of what a tile cost.
      */
     private fun smear(
         size: Int,
@@ -340,15 +388,26 @@ object Wax {
         val reach = size * reachFraction
         val taps = 9
         val half = (taps - 1) / 2.0
+        // Whole pixels, and never more than a tile away, so one add is all
+        // the wrapping a sample can need.
+        val offX = IntArray(taps)
+        val offY = IntArray(taps)
+        for (i in 0 until taps) {
+            val t = (i - half) / half * reach
+            offX[i] = Math.round(t * dx).toInt()
+            offY[i] = Math.round(t * dy).toInt()
+        }
         val out = DoubleArray(size * size)
+        // Where each tap lands, for each pixel of a row and of a column: the
+        // wrap is the only work in the sample loop, and it is the same for a
+        // whole column and a whole row.
+        val tapsX = Array(taps) { i -> IntArray(size) { x -> wrapIndex(x + offX[i], size) } }
+        val tapsY = Array(taps) { i -> IntArray(size) { y -> wrapIndex(y + offY[i], size) * size } }
         for (y in 0 until size) {
             for (x in 0 until size) {
                 var sum = 0.0
                 for (i in 0 until taps) {
-                    val t = (i - half) / half * reach
-                    val sx = wrap(x + Math.round(t * dx).toInt(), size)
-                    val sy = wrap(y + Math.round(t * dy).toInt(), size)
-                    sum += base[sy * size + sx]
+                    sum += base[tapsY[i][y] + tapsX[i][x]]
                 }
                 out[y * size + x] = sum / taps
             }
@@ -356,45 +415,39 @@ object Wax {
         return out
     }
 
-    /** One bilinear sample of a wrapping lattice, at ([fy], [fx]) cells. */
-    private fun sample(lattice: DoubleArray, rows: Int, cols: Int, fy: Double, fx: Double): Double {
-        val y0 = wrap(fy.toInt(), rows)
-        val y1 = wrap(y0 + 1, rows)
-        val x0 = wrap(fx.toInt(), cols)
-        val x1 = wrap(x0 + 1, cols)
-        val ty = smooth(fy - fy.toInt())
-        val tx = smooth(fx - fx.toInt())
-        val a = lattice[y0 * cols + x0]
-        val b = lattice[y0 * cols + x1]
-        val c = lattice[y1 * cols + x0]
-        val d = lattice[y1 * cols + x1]
-        val top = a + (b - a) * tx
-        val bottom = c + (d - c) * tx
-        return top + (bottom - top) * ty
-    }
+    /** One coordinate of a wrapping sample, with no division in the loop. */
+    private fun wrapIndex(v: Int, n: Int): Int =
+        if (v < 0) v + n else if (v >= n) v - n else v
 
-    private fun wrap(v: Int, n: Int): Int {
-        val m = v % n
-        return if (m < 0) m + n else m
-    }
-
+    /** The weight between two lattice cells, eased so the speckle is wax. */
     private fun smooth(t: Double): Double = t * t * (3.0 - 2.0 * t)
 
     /** A wrapping 3x3 box blur, which turns speckle into wax. */
     private fun blur(src: DoubleArray): DoubleArray {
         val size = sqrtInt(src.size)
         val out = DoubleArray(src.size)
+        // The three columns and the three rows a pixel reads are the same for
+        // a whole row and a whole column, and the wrap is the only thing that
+        // made finding them any work at all.
+        val before = IntArray(size)
+        val after = IntArray(size)
+        for (i in 0 until size) {
+            before[i] = if (i == 0) size - 1 else i - 1
+            after[i] = if (i == size - 1) 0 else i + 1
+        }
         for (y in 0 until size) {
+            val above = before[y] * size
+            val here = y * size
+            val below = after[y] * size
+            var i = y * size
             for (x in 0 until size) {
-                var sum = 0.0
-                for (dy in -1..1) {
-                    val yy = (y + dy + size) % size
-                    for (dx in -1..1) {
-                        val xx = (x + dx + size) % size
-                        sum += src[yy * size + xx]
-                    }
-                }
-                out[y * size + x] = sum / 9.0
+                val left = before[x]
+                val right = after[x]
+                out[i++] = (
+                    src[above + left] + src[above + x] + src[above + right] +
+                        src[here + left] + src[here + x] + src[here + right] +
+                        src[below + left] + src[below + x] + src[below + right]
+                    ) / 9.0
             }
         }
         return out

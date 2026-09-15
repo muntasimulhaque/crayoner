@@ -9,6 +9,7 @@ import android.view.PixelCopy
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -46,21 +47,29 @@ internal class PageProbe(private val page: Page) {
     class Sheet {
         var draft: Draft = Draft.Empty
         var crayon: Long? = null
-        var live: Stroke? = null
+
+        /** The mark under the finger, as the sheet draws it. */
+        private val liveMark = mutableStateOf<Stroke?>(null)
+        val live: State<Stroke?> = liveMark
+        var mark: Stroke?
+            get() = liveMark.value
+            set(value) {
+                liveMark.value = value
+            }
 
         fun begin(at: Vec2) {
             crayon = Crayons.RED
-            live = Strokes.dot(Crayons.RED, at)
+            mark = Strokes.dot(Crayons.RED, at)
         }
 
         fun move(at: Vec2) {
-            live = live?.let { Strokes.extend(it, at) }
+            mark = mark?.let { Strokes.extend(it, at) }
         }
 
         fun end() {
-            val mark = live ?: return
-            live = null
-            draft = draft.color(mark.color, mark.points)
+            val finished = mark ?: return
+            mark = null
+            draft = draft.color(finished.color, finished.points)
         }
     }
 
@@ -85,10 +94,10 @@ internal class PageProbe(private val page: Page) {
                     page = page,
                     draft = sheet.draft,
                     crayon = sheet.crayon,
-                    live = sheet.live,
                     marks = sheet.draft.progress.strokes.size.toLong(),
                 ),
                 soundOn = false,
+                live = sheet.live,
                 onStrokeStart = { sheet.begin(it) },
                 onStrokeMove = { sheet.move(it) },
                 onStrokeEnd = { sheet.end() },

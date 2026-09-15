@@ -3,7 +3,6 @@ package io.github.muntasimulhaque.crayoner.host
 import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Progress
-import io.github.muntasimulhaque.crayoner.core.Stroke
 
 /**
  * Where in the book we are, and everything the screen needs to draw the
@@ -27,12 +26,6 @@ sealed interface Screen {
         val erasing: Boolean = false,
         /** The box of colors, held up over the page. */
         val boxOpen: Boolean = false,
-        /**
-         * The mark under the finger right now. It is drawn with the finished
-         * ones and saved the moment the finger lifts, so what the child sees
-         * while drawing is what they get.
-         */
-        val live: Stroke? = null,
         /** The sample held up big, while the child looks closely. */
         val peeking: Boolean = false,
         /**

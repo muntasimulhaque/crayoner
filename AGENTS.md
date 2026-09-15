@@ -1278,3 +1278,67 @@ the screenshots, all in the same session.
   the first capture is the wall as it really is. See D-063 for the mapping
   that is now proved in x and y: `TouchProbeTest` taps three points on the
   sheet and finds each dot's own center, not only its row.
+- D-077 **The picture store is a store, and the wax is made once.** Two
+  costs that were one bug each, both of them in the way a page becomes
+  pixels. The store of rendered pages was keyed by a class that compares by
+  identity, so every look-up built a fresh key, every look-up missed, and
+  every screen drew its own copy of a picture that had just been drawn: the
+  wall's prewarm rendered sixteen sheets that no card could find, the coin
+  in the bar drew a page again on every visit, and the sheet re-rendered its
+  own print whenever it was composed. The key is a data class now and the
+  store does what it says. Its budget is split in two, because the wall's
+  sixteen cards and the page being colored are not the same kind of thing:
+  the wall's pictures are kept for as long as the wall can be looked at,
+  since a card with no picture is a card that has to be drawn line by line
+  on the frame the finger is asking for, which was the wall's worst stutter,
+  and every other picture (the sheet, its marks, the sample held up, the
+  coin in the bar) lives beside them and is let go first. A picture that is
+  still being made is drawn as the page's own print until it lands: never
+  the wax, which is the expensive half, and never a hole. Two more costs
+  went with it. A wax tile was cached under the size it was drawn at, and a
+  tile does not depend on that size at all: the tooth, the mottle and the
+  drag are the same ninety six pixels whether they cover a card or a whole
+  sheet, so four sizes meant the book's ninety six areas were made four
+  times over. And the tile's own walk over its lattice paid for a `pow`, a
+  `Math.round` and two remainders for every pixel; it is four times faster
+  now and the same tile to the last pixel, pinned by a hash in `WaxTest`.
+  The marks' layer grows by the one mark that landed instead of being copied
+  whole every time, the page's paths are built once at each size and shared
+  by the printed picture and the live drawing alike, and every background
+  render goes through one gate, so one picture is being made at a time and
+  the one a card is waiting for is drawn before the wall's own march reaches
+  the pages after it. The capture harness changed with it: a scene is looked
+  at until two copies in a row match instead of being copied at a fixed
+  moment, because a wall whose pictures are still being made goes on
+  changing for a second after its cards are up.
+- D-078 **The finger and the wax are the same frame.** The mark under the
+  finger used to be part of the screen's own state and travelled to the
+  screen through a flow: a touch wrote a value, a coroutine collector woke
+  up on the next dispatch, the whole desk recomposed, and the wax landed a
+  frame or two after the fingertip that made it. On a slow frame that is a
+  mark a tenth of a second behind the hand, which is the one thing this app
+  cannot be wrong about. Three changes, all of them between the glass and
+  the paper. The screen's state is Compose's own state rather than a flow,
+  so a write made inside the touch event is read by the composition of that
+  same frame. The mark in flight is not part of the screen's state at all:
+  it has its own state, and the one canvas that paints it asks for it inside
+  the draw, so a move event costs a redraw of one canvas and never a
+  recomposition of the desk. And every point the system batched into one
+  event is walked, oldest first, so a quick flick is the line the hand
+  really drew rather than the last two dots of it. The mark also never
+  freezes: a stroke that has spent its nine hundred points is thinned in its
+  older half rather than stopped, so the crayon cannot leave the paper while
+  the child is still pressing it down, and its two ends stay exactly where
+  the hand put them. Amends the stroke budget of D-024. Measured on the CI
+  emulator, whose graphics are software and whose absolute frames are the
+  emulator's and not a phone's: a scrolled wall frame spends about a
+  millisecond in layout and one to three in draw, a drawing hand about a
+  millisecond, the page's own composition on opening went from seventy
+  milliseconds to fifteen, and the worst frame of a launch went from eleven
+  seconds to a quarter of one. A gesture that is cut off in the middle of
+  itself, by the screen turning over or a phone call arriving, finishes the
+  mark the hand had already put down instead of leaving half of one hanging
+  on the paper. Still open, and named rather than hidden: a page that has
+  spent its six hundred strokes drops the marks made after that, and the
+  honest answer is to thin the oldest marks rather than refuse the newest
+  one.

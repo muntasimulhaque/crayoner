@@ -273,7 +273,17 @@ class ScreenshotTest {
         )
     }
 
-    /** Render one state, settle it, and copy the window's own pixels out. */
+    /** Render one state, wait for the screen to stop moving, and copy the
+     *  window's own pixels out.
+     *
+     * The wall's pictures are made after the cards are already on screen,
+     * so a capture taken a fixed moment after a state is pushed can catch
+     * the wall half drawn: outline cards that fill in a breath later. Two
+     * copies in a row that match mean the screen has stopped changing, and
+     * whatever is in it is the state rather than a moment of it. It also
+     * waits out the sample button's opening breath, which is an animation
+     * on a blank page and nothing else.
+     */
     private fun shot(
         scenario: ActivityScenario<ComponentActivity>,
         outDir: File,
@@ -281,10 +291,36 @@ class ScreenshotTest {
         block: @Composable () -> Unit,
     ) {
         push(block)
-        val bitmap = captureWindow(scenario)
-        File(outDir, "$name.png").outputStream().use { out ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        var previous: String? = null
+        var bitmap: Bitmap? = null
+        for (attempt in 0 until SETTLE_ATTEMPTS) {
+            Thread.sleep(SETTLE_STEP_MS)
+            val shot = captureWindow(scenario)
+            val signature = signatureOf(shot)
+            bitmap = shot
+            if (signature == previous) break
+            previous = signature
         }
+        val settled = bitmap ?: return
+        File(outDir, "$name.png").outputStream().use { out ->
+            settled.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+    }
+
+    /** A cheap fingerprint of one frame: a grid of its own pixels. */
+    private fun signatureOf(bitmap: Bitmap): String {
+        val signature = StringBuilder()
+        val step = 23
+        var y = 0
+        while (y < bitmap.height) {
+            var x = 0
+            while (x < bitmap.width) {
+                signature.append(bitmap.getPixel(x, y).toUInt().toString(16))
+                x += step
+            }
+            y += step
+        }
+        return signature.toString()
     }
 
     /**
@@ -347,5 +383,11 @@ class ScreenshotTest {
          * transparent PNG, which is worse than a slower run.
          */
         const val SETTLE_MS = 2200L
+
+        /** How often a scene is looked at while it is settling, and how
+         *  many looks it gets: a wall whose pictures are still being made
+         *  changes for a few seconds after its cards are up. */
+        const val SETTLE_STEP_MS = 300L
+        const val SETTLE_ATTEMPTS = 40
     }
 }

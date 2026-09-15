@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -44,6 +46,21 @@ fun PageSemantics(
     onColor: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The words for every area, built once for the page and the crayon in
+    // hand. They are read out of resources and put together into sentences,
+    // and the sheet this overlay sits on recomposes every time a mark lands:
+    // asking the resources for twenty four strings per mark was work done for
+    // a sentence that had not changed.
+    val resources = LocalResources.current
+    val labels = remember(page, crayon, resources) {
+        page.regions.map { region ->
+            areaLabel(
+                kind = resources.getString(areaNameRes(region.kind)),
+                wanted = resources.getString(crayonNameRes(region.fillArgb)).lowercase(),
+                ready = crayon == region.fillArgb,
+            )
+        }
+    }
     BoxWithConstraints(modifier) {
         val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
         if (widthPx <= 0f) return@BoxWithConstraints
@@ -52,13 +69,8 @@ fun PageSemantics(
         for (index in page.regions.indices.reversed()) {
             val region = page.regions[index]
             val bounds = region.bounds
-            val label = areaLabel(
-                kind = stringResource(areaNameRes(region.kind)),
-                wanted = stringResource(crayonNameRes(region.fillArgb)).lowercase(),
-                ready = crayon == region.fillArgb,
-            )
             PageAreaTarget(
-                label = label,
+                label = labels[index],
                 onColor = { onColor(index) },
                 x = (bounds.x * widthPx).toFloat(),
                 y = (bounds.y * widthPx).toFloat(),

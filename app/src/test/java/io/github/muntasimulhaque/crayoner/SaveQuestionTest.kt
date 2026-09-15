@@ -19,6 +19,11 @@ import org.junit.Test
  * the desk: every answer is a decision about what the next visit shows, never
  * a chance to lose work. That is a property of the state, not of the drawing,
  * so it is held here.
+ *
+ * The mark under the finger is not part of this state any more: it is the
+ * drawing layer's own, and it is let go when the question comes up (see
+ * `ColoringHost.home`), so there is no longer a state in which the question
+ * and a half-drawn mark could be on the desk together.
  */
 class SaveQuestionTest {
 
@@ -66,17 +71,5 @@ class SaveQuestionTest {
         // put a step back on the stack that the child never made.
         assertFalse(s.canUndo)
         assertFalse(s.canRedo)
-    }
-
-    @Test
-    fun theQuestionIsNeverUpWhileTheHandIsOnThePaper() {
-        // The overlay is up at the same moment as a finger, only if the child
-        // somehow drew through it. Every entry point into the paper refuses a
-        // mark while the question is up, so this state is the one the screen
-        // composables can rely on: no live mark and no half-drawn stroke can
-        // be left behind by an answer.
-        val asking = colored().copy(asking = true, live = null)
-        assertTrue(asking.asking)
-        assertEquals(null, asking.live)
     }
 }

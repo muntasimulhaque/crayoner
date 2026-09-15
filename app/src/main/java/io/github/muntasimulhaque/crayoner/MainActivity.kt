@@ -15,7 +15,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.muntasimulhaque.crayoner.host.ColoringHost
@@ -43,8 +42,11 @@ class MainActivity : ComponentActivity() {
         policeDebugBuild()
         keepBarsHidden()
         setContent {
-            val screen by host.screen.collectAsStateWithLifecycle()
-            val shelf by host.shelf.collectAsStateWithLifecycle()
+            val screen by host.screen
+            // The sound switch alone: the shelf's map of drafts is written on
+            // every saved mark, and the bar has no business recomposing for
+            // that. The shelf itself is read where it is drawn, on the wall.
+            val soundOn by host.soundOn
             // A toy box, not a document: text follows the system font
             // setting, but only so far. Past this cap the words stop fitting
             // the fixed play surfaces and begin to overlap them, which
@@ -58,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 CrayonerTheme {
                     when (val s = screen) {
                         Screen.Home -> HomeScreen(
-                            shelf = shelf,
+                            shelf = host.shelf.value,
                             onOpen = host::open,
                         )
                         is Screen.Coloring -> {
@@ -76,7 +78,8 @@ class MainActivity : ComponentActivity() {
                             }
                             PlayScreen(
                                 state = s,
-                                soundOn = shelf.soundOn,
+                                soundOn = soundOn,
+                                live = host.live,
                                 onStrokeStart = host::beginStroke,
                                 onStrokeMove = host::moveStroke,
                                 onStrokeEnd = host::endStroke,

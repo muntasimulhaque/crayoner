@@ -100,13 +100,25 @@ class ProgressTest {
 
     @Test
     fun aStrokeNeverGrowsWithoutBound() {
+        // A long scribble: three thousand points' worth of travel on one
+        // press, which is more than a hand can make before the mark's own
+        // budget runs out.
+        val lastX = (3000 * 0.004) % 0.9
         var stroke = Strokes.dot(Crayons.RED, Vec2(0.0, 0.5))
-        for (i in 1..5000) {
-            stroke = Strokes.extend(stroke, Vec2(i / 5000.0, 0.5))
+        for (i in 1..3000) {
+            stroke = Strokes.extend(stroke, Vec2((i * 0.004) % 0.9, 0.5))
         }
-        assertTrue(stroke.points.size <= Strokes.MAX_POINTS)
+        assertTrue("kept ${stroke.points.size} points", stroke.points.size <= Strokes.MAX_POINTS)
         // A full stroke is never emptied: the child's mark stays where it is.
         assertFalse(stroke.isEmpty)
+        // And it never stops following the hand: the last point the finger
+        // was at is the last point of the mark, however long the mark grew.
+        // A stroke that froze at its budget would be the crayon coming off
+        // the paper while the child was still pressing it down.
+        assertEquals(lastX, stroke.points.last().x, 1e-9)
+        assertEquals(0.5, stroke.points.last().y, 1e-9)
+        // Its own beginning is where the hand put it down, too.
+        assertEquals(0.0, stroke.points.first().x, 1e-9)
     }
 
     @Test

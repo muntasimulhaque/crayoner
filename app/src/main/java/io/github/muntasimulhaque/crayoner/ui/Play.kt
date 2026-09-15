@@ -14,15 +14,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.R
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Page
+import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The coloring screen: the sheet, and the things a hand reaches for.
@@ -49,6 +54,8 @@ import io.github.muntasimulhaque.crayoner.host.Screen
 fun PlayScreen(
     state: Screen.Coloring,
     soundOn: Boolean,
+    /** The mark under the finger, asked for by the draw that paints it. */
+    live: State<Stroke?>? = null,
     onStrokeStart: (Vec2) -> Unit,
     onStrokeMove: (Vec2) -> Unit,
     onStrokeEnd: () -> Unit,
@@ -78,6 +85,20 @@ fun PlayScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(CrayonerColors.Desk)) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
+            // The sample held up close is the picture the child copies, and it
+            // is one tap away at all times. Its own picture is rendered the
+            // moment the page opens, off the main thread, at exactly the size
+            // the peek will ask for, so the tap finds a picture instead of
+            // making one: a picture of a whole page is real work, and the
+            // main thread is where a tap is felt.
+            val density = LocalDensity.current
+            val page = state.page
+            LaunchedEffect(page.id) {
+                val widthPx = with(density) { peekSide(maxWidth, maxHeight).roundToPx() }
+                withContext(Dispatchers.Default) {
+                    prewarmPageImages(listOf(page), ::sampleFills, widthPx)
+                }
+            }
             // The tools stand beside the sheet only when there is genuinely
             // room for both, which needs width AND a screen that is wider
             // than it is tall. A portrait tablet is wide, but standing the
@@ -100,6 +121,7 @@ fun PlayScreen(
             val sheet: @Composable (Modifier) -> Unit = { modifier ->
                 Sheet(
                     state = state,
+                    live = live,
                     onStrokeStart = onStrokeStart,
                     onStrokeMove = onStrokeMove,
                     onStrokeEnd = onStrokeEnd,

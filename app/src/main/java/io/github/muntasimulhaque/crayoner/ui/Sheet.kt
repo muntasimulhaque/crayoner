@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.core.Page
+import io.github.muntasimulhaque.crayoner.core.Stroke as WaxStroke
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.core.pagePointOf
 import io.github.muntasimulhaque.crayoner.host.Screen
@@ -52,6 +54,7 @@ val PaperShape = RoundedCornerShape(2.dp)
 @Composable
 internal fun SheetOf(
     state: Screen.Coloring,
+    live: State<WaxStroke?>?,
     onStrokeStart: (Vec2) -> Unit,
     onStrokeMove: (Vec2) -> Unit,
     onStrokeEnd: () -> Unit,
@@ -86,30 +89,52 @@ internal fun SheetOf(
                         return pagePointOf(offset.x.toDouble(), offset.y.toDouble(), w)
                     }
                     awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        at(down.position)?.let(onStrokeStart)
-                        down.consume()
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (change.pressed) {
-                                at(change.position)?.let(onStrokeMove)
-                                change.consume()
-                            } else {
-                                // The point the finger lifted at is the last
-                                // point of the line it drew. Without it a
-                                // quick flick ends a finger's width short of
-                                // where the hand really stopped.
-                                at(change.position)?.let(onStrokeMove)
-                                onStrokeEnd()
-                                break
+                        // A gesture can be taken away in the middle of itself:
+                        // the screen turns over, a phone call arrives, the
+                        // sheet is taken off the desk. Whatever the hand had
+                        // already put down is finished rather than dropped,
+                        // because work the hand has done is never thrown
+                        // away, and no half mark is left hanging on the
+                        // paper either. On a gesture that ends the way it
+                        // should, this is a second knock on a door that is
+                        // already closed.
+                        try {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            at(down.position)?.let(onStrokeStart)
+                            down.consume()
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                // Every point the system batched into this
+                                // event, oldest first: a quick flick arrives
+                                // as one event carrying the whole line, and a
+                                // mark that only ever saw the last point of
+                                // it would cut the corner the hand drew.
+                                for (past in change.historical) {
+                                    at(past.position)?.let(onStrokeMove)
+                                }
+                                if (change.pressed) {
+                                    at(change.position)?.let(onStrokeMove)
+                                    change.consume()
+                                } else {
+                                    // The point the finger lifted at is the
+                                    // last point of the line it drew. Without
+                                    // it a quick flick ends a finger's width
+                                    // short of where the hand really stopped.
+                                    at(change.position)?.let(onStrokeMove)
+                                    onStrokeEnd()
+                                    break
+                                }
                             }
-                        }
-                        onStrokeEnd()
-                        // A second finger must not leave a mark hanging: wait
-                        // for every pointer to lift before the next mark.
-                        while (eventPressed()) {
-                            awaitPointerEvent()
+                            onStrokeEnd()
+                            // A second finger must not leave a mark hanging:
+                            // wait for every pointer to lift before the next
+                            // mark.
+                            while (eventPressed()) {
+                                awaitPointerEvent()
+                            }
+                        } finally {
+                            onStrokeEnd()
                         }
                     }
                 },
@@ -119,7 +144,7 @@ internal fun SheetOf(
                 fills = emptyMap(),
                 strokes = state.progress.strokes,
                 generation = state.marks,
-                live = state.live,
+                live = live?.let { mark -> { mark.value } },
                 widthPx = widthPx,
                 heightPx = heightPx,
                 modifier = Modifier.fillMaxSize(),
@@ -145,6 +170,7 @@ internal fun SheetOf(
 @Composable
 internal fun Sheet(
     state: Screen.Coloring,
+    live: State<WaxStroke?>?,
     onStrokeStart: (Vec2) -> Unit,
     onStrokeMove: (Vec2) -> Unit,
     onStrokeEnd: () -> Unit,
@@ -160,6 +186,7 @@ internal fun Sheet(
         val width = minOf(byWidth, byHeight).coerceAtLeast(SHEET_MIN)
         SheetOf(
             state = state,
+            live = live,
             onStrokeStart = onStrokeStart,
             onStrokeMove = onStrokeMove,
             onStrokeEnd = onStrokeEnd,

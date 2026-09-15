@@ -1,6 +1,9 @@
 package io.github.muntasimulhaque.crayoner.host
 
 import android.app.Application
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.muntasimulhaque.crayoner.core.Crayons
@@ -8,13 +11,11 @@ import io.github.muntasimulhaque.crayoner.core.Draft
 import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Progress
+import io.github.muntasimulhaque.crayoner.core.Stroke
 import io.github.muntasimulhaque.crayoner.core.Strokes
 import io.github.muntasimulhaque.crayoner.core.Vec2
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,17 @@ import kotlinx.coroutines.launch
  * call, a rotation or a process death costs at most the mark in flight. No
  * network, no accounts, nothing leaving the device.
  *
+ * ## Why the state is Compose state
+ *
+ * The screen and the mark under the finger are held as Compose state rather
+ * than as flows, and it is not a style choice: it is the difference between
+ * wax that lands under the fingertip and wax that trails it. A flow hands a
+ * value to a collector through a coroutine dispatch, which costs a frame or
+ * two; a snapshot write made inside the touch event that carried the finger
+ * is read by the very next composition, in the same frame the finger moved.
+ * On a slow frame the flow's hop is a mark a tenth of a second behind the
+ * hand, and no amount of drawing quality makes up for that.
+ *
  * Nothing here counts, scores, compares or judges anything the child does:
  * not the colors, not the areas, and not whether a picture is finished. The
  * app has no opinion about any of it.
@@ -38,11 +50,32 @@ class ColoringHost(app: Application) : ViewModel() {
     private val store = CrayonStore(app)
     private val soundBoard = SoundBoard(app)
 
-    private val _screen = MutableStateFlow<Screen>(Screen.Home)
-    val screen: StateFlow<Screen> = _screen.asStateFlow()
+    private val _screen = mutableStateOf<Screen>(Screen.Home)
+    val screen: State<Screen> = _screen
 
-    private val _shelf = MutableStateFlow(ShelfState(loaded = false))
-    val shelf: StateFlow<ShelfState> = _shelf.asStateFlow()
+    /**
+     * The mark under the finger, in its own state rather than in [screen].
+     *
+     * A move event changes it dozens of times a second, and it is read in
+     * exactly one place: the draw that puts the wax on the paper. Keeping it
+     * apart from the screen is what lets a moving finger cost a redraw of one
+     * canvas instead of a recomposition of everything on the desk.
+     */
+    private val _live = mutableStateOf<Stroke?>(null)
+    val live: State<Stroke?> = _live
+
+    private val _shelf = mutableStateOf(ShelfState(loaded = false))
+    val shelf: State<ShelfState> = _shelf
+
+    /**
+     * The sound switch on its own, for the page's bar.
+     *
+     * The shelf's map of drafts changes on every finished mark, and the bar
+     * only ever wants the one boolean: reading the shelf's whole state there
+     * would recompose the coloring screen every time a mark was saved. A
+     * derived state only speaks up when the answer really changes.
+     */
+    val soundOn: State<Boolean> = derivedStateOf { _shelf.value.soundOn }
 
     /** Draft writes are conflated and slightly delayed, never per mark. */
     private val drafts = MutableSharedFlow<DraftWrite>(extraBufferCapacity = 1)
@@ -77,6 +110,10 @@ class ColoringHost(app: Application) : ViewModel() {
     /** Open a page: its saved marks if it has any, else a blank sheet. */
     fun open(pageId: String) {
         val page = Pages.byId(pageId) ?: return
+        // Nothing is in flight on a page nobody is looking at, but a mark
+        // left behind would be drawn on the next page's paper, so it goes
+        // here as well as everywhere else a page gives way to another.
+        _live.value = null
         val saved = runCatching { store.draftFor(page.id, _shelf.value.drafts) }
             .getOrDefault(Progress.Empty)
         _screen.value = Screen.Coloring(
@@ -134,7 +171,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun undo() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        if (s.live != null) return
+        if (_live.value != null) return
         val next = s.draft.undo()
         if (next === s.draft) return
         commit(s, next)
@@ -153,7 +190,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun redo() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        if (s.live != null) return
+        if (_live.value != null) return
         val next = s.draft.redo()
         if (next === s.draft) return
         commit(s, next)
@@ -177,32 +214,39 @@ class ColoringHost(app: Application) : ViewModel() {
         if (s.peeking || s.boxOpen || s.asking) return
         val at = clamp(p)
         if (s.erasing) {
-            _screen.value = s.copy(live = Strokes.eraseDot(at))
+            _live.value = Strokes.eraseDot(at)
             return
         }
         val hand = s.crayon ?: colorWantedAt(s.page, at) ?: return
-        _screen.value = s.copy(crayon = hand, live = Strokes.dot(hand, at))
+        // The crayon is picked up here and nowhere else, so a first touch
+        // without one leaves the child holding the color the paper under
+        // their finger asked for.
+        if (s.crayon == null) _screen.value = s.copy(crayon = hand)
+        _live.value = Strokes.dot(hand, at)
     }
 
     /** The finger moved: the mark grows under it. */
     fun moveStroke(p: Vec2) {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        val live = s.live ?: return
+        val live = _live.value ?: return
         if (s.peeking || s.boxOpen || s.asking) return
         val grown = Strokes.extend(live, clamp(p))
-        if (grown !== live) _screen.value = s.copy(live = grown)
+        if (grown !== live) _live.value = grown
     }
 
     /** The finger lifted: the mark is finished, saved, and answered. */
     fun endStroke() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
-        val live = s.live ?: return
+        val live = _live.value ?: return
         if (s.peeking || s.boxOpen || s.asking) {
-            _screen.value = s.copy(live = null)
+            _live.value = null
             return
         }
+        // The mark comes off the finger and onto the paper in one step, so
+        // no frame can show it twice or show it nowhere at all.
+        _live.value = null
         val draft = if (live.erase) s.draft.erase(live.points) else s.draft.color(live.color, live.points)
         commit(s, draft)
     }
@@ -234,7 +278,6 @@ class ColoringHost(app: Application) : ViewModel() {
     private fun commit(s: Screen.Coloring, draft: Draft) {
         _screen.value = s.copy(
             draft = draft,
-            live = null,
             marks = s.marks + 1,
         )
         // The mark itself makes no sound. Nothing plays while a finger is on
@@ -256,6 +299,10 @@ class ColoringHost(app: Application) : ViewModel() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
         if (s.peeking == on) return
+        // A peek is a look, not a place to draw: a mark in flight when the
+        // sample comes up is let go rather than finished, exactly as it was
+        // before.
+        if (on) _live.value = null
         // Lifting the finished sheet and laying it back down is paper being
         // handled, so it rustles like the crayon and the lid do.
         _screen.value = s.copy(peeking = on, boxOpen = false)
@@ -274,6 +321,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun home() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
+        _live.value = null
         if (s.progress.strokes.isEmpty()) {
             _screen.value = Screen.Home
             return
@@ -289,6 +337,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun keepIt() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
+        _live.value = null
         rememberDraft(s.page, s.draft)
         _screen.value = Screen.Home
     }
@@ -304,6 +353,7 @@ class ColoringHost(app: Application) : ViewModel() {
     fun startFresh() {
         val s = _screen.value
         if (s !is Screen.Coloring) return
+        _live.value = null
         _shelf.value = _shelf.value.copy(drafts = _shelf.value.drafts - s.page.id)
         rememberDraft(s.page, Draft.Empty)
         _screen.value = Screen.Home

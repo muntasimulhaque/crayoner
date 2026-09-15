@@ -91,6 +91,11 @@ fun SampleButton(
                 fills = remember(page) { sampleFills(page) },
                 widthPx = with(LocalDensity.current) { width.roundToPx() },
                 heightPx = with(LocalDensity.current) { height.roundToPx() },
+                // The button never makes the child wait for it: its picture is
+                // rendered off the main thread, and until it lands the coin
+                // shows the picture's own outlines, which at this size is the
+                // whole of the picture anyway.
+                blocking = false,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -160,23 +165,18 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
         // never floating over the dimmed screen behind it. The margin grows
         // with the screen, so the panel never feels cramped on a tablet or
         // fills the screen on a phone.
-        val margin = minOf(maxWidth, maxHeight) * 0.09f
-        val plateMax = minOf(maxWidth - margin * 2f, maxHeight - margin * 2f)
-        val nameBlock = 50.dp
-        val platePadding = 16.dp
-        // The sheet keeps its own proportion inside the plate, so a page is
-        // as tall in the peek as it is on the desk. Both the room's width
-        // and its height are respected: the sheet is as wide as it can be
-        // and as tall as its own shape needs, and the plate wraps it, name
-        // and all.
-        val innerW = (plateMax - platePadding * 2).coerceAtLeast(96.dp)
-        val innerH = (plateMax - platePadding * 2 - nameBlock).coerceAtLeast(96.dp)
-        val side = minOf(innerW, innerH / Page.ASPECT.toFloat()).coerceAtLeast(96.dp)
-        val sheet = side * Page.ASPECT.toFloat()
-        val totalW = side + platePadding * 2
-        val totalH = sheet + platePadding * 2 + nameBlock
+        val side = peekSide(maxWidth, maxHeight)
         val widthPx = with(density) { side.roundToPx() }
-        val heightPx = with(density) { sheet.roundToPx() }
+        // The picture's own height, from the one function that gives every
+        // page image its height, so the box the sheet is looked at in and
+        // the picture rendered for it are the same rectangle to the pixel:
+        // a prewarm that cannot find the size the peek asks for is work
+        // done for nobody.
+        val heightPx = heightFor(widthPx)
+        val sideDp = with(density) { widthPx.toDp() }
+        val sheetDp = with(density) { heightPx.toDp() }
+        val totalW = sideDp + PEEK_PADDING * 2
+        val totalH = sheetDp + PEEK_PADDING * 2 + NAME_BLOCK
         Box(
             modifier = Modifier.size(width = totalW, height = totalH),
             contentAlignment = Alignment.Center,
@@ -187,14 +187,14 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
                     .buttonShadow(PaperShape, elevation = 12.dp)
                     .clip(PaperShape)
                     .background(CrayonerColors.Card)
-                    .padding(platePadding),
+                    .padding(PEEK_PADDING),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Box(modifier = Modifier.size(width = side, height = sheet)) {
+                    Box(modifier = Modifier.size(width = sideDp, height = sheetDp)) {
                         PageCanvas(
                             page = page,
                             fills = remember(page) { sampleFills(page) },
@@ -204,7 +204,7 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
                         )
                     }
                     Box(
-                        modifier = Modifier.height(nameBlock),
+                        modifier = Modifier.height(NAME_BLOCK),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -219,6 +219,38 @@ fun SamplePeek(page: Page, onDismiss: () -> Unit) {
         }
     }
 }
+
+/**
+ * How wide the peek's own sheet is drawn, from the room the whole screen
+ * holds: the picture's column, inside the plate's padding, inside the plate's
+ * margin from the desk's edges.
+ *
+ * It is a function rather than a line inside the peek because one other
+ * thing needs the same answer: the picture for the sheet held up close is
+ * rendered, off the main thread, the moment a page opens, and a prewarm that
+ * measured the plate any other way than the plate measures itself would
+ * leave the tap to make a picture of its own. See `Play.kt`.
+ */
+internal fun peekSide(maxWidth: Dp, maxHeight: Dp): Dp {
+    if (maxWidth <= 0.dp || maxHeight <= 0.dp) return PEEK_MIN
+    val margin = minOf(maxWidth, maxHeight) * PEEK_MARGIN
+    val plateMax = minOf(maxWidth - margin * 2f, maxHeight - margin * 2f)
+    val innerW = (plateMax - PEEK_PADDING * 2).coerceAtLeast(PEEK_MIN)
+    val innerH = (plateMax - PEEK_PADDING * 2 - NAME_BLOCK).coerceAtLeast(PEEK_MIN)
+    return minOf(innerW, innerH / Page.ASPECT.toFloat()).coerceAtLeast(PEEK_MIN)
+}
+
+/** The plate's own margin from the desk's edges, as a share of the screen. */
+private const val PEEK_MARGIN = 0.09f
+
+/** How much paper the peek's plate keeps around its picture. */
+private val PEEK_PADDING = 16.dp
+
+/** The room under the picture the peek keeps for the picture's name. */
+private val NAME_BLOCK = 50.dp
+
+/** The smallest the peek's sheet is ever drawn, so a tiny screen still has one. */
+private val PEEK_MIN = 96.dp
 
 /** The word for one page, shown to parents and read to a screen reader. */
 internal fun pageNameRes(pageId: String): Int = when (pageId) {
