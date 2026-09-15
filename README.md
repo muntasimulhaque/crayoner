@@ -80,7 +80,7 @@ four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
 never be updated again.
 
 A second workflow renders the Play Store screenshots on phone, 7" and 10"
-emulators: seven scenes per form factor.
+emulators: eight scenes per form factor.
 
 ## Tech
 
@@ -112,8 +112,9 @@ is picture and nothing is stretched. That is why the whole coloring engine is
 playable in plain JVM tests, and why the store screenshots render straight
 from state.
 
-See [AGENTS.md](AGENTS.md) for the working rules, the design decisions and
-the lessons behind them.
+See [AGENTS.md](AGENTS.md) for the working rules and
+[docs/decisions.md](docs/decisions.md) for the design decisions and the
+lessons behind them.
 
 ## Privacy
 
