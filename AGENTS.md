@@ -366,7 +366,10 @@ feature that may regress.
   pressing it again keeps taking marks back one at a time.
 - Touch targets are comfortably above the 48 dp minimum: every round
   control in the app is one `CoinSize` of 52 dp, and a seat never shrinks
-  below 48 dp even on the narrowest desk. See D-064 and D-066.
+  below 48 dp even on the narrowest desk. See D-064 and D-066. The same
+  holds for the book itself: every separate piece of every picture is at
+  least a fingertip wide, so nothing a child can see is a thing a child
+  cannot touch. See D-074.
 
 ## The one renderer, in two languages
 
@@ -1196,3 +1199,82 @@ the screenshots, all in the same session.
   The capsule keeps its own measured width and stays centered under the
   sheet on a phone. Supersedes the shared rail of D-058 and the "rail only
   on a phone" half of D-062.
+- D-072 **The castle is not a face.** The castle page was two towers of one
+  height, each with a round window and a pointed roof, and a door on the
+  center line. Two round windows set level above a door are a face read from
+  across the room, which hard constraint 2 forbids, and with the windows
+  gone the two roofs became the pair that still made one. The page was
+  rebuilt so that nothing on it is symmetrical: a tall crenellated keep on
+  the right, a low crenellated wall running out to the left, one door off
+  the center line, and no windows and no roofs anywhere. Every merlon is a
+  square on a wall's own top edge, at two heights and several widths, and no
+  two of them sit opposite each other. The rule this settles is that no two
+  alike shapes may be set level over a third: battlements are a row, a face
+  is a pair.
+- D-073 **The one sound answers paper being handled, and nothing else.** The
+  rustle now plays wherever a hand moves paper or wax: a crayon picked from
+  the box, the rubber picked up or put down, the box lid opening and
+  closing, the sample sheet held up and laid back down, and a picture taken
+  from the wall. It is silent for the two steps (they change the paper, but
+  no hand has picked anything up, and the haptic already answers them), for
+  Home, and for the keep question, which are navigation rather than
+  handling. The sound switch plays the rustle only when it is turned back
+  on: a parent who has just allowed sound should hear it land, and a switch
+  being turned off is silent because that is what it was just asked for.
+  Nothing plays while a finger is on the paper. The effect itself is
+  unchanged, and there is still exactly one of it.
+- D-074 **Every separate piece a child can see is a fingertip wide.** The
+  old floor (D-069) measured each region once and asked whether the region
+  held a circle 0.070 of the page across. That let a big sibling hide a
+  small one: the four apples passed on the width of the largest apple, and
+  a child who wanted the smallest one still could not put a finger on it.
+  `FingerTest` now rasterizes each page, keeps the topmost region at every
+  cell (the same rule a finger uses), splits each region into its visible,
+  connected pieces, and holds every piece to a floor: a compact piece must
+  hold a circle 0.155 across (a fingertip on the smallest phone the app is
+  used on), and a long band must hold one 0.075 across (wider than the wax
+  tip, so a stroke can be drawn along it). The ruler's own test stays. What
+  the audit found was fixed in the pictures: the ice cream's and cupcake's
+  cherries, the tree's apples and trunk, the mushroom's spots, the kite's
+  tail bows, the flower petals and centers and leaves, the umbrella's
+  raindrops and handle, the rocket's stars and fins, the car's windows and
+  the balloon's basket, the lighthouse's stripes, lamp and roof, and the two
+  slivers of lawn the car and train pages printed between the road and the
+  paper's own edge (the grass went; the road and the ballast run to the
+  bottom of the sheet). The balloon's second cloud went with them: it could
+  not fit between the envelope and the paper's edge without being sliced,
+  and a sliced cloud is not weather. Amends D-069, which set the rule but
+  measured the wrong thing.
+- D-075 **The shelf remembers a kept picture the moment it is kept.** Every
+  mark was saved a quarter of a second after it was made, but the in-memory
+  shelf the app reads when a page reopens was the map it was born with:
+  `rememberDraft` wrote to the disk and never to the shelf. A child who
+  pressed Home, answered Keep it just as it is, and opened the same picture
+  again saw blank paper, which read as if the answer had done nothing at
+  all. The draft now goes into the shelf in the same breath as it starts
+  for the disk, and starting fresh lets it go in the same breath; the write
+  still settles a quarter of a second later, so a process death costs at
+  most the mark in flight. `HostRulesTest` holds the rule without a device.
+  Amends D-068.
+- D-076 **Neither the wall nor the wax makes the hand wait.** Four cost
+  fixes with one cause: work was being done at the moment the finger needed
+  the frame. The wall's prewarm rendered sixteen pictures at the grid
+  *cell's* width while every card asks for its own inner width, so no card
+  ever found a prewarmed picture, every card rendered its own again, and
+  the cache carried two sets for one wall; the prewarm now measures the
+  card's own width, to the pixel, and each card is laid out at exactly the
+  size of the picture on it. The page's layer of finished marks no longer
+  re-renders when a mark lands: it grows by the one mark drawn on top of
+  it, and only a step back or the rubber rebuilds it whole. A live mark was
+  building a new shader every frame (one for its wax, one for the printed
+  page under the rubber); both are built once and kept. And a sheet reads
+  its own width on every pointer event and adds the point the finger lifted
+  at to the line, so a resize can never pull the wax off the fingertip and
+  a quick flick ends where the hand really stopped. The screenshot harness
+  had the same disease in a different organ: it waited on the main thread
+  for a copy that answers on the main thread, so every capture timed out
+  and the first one came back transparent; the wait now happens off the
+  main thread, with a software draw of the view tree as the fallback, and
+  the first capture is the wall as it really is. See D-063 for the mapping
+  that is now proved in x and y: `TouchProbeTest` taps three points on the
+  sheet and finds each dot's own center, not only its row.
