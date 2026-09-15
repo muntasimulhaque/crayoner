@@ -180,14 +180,14 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 1.1 (versionCode 11) is the build waiting in `play-store/aab/`.**
-It was built by CI from commit 0e5bb97, signed with the Crayoner upload
-key, and reads versionCode 11, versionName 1.1, package
+**Version 1.1 (versionCode 11) was submitted for Play review on 15 Sep
+2026.** It was built by CI from commit 0e5bb97, signed with the Crayoner
+upload key, and reads versionCode 11, versionName 1.1, package
 io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
 androidx core private receiver (checked against the built APK's own manifest
-with `aapt2 dump permissions`). The AAB is sha256 572f2604 and sits in
-`play-store/aab/` until it is submitted, then the folder is emptied again.
-The next build to upload after this one will be 1.2.
+with `aapt2 dump permissions`). The AAB was sha256 572f2604 and has been
+DELETED from `play-store/aab/` now that it is submitted, so a stale build can
+never be uploaded twice. The next build to upload will be 1.2.
 
 1.1 is the round where the app stops making the hand wait, and it came from
 the owner using 1.0. The picture wall's prewarm measured the grid cell while
