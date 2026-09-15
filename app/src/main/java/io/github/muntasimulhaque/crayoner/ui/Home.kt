@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -182,12 +181,16 @@ private fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
         // moment the shelf knows how wide its cards are: sixteen pages of wax
         // is real work, and doing it here rather than under the first
         // scrolling finger is the difference between a wall that slides and
-        // a wall that stutters.
-        val cellPx = with(LocalDensity.current) { cell.roundToPx() }
-        LaunchedEffect(cellPx, pages) {
-            if (cellPx <= 0) return@LaunchedEffect
+        // a wall that stutters. The width is the card's own inner width, to
+        // the pixel, which is the width the card will ask for when it draws:
+        // a prewarmed picture that no card can find is work done for nobody,
+        // and it was, once, because the prewarm measured the whole cell
+        // while the card is inset by its own mount.
+        val cardWidthPx = with(LocalDensity.current) { (cell - CARD_MOUNT * 2).roundToPx() }
+        LaunchedEffect(cardWidthPx, pages) {
+            if (cardWidthPx <= 0) return@LaunchedEffect
             withContext(Dispatchers.Default) {
-                prewarmPageImages(pages, ::sampleFills, cellPx)
+                prewarmPageImages(pages, ::sampleFills, cardWidthPx)
             }
         }
 
@@ -208,6 +211,7 @@ private fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
                 HungPicture(
                     page = page,
                     nameSize = nameSize,
+                    widthPx = cardWidthPx,
                     onOpen = { onOpen(page.id) },
                 )
             }
@@ -262,6 +266,7 @@ private fun rememberNameFontSize(names: List<String>, textWidth: Dp): TextUnit {
 private fun HungPicture(
     page: Page,
     nameSize: TextUnit,
+    widthPx: Int,
     onOpen: () -> Unit,
 ) {
     val name = stringResource(pageNameRes(page.id))
@@ -269,6 +274,10 @@ private fun HungPicture(
     // hand, small enough that nothing ever looks broken. Derived from the id
     // so a picture hangs at the same angle every single launch.
     val tilt = remember(page.id) { tiltFor(page.id) }
+    val heightPx = heightFor(widthPx)
+    val density = LocalDensity.current
+    val cardWidth = with(density) { widthPx.toDp() }
+    val cardHeight = with(density) { heightPx.toDp() }
 
     Column(
         modifier = Modifier.rotate(tilt),
@@ -285,12 +294,14 @@ private fun HungPicture(
                 // A plate of paper, even on all four sides: the picture is
                 // the reason the card exists, and the mount around it is the
                 // width of a hand's worth of blank margin and no more.
-                .padding(6.dp),
+                .padding(CARD_MOUNT),
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f / Page.ASPECT.toFloat())
+                    // The card's paper is exactly the size of the picture
+                    // drawn on it, to the pixel, so the prewarmed image and
+                    // the card that asks for it can never miss each other.
+                    .size(width = cardWidth, height = cardHeight)
                     .clip(RoundedCornerShape(3.dp))
                     .border(
                         width = 1.dp,
@@ -298,7 +309,7 @@ private fun HungPicture(
                         shape = RoundedCornerShape(3.dp),
                     ),
             ) {
-                SamplePlate(page = page)
+                SamplePlate(page = page, widthPx = widthPx, heightPx = heightPx)
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -312,6 +323,9 @@ private fun HungPicture(
     }
 }
 
+/** The paper margin around a card's picture, on each of its four sides. */
+private val CARD_MOUNT = 6.dp
+
 /** How far one picture leans on the wall: small, stable, never zero. */
 private fun tiltFor(id: String): Float {
     val hash = abs(id.hashCode())
@@ -319,12 +333,16 @@ private fun tiltFor(id: String): Float {
     return steps * 0.6f
 }
 
-/** The sample picture filling the card's sheet. */
+/** The sample picture filling the card's sheet, at the size it was drawn. */
 @Composable
-private fun SamplePlate(page: Page) {
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth().aspectRatio(1f / Page.ASPECT.toFloat())) {
-        val widthPx = with(LocalDensity.current) { maxWidth.roundToPx() }
-        val heightPx = with(LocalDensity.current) { maxHeight.roundToPx() }
+private fun SamplePlate(page: Page, widthPx: Int, heightPx: Int) {
+    val density = LocalDensity.current
+    Box(
+        modifier = Modifier.size(
+            width = with(density) { widthPx.toDp() },
+            height = with(density) { heightPx.toDp() },
+        ),
+    ) {
         PageCanvas(
             page = page,
             fills = remember(page) { sampleFills(page) },

@@ -78,7 +78,7 @@ private class Cache {
 private val pageImages = Cache()
 
 /** The height an image of a given width has, rounded up: page units again. */
-private fun heightFor(widthPx: Int): Int =
+internal fun heightFor(widthPx: Int): Int =
     Math.ceil(widthPx * Page.ASPECT).toInt().coerceAtLeast(1)
 
 /**
@@ -130,7 +130,7 @@ fun rememberPageImage(
  * pixels) is skipped: the shelf then draws that picture live, which is
  * slower and still correct.
  */
-fun prewarmPageImages(pages: List<Page>, fills: (Page) -> Map<Int, Long>, widthPx: Int) {
+suspend fun prewarmPageImages(pages: List<Page>, fills: (Page) -> Map<Int, Long>, widthPx: Int) {
     if (widthPx <= 0) return
     val height = heightFor(widthPx)
     for (page in pages) {
@@ -138,6 +138,10 @@ fun prewarmPageImages(pages: List<Page>, fills: (Page) -> Map<Int, Long>, widthP
         if (pageImages.get(key) != null) continue
         val image = renderPageImage(page, fills(page), widthPx, height) ?: continue
         pageImages.put(key, image)
+        // Between pictures, let anything else on the default pool have the
+        // thread: a wall of sixteen sheets is real work, and none of it is
+        // more urgent than the frames the finger is already asking for.
+        kotlinx.coroutines.yield()
     }
 }
 
@@ -178,7 +182,11 @@ private fun renderPageImage(
  * one image and the one mark under the finger, and not two hundred and one.
  *
  * [generation] is the host's own count of changes to the paper: when it
- * changes, the layer is rebuilt exactly once.
+ * changes, the layer moves on by exactly one step. A finished mark only ever
+ * adds to the top of the pile, so the one thing a new mark costs is that mark
+ * drawn onto the layer already there, and the hundreds under it are not drawn
+ * again. Undo and the rubber change the pile itself, and those rebuild the
+ * layer whole; they are presses, not the middle of a drawing hand.
  */
 @Composable
 fun rememberMarkImage(
@@ -189,16 +197,57 @@ fun rememberMarkImage(
     generation: Long,
 ): ImageBitmap? {
     if (print == null || widthPx <= 0 || heightPx <= 0 || strokes.isEmpty()) return null
+    val layer = remember(print, widthPx, heightPx) { MarkLayer() }
     return remember(print, generation, widthPx, heightPx) {
-        renderMarkImage(print, strokes, widthPx, heightPx)
+        layer.of(print, strokes, widthPx, heightPx)
     }
 }
 
+/** The marks' own layer, and the list it was made from, kept between marks. */
+private class MarkLayer {
+    private var strokes: List<Stroke> = emptyList()
+    private var image: ImageBitmap? = null
+
+    fun of(
+        print: ImageBitmap,
+        strokes: List<Stroke>,
+        widthPx: Int,
+        heightPx: Int,
+    ): ImageBitmap? {
+        val old = image
+        // The list has to be the same paper plus whatever was done on top of
+        // it: every stroke the layer already holds, in the same order, by
+        // identity, because a rebuilt page can hold equal marks that are
+        // not the ones the layer drew.
+        val extends = old != null && strokes.size >= this.strokes.size &&
+            this.strokes.indices.all { this.strokes[it] === strokes[it] }
+        val next = when {
+            old == null || !extends -> renderMarkImage(print, strokes, widthPx, heightPx)
+            strokes.size == this.strokes.size -> old
+            else -> renderMarkImage(
+                print,
+                strokes.subList(this.strokes.size, strokes.size),
+                widthPx,
+                heightPx,
+                base = old,
+            )
+        }
+        this.strokes = strokes
+        this.image = next
+        return next
+    }
+}
+
+/**
+ * The marks, drawn from scratch unless [base] is given, in which case the
+ * base is laid down first and only [strokes] are drawn on top of it.
+ */
 private fun renderMarkImage(
     print: ImageBitmap,
     strokes: List<Stroke>,
     widthPx: Int,
     heightPx: Int,
+    base: ImageBitmap? = null,
 ): ImageBitmap? = runCatching {
     val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
     val image = bitmap.asImageBitmap()
@@ -210,6 +259,7 @@ private fun renderMarkImage(
     ) {
         // The print image is already the sheet at the frame's own size, so
         // the rubber paints back exactly the paper the child is looking at.
+        base?.let { drawImage(it) }
         drawStrokes(strokes, widthPx.toFloat(), printBrush(print))
     }
     image

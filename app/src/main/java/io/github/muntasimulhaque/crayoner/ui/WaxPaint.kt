@@ -107,7 +107,18 @@ private fun waxBrush(region: Region, color: Color, side: Float): ShaderBrush? {
  */
 private val strokeWax = HashMap<Long, ImageBitmap>()
 
+/**
+ * The brushes themselves, one per color, kept for the life of the app.
+ *
+ * A brush is not the tile: building one wraps the tile in a native shader,
+ * and a live mark is drawn sixty times a second while a finger moves. Doing
+ * that work every frame was a cost the drawing hand paid for nothing, and it
+ * showed up as the wax trailing the fingertip on a slow device.
+ */
+private val strokeBrushes = HashMap<Long, ShaderBrush>()
+
 internal fun waxStroke(argb: Long): ShaderBrush? {
+    strokeBrushes[argb]?.let { return it }
     val tile = strokeWax.getOrPut(argb) {
         val pixels = Wax.surface(
             argb = argb,
@@ -122,7 +133,7 @@ internal fun waxStroke(argb: Long): ShaderBrush? {
     }
     return runCatching {
         ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated))
-    }.getOrNull()
+    }.getOrNull()?.also { strokeBrushes[argb] = it }
 }
 
 /** The angle a mark's wax lies at, and its seed: the same for every mark. */

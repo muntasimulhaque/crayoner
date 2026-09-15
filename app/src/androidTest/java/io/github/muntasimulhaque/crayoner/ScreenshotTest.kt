@@ -281,30 +281,71 @@ class ScreenshotTest {
         block: @Composable () -> Unit,
     ) {
         push(block)
-        lateinit var bitmap: Bitmap
-        scenario.onActivity { activity -> bitmap = captureWindow(activity) }
+        val bitmap = captureWindow(scenario)
         File(outDir, "$name.png").outputStream().use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
     }
 
-    /** The activity's own window pixels: the truth the child actually sees. */
-    private fun captureWindow(activity: ComponentActivity): Bitmap {
-        val decor = activity.window.decorView
-        val bitmap = Bitmap.createBitmap(decor.width, decor.height, Bitmap.Config.ARGB_8888)
+    /**
+     * The activity's own window pixels: the truth the child actually sees.
+     *
+     * The wait for the copy must happen OFF the main thread. PixelCopy
+     * answers on the main looper, so waiting for it from inside an activity
+     * callback deadlocks every copy until its timeout and then hands back
+     * whatever the render thread managed to fill in the meantime: on a cold
+     * window that is an empty, transparent bitmap, which is how the wall
+     * once came back as a blank page. Waiting on this thread lets the
+     * listener land, and if the copy itself cannot be taken (a surface
+     * that has not drawn yet), the decor view is drawn in software instead,
+     * which is exactly the pixels the scene is made of.
+     */
+    private fun captureWindow(scenario: ActivityScenario<ComponentActivity>): Bitmap {
+        var width = 1
+        var height = 1
+        scenario.onActivity { activity ->
+            width = activity.window.decorView.width.coerceAtLeast(1)
+            height = activity.window.decorView.height.coerceAtLeast(1)
+        }
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val latch = CountDownLatch(1)
-        PixelCopy.request(activity.window, bitmap, { result ->
-            if (result != PixelCopy.SUCCESS) {
-                // Software draw as the fallback path; static scenes render fine.
-                decor.draw(android.graphics.Canvas(bitmap))
-            }
-            latch.countDown()
-        }, Handler(Looper.getMainLooper()))
-        latch.await(10, TimeUnit.SECONDS)
+        scenario.onActivity { activity ->
+            PixelCopy.request(
+                activity.window,
+                bitmap,
+                { result ->
+                    if (result != PixelCopy.SUCCESS) drawInSoftware(scenario, bitmap)
+                    latch.countDown()
+                },
+                Handler(Looper.getMainLooper()),
+            )
+        }
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            // A copy that never answered at all: draw the tree by hand.
+            drawInSoftware(scenario, bitmap)
+        }
         return bitmap
     }
 
+    /** The decor view's pixels, drawn without a graphics surface. */
+    private fun drawInSoftware(
+        scenario: ActivityScenario<ComponentActivity>,
+        bitmap: Bitmap,
+    ) {
+        scenario.onActivity { activity ->
+            activity.window.decorView.draw(android.graphics.Canvas(bitmap))
+        }
+    }
+
     private companion object {
-        const val SETTLE_MS = 900L
+        /**
+         * How long a scene is given to draw before it is copied out. The
+         * first scene is the expensive one: the wall of sixteen pictures
+         * has to build its wax tiles and render its visible cards before a
+         * single frame exists, and a cold emulator draws that frame in
+         * seconds rather than milliseconds. A copy taken too early is a
+         * transparent PNG, which is worse than a slower run.
+         */
+        const val SETTLE_MS = 2200L
     }
 }

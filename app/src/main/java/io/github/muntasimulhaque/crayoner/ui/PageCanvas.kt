@@ -40,6 +40,11 @@ fun PageCanvas(
 ) {
     val image = rememberPageImage(page, fills, widthPx, heightPx, blocking)
     val flat = rememberMarkImage(image, strokes, widthPx, heightPx, generation)
+    // The eraser paints with the printed page itself, and the brush around
+    // it is built once per picture: a live rubber mark is redrawn on every
+    // frame of the hand's travel, and a new native shader on every frame is
+    // a cost the hand pays for nothing.
+    val print = remember(image) { image?.let { printBrush(it) } }
     Canvas(modifier = modifier) {
         val frame = size.width
         if (image != null) {
@@ -54,7 +59,6 @@ fun PageCanvas(
         // printed page as its paint when it is the rubber: the child sees
         // the wax come off exactly where they are rubbing.
         if (live != null) {
-            val print = image?.let { printBrush(it) }
             drawStrokes(listOf(live), frame, print)
         }
     }

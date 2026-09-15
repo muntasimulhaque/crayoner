@@ -73,27 +73,34 @@ internal fun SheetOf(
                 .clip(PaperShape)
                 .background(CrayonerColors.Card)
                 .clipToBounds()
-                // The pointer input is told its own size by the layout system
-                // rather than being handed the size the caller meant to ask
-                // for: a mark's geometry is read from the same frame the
-                // finger's coordinates are in, to the pixel, so rounding can
-                // never pull the wax away from the fingertip.
+                // The pointer input reads its own frame's size on every
+                // event rather than once when the gesture starts: the mark's
+                // geometry and the finger's coordinates come from the same
+                // box at the same moment, to the pixel, so nothing that
+                // resizes the sheet (a fold, a split screen, a rotation)
+                // can pull the wax away from the fingertip.
                 .pointerInput(state.page.id) {
-                    val w = size.width.toDouble()
-                    if (w <= 0.0) return@pointerInput
-                    fun at(offset: Offset) =
-                        pagePointOf(offset.x.toDouble(), offset.y.toDouble(), w)
+                    fun at(offset: Offset): Vec2? {
+                        val w = size.width.toDouble()
+                        if (w <= 0.0) return null
+                        return pagePointOf(offset.x.toDouble(), offset.y.toDouble(), w)
+                    }
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
-                        onStrokeStart(at(down.position))
+                        at(down.position)?.let(onStrokeStart)
                         down.consume()
                         while (true) {
                             val event = awaitPointerEvent()
                             val change = event.changes.firstOrNull { it.id == down.id } ?: break
                             if (change.pressed) {
-                                onStrokeMove(at(change.position))
+                                at(change.position)?.let(onStrokeMove)
                                 change.consume()
                             } else {
+                                // The point the finger lifted at is the last
+                                // point of the line it drew. Without it a
+                                // quick flick ends a finger's width short of
+                                // where the hand really stopped.
+                                at(change.position)?.let(onStrokeMove)
                                 onStrokeEnd()
                                 break
                             }
