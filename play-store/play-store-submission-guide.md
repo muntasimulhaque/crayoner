@@ -180,6 +180,30 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 1.3 (versionCode 13) is built, and its AAB waits in
+`play-store/aab/` for submission.** It was built by CI from commit c63b8a0,
+signed with the Crayoner upload key, and reads versionCode 13, versionName
+1.3, package io.github.muntasimulhaque.crayoner, target 37, with no
+permission beyond the androidx core private receiver (checked against the
+built APK's own manifest with `aapt2 dump permissions`). The AAB is sha256
+b23bee89 and sits in `play-store/aab/` until it is submitted, when it must
+be deleted so a stale build can never be uploaded twice. The next build to
+upload will be 1.4.
+
+1.3 is the round where the app is cut into smaller files and nothing else.
+Every picture, every color, every mark, every sound and every screen is the
+one 1.2 shipped. The split was verified declaration by declaration: every
+declaration in the app's sources has the same own text before and after,
+with only the visibility of a declaration that crossed a file boundary
+widened from private to internal, one dead value that nothing read removed,
+and the host's quarter second save moved into its own small class with the
+same rule and the same timings. The CI recapture came back visually
+identical: the 7 inch tablet set is byte for byte the one in these folders,
+and the phone and 10 inch sets differ only in a handful of antialiased
+pixels, at most two units of 255, which is the same rasterizer noise the
+icon pin already forgives. The 24 captures in these folders stand
+unchanged, and there is nothing new to look at on any screen.
+
 **Version 1.2 (versionCode 12) was submitted for Play review on 15 Sep
 2026.** It was built by CI from commit 1c22e1f, signed with the Crayoner
 upload key, and reads versionCode 12, versionName 1.2, package
@@ -460,14 +484,17 @@ submitted, and 0.2 superseded it.
 
 - The review email from Play (usually a few days for a paid app in the
   Families program).
-- 1.2 lands on top of 1.1 on the same closed track. Anyone already testing
+- 1.3 lands on top of 1.2 on the same closed track. Anyone already testing
   gets the update; no new invitations are needed.
 - If Play asks anything, the answers are all in this file: category, the
   questionnaire, the data safety declaration, and the target audience.
 - Nothing in the app needs to change for review; it is complete and tested.
-- The first thing worth looking at after updating is the picture wall, because
-  that is most of what this release is: open the app and scroll straight away,
-  while the pictures are still being made, and again after they are all there.
+- The check for 1.3 is that nothing changed: it is the same app rebuilt from
+  smaller files inside, so the wall, a page, the box, the sample, the rubber
+  and the one rustle should be exactly what 1.2 showed. If anything looks or
+  sounds different at all, that is a bug in the rebuild, not a feature.
+  Then, as always, open the app and scroll straight away, while the pictures
+  are still being made, and again after they are all there.
   Nothing should hitch, no card should ever be seen drawing itself, and a
   card that is still waiting shows the page's own outlines for that moment
   rather than a hole. Then open a picture and draw: the wax should sit under
@@ -509,6 +536,12 @@ The notes for 0.6, 0.7 and 0.8 were handed over in their own sessions and
 are not recorded here; what each of those builds changed is in the Status
 section above, and the version walk below is what keeps the numbering
 right. The 0.9 notes are the ones submitted on 14 Sep 2026.
+
+### Version 1.3 (versionCode 13)
+
+```
+Nothing has moved and nothing works differently. Every picture, every color, every mark and the one rustle are exactly as before. Inside, the app is now built from smaller pieces, so it is quicker to fix and harder to break. Nothing to relearn, nothing to look for, nothing taken away.
+```
 
 ### Version 1.2 (versionCode 12)
 
