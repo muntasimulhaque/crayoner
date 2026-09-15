@@ -180,15 +180,14 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 1.3 (versionCode 13) is built, and its AAB waits in
-`play-store/aab/` for submission.** It was built by CI from commit c63b8a0,
-signed with the Crayoner upload key, and reads versionCode 13, versionName
-1.3, package io.github.muntasimulhaque.crayoner, target 37, with no
-permission beyond the androidx core private receiver (checked against the
-built APK's own manifest with `aapt2 dump permissions`). The AAB is sha256
-b23bee89 and sits in `play-store/aab/` until it is submitted, when it must
-be deleted so a stale build can never be uploaded twice. The next build to
-upload will be 1.4.
+**Version 1.3 (versionCode 13) was submitted for Play review on 15 Sep
+2026.** It was built by CI from commit c63b8a0, signed with the Crayoner
+upload key, and reads versionCode 13, versionName 1.3, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked against the built APK's own manifest
+with `aapt2 dump permissions`). The AAB was sha256 b23bee89 and has been
+DELETED from `play-store/aab/` now that it is submitted, so a stale build can
+never be uploaded twice. The next build to upload will be 1.4.
 
 1.3 is the round where the app is cut into smaller files and nothing else.
 Every picture, every color, every mark, every sound and every screen is the
