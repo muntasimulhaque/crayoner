@@ -118,14 +118,23 @@ fun CrayonBoxSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val columns = when {
-                    maxWidth >= 620.dp -> 8
-                    maxWidth >= 460.dp -> 6
-                    maxWidth >= 340.dp -> 5
-                    else -> 4
-                }
+                // Four columns on a phone, eight on anything wider: both of
+                // them divide thirty two exactly, so the box is always a
+                // full rectangle and no crayon is ever left alone on a row
+                // of its own. Eight is the real box's own tray (the order
+                // in core/Crayons is the box's own, eight to a row), and it
+                // is also the smallest count that still gives a cell wider
+                // than a fingertip on a tablet; four is the widest slice of
+                // that tray a phone's width can hold at a child's scale.
+                val columns = if (maxWidth >= 560.dp) 8 else 4
                 val gaps = 8.dp
                 val cell = (maxWidth - gaps * (columns - 1)) / columns
+                // A crayon's cell is never shorter than a fingertip, even
+                // when eight columns squeeze it: on a seven inch screen the
+                // row grows taller than the crayon's own proportion needs,
+                // and the air around a lying crayon in a real box is what
+                // happens in the gap.
+                val rowHeight = (cell * 0.62f).coerceAtLeast(MIN_ROW)
                 val rows = Crayons.all.chunked(columns)
                 Column(
                     verticalArrangement = Arrangement.spacedBy(gaps),
@@ -139,6 +148,7 @@ fun CrayonBoxSheet(
                                     selected = argb == selected,
                                     onClick = { onPick(argb) },
                                     cell = cell,
+                                    rowHeight = rowHeight,
                                 )
                             }
                         }
@@ -148,6 +158,13 @@ fun CrayonBoxSheet(
         }
     }
 }
+
+/**
+ * The shortest a crayon's cell is ever drawn. It is the accessibility
+ * floor, the same 48 dp the capsule's seats stop shrinking at: a color a
+ * finger cannot hit is not a color in the box.
+ */
+private val MIN_ROW = 48.dp
 
 /** How far the lid must be pulled down before it lets go of the page. */
 private val DISMISS_PULL = 64.dp

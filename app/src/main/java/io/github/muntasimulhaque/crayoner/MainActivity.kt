@@ -6,11 +6,7 @@ import android.os.StrictMode
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -22,9 +18,6 @@ import io.github.muntasimulhaque.crayoner.host.Screen
 import io.github.muntasimulhaque.crayoner.ui.CrayonerTheme
 import io.github.muntasimulhaque.crayoner.ui.HomeScreen
 import io.github.muntasimulhaque.crayoner.ui.PlayScreen
-
-/** The most the crayon box lets system font scaling grow its words. */
-private const val MAX_FONT_SCALE = 1.3f
 
 class MainActivity : ComponentActivity() {
 
@@ -47,56 +40,52 @@ class MainActivity : ComponentActivity() {
             // every saved mark, and the bar has no business recomposing for
             // that. The shelf itself is read where it is drawn, on the wall.
             val soundOn by host.soundOn
-            // A toy box, not a document: text follows the system font
-            // setting, but only so far. Past this cap the words stop fitting
-            // the fixed play surfaces and begin to overlap them, which
-            // serves nobody, so the whole UI composes under a bounded
-            // density instead.
-            val system = LocalDensity.current
-            val capped = remember(system.density, system.fontScale) {
-                Density(density = system.density, fontScale = minOf(system.fontScale, MAX_FONT_SCALE))
-            }
-            CompositionLocalProvider(LocalDensity provides capped) {
-                CrayonerTheme {
-                    when (val s = screen) {
-                        Screen.Home -> HomeScreen(
-                            shelf = host.shelf.value,
-                            onOpen = host::open,
-                        )
-                        is Screen.Coloring -> {
-                            // Back is always the gentle answer: it puts down
-                            // what is open rather than leaving the app, and
-                            // the box of colors is one of the things that is
-                            // open.
-                            BackHandler(enabled = true) {
-                                when {
-                                    s.asking -> host.dismissAsk()
-                                    s.boxOpen -> host.setBoxOpen(false)
-                                    s.peeking -> host.setPeek(false)
-                                    else -> host.home()
-                                }
+            // Text is composed at the reader's own system text size, whatever
+            // it is. The lines that have room to grow use it (the keep
+            // question, the wordmark); the wall's picture names are fitted to
+            // their cards, which is the most any fixed surface can honestly
+            // do. An earlier build capped the scale at 1.3 to stop words
+            // spilling over the fixed play surfaces, which also stopped a
+            // reader's own setting from mattering at all. See D-087.
+            CrayonerTheme {
+                when (val s = screen) {
+                    Screen.Home -> HomeScreen(
+                        shelf = host.shelf.value,
+                        onOpen = host::open,
+                    )
+                    is Screen.Coloring -> {
+                        // Back is always the gentle answer: it puts down
+                        // what is open rather than leaving the app, and
+                        // the box of colors is one of the things that is
+                        // open.
+                        BackHandler(enabled = true) {
+                            when {
+                                s.asking -> host.dismissAsk()
+                                s.boxOpen -> host.setBoxOpen(false)
+                                s.peeking -> host.setPeek(false)
+                                else -> host.home()
                             }
-                            PlayScreen(
-                                state = s,
-                                soundOn = soundOn,
-                                live = host.live,
-                                onStrokeStart = host::beginStroke,
-                                onStrokeMove = host::moveStroke,
-                                onStrokeEnd = host::endStroke,
-                                onPick = host::pickCrayon,
-                                onErase = host::setErasing,
-                                onOpenBox = host::setBoxOpen,
-                                onUndo = host::undo,
-                                onRedo = host::redo,
-                                onHome = host::home,
-                                onSound = host::setSound,
-                                onPeek = host::setPeek,
-                                onColorArea = host::colorArea,
-                                onKeep = host::keepIt,
-                                onStartFresh = host::startFresh,
-                                onDismissAsk = host::dismissAsk,
-                            )
                         }
+                        PlayScreen(
+                            state = s,
+                            soundOn = soundOn,
+                            live = host.live,
+                            onStrokeStart = host::beginStroke,
+                            onStrokeMove = host::moveStroke,
+                            onStrokeEnd = host::endStroke,
+                            onPick = host::pickCrayon,
+                            onErase = host::setErasing,
+                            onOpenBox = host::setBoxOpen,
+                            onUndo = host::undo,
+                            onRedo = host::redo,
+                            onHome = host::home,
+                            onSound = host::setSound,
+                            onPeek = host::setPeek,
+                            onColorArea = host::colorArea,
+                            onKeep = host::keepIt,
+                            onStartFresh = host::startFresh,
+                            onDismissAsk = host::dismissAsk,
+                        )
                     }
                 }
             }

@@ -59,8 +59,29 @@ object Strokes {
     /** No single stroke may hold more than this many points. */
     const val MAX_POINTS = 900
 
-    /** No page may hold more than this many strokes. */
-    const val MAX_STROKES = 600
+    /**
+     * No page may hold more than this many strokes.
+     *
+     * The number is a page's own limit and not the app's opinion of a
+     * coloring: a sheet that has taken fifteen hundred marks is a sheet a
+     * child has been working on for a long time, and the limit exists so a
+     * save cannot grow without bound. When it is reached the *oldest* mark
+     * is the one that gives way, never the one the hand just made: a child
+     * is answered every time they touch the paper. See D-086.
+     */
+    const val MAX_STROKES = 1500
+
+    /**
+     * No page may hold more than this many points across all of its marks.
+     *
+     * This is the limit that matters for the work: a save is read and written
+     * as text, and a page of fifteen hundred long scribbles would be several
+     * megabytes of coordinates. When the page has spent its budget the marks
+     * do not stop and none of them is dropped: the oldest ones are thinned a
+     * step, so a hand that keeps drawing gets a picture whose earliest wax is
+     * a little coarser and whose newest mark is exactly what it drew.
+     */
+    const val MAX_TOTAL_POINTS = 30_000
 
     /**
      * [stroke] with [p] appended, or the same stroke when the finger has
@@ -73,7 +94,7 @@ object Strokes {
         val last = stroke.points.lastOrNull()
         if (last != null && hypot(p.x - last.x, p.y - last.y) < MIN_STEP) return stroke
         if (stroke.points.size < MAX_POINTS) return stroke.plus(p)
-        return thin(stroke).plus(p)
+        return thinned(stroke).plus(p)
     }
 
     /**
@@ -85,8 +106,12 @@ object Strokes {
      * room for the next point: a mark that stopped growing under a moving
      * finger would be the crayon leaving the paper without the child lifting
      * it, and no save is worth that.
+     *
+     * It is also how a full page makes room, which is why it is open: the
+     * oldest marks on a page that has spent its budget are thinned a step at
+     * a time rather than dropped (see [Progress]).
      */
-    private fun thin(stroke: Stroke): Stroke {
+    fun thinned(stroke: Stroke): Stroke {
         val points = stroke.points
         val older = points.size / 2
         val out = ArrayList<Vec2>(points.size)
@@ -211,8 +236,46 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
     val isEmpty: Boolean get() = strokes.isEmpty()
 
     fun with(stroke: Stroke): Progress =
-        if (stroke.isEmpty || strokes.size >= Strokes.MAX_STROKES) this
-        else Progress(strokes + stroke)
+        if (stroke.isEmpty) this else Progress(bounded(strokes + stroke))
+
+    /**
+     * [all] with the page's own two limits applied, the newest kept whole.
+     *
+     * The newest marks are the ones the hand just made, so they are kept
+     * exactly as drawn and every limit falls on the oldest. A page holding
+     * more marks than a page may hold lets its earliest ones go; a page that
+     * has spent the point budget keeps every mark but draws the oldest ones
+     * coarser, which is a picture that fades rather than a hand that is told
+     * that what it just did did not happen.
+     */
+    private fun bounded(all: List<Stroke>): List<Stroke> {
+        // The oldest marks are the ones a page lets go of first, whether it
+        // is over its count or over its points, so the numbers below are
+        // taken from what a page will keep rather than from everything the
+        // hand has made.
+        val kept = if (all.size > Strokes.MAX_STROKES) {
+            all.subList(all.size - Strokes.MAX_STROKES, all.size)
+        } else {
+            all
+        }
+        var total = 0
+        for (stroke in kept) total += stroke.points.size
+        if (total <= Strokes.MAX_TOTAL_POINTS) {
+            return if (kept === all) all else kept.toList()
+        }
+        val out = kept.toMutableList()
+        var index = 0
+        while (total > Strokes.MAX_TOTAL_POINTS && index < out.size) {
+            val stroke = out[index]
+            if (stroke.points.size >= MIN_THINNABLE) {
+                val thinner = Strokes.thinned(stroke)
+                total -= stroke.points.size - thinner.points.size
+                out[index] = thinner
+            }
+            index++
+        }
+        return out
+    }
 
     fun cleared(): Progress = Progress()
 
@@ -232,6 +295,13 @@ data class Progress(val strokes: List<Stroke> = emptyList()) {
 
     companion object {
         val Empty: Progress = Progress()
+
+        /**
+         * The shortest mark that is worth thinning. A dot and a short flick
+         * are already as small as a mark gets, and halving one of them would
+         * not give the page's budget anything back.
+         */
+        private const val MIN_THINNABLE = 4
 
         /** What an eraser mark's chunk starts with instead of a color. */
         const val ERASE_TAG = "X"

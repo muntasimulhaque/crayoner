@@ -34,6 +34,7 @@ internal fun ColorSeat(
     selected: Boolean,
     onClick: () -> Unit,
     cell: Dp,
+    rowHeight: Dp,
 ) {
     val label = stringResource(crayonNameRes(argb))
     val lift = animateFloatAsState(
@@ -48,10 +49,9 @@ internal fun ColorSeat(
     // past the cell it belongs to.
     val lying = cell * (0.90f + 0.08f * lift)
     val thickness = lying * CrayonShape.THICKNESS.toFloat()
-    val cellHeight = cell * 0.62f
     Box(
         modifier = Modifier
-            .size(cell, cellHeight)
+            .size(cell, rowHeight)
             .semantics {
                 contentDescription = label
                 this.selected = selected

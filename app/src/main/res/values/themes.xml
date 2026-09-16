@@ -3,6 +3,6 @@
     <style name="Theme.Crayoner" parent="android:Theme.Material.Light.NoActionBar">
         <!-- The resting ground, so the very first frame is already the app's
              world rather than a flash the Compose surface then replaces. -->
-        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:windowBackground">@color/desk</item>
     </style>
 </resources>

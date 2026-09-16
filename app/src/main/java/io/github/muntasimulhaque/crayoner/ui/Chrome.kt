@@ -42,6 +42,13 @@ internal fun Modifier.buttonShadow(shape: Shape, elevation: Dp = 5.dp): Modifier
 )
 
 /**
+ * How far a pressed thing drops: the app's own weight. Every press in the app
+ * dips by this much and shrinks by a hair, so a press feels the same whether
+ * it lands on a round coin or on a sheet of paper.
+ */
+internal val PressDrop = 1.6.dp
+
+/**
  * The one round control in the app, in the two states of the thing itself:
  * a plate a child presses, and a plate that is only holding something up.
  *
@@ -85,7 +92,7 @@ internal fun CoinPlate(
                 val k = 1f - 0.055f * dip
                 scaleX = k
                 scaleY = k
-                translationY = 1.6.dp.toPx() * dip
+                translationY = PressDrop.toPx() * dip
             }
             .buttonShadow(shape, elevation)
             .size(size)

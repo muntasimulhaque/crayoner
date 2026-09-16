@@ -229,15 +229,18 @@ class DraftTest {
     }
 
     @Test
-    fun aFullPageStillLetsAMarkBeTakenBack() {
+    fun aFullPageStillLetsTheNewestMarkLand() {
         var draft = Draft.Empty
         for (i in 0 until Strokes.MAX_STROKES) {
             draft = draft.color(Crayons.RED, line(Crayons.RED, (i % 100) / 100.0).points)
         }
         assertEquals(Strokes.MAX_STROKES, draft.progress.strokes.size)
-        // A full page takes no more marks, and still gives the child one back.
+        // A full page takes the new mark and lets its oldest one go: a child
+        // is answered every time they touch the paper, and what gives way is
+        // the wax they made first. And a full page still gives one back.
         val fuller = draft.color(Crayons.BLUE, listOf(Vec2(0.5, 0.5)))
         assertEquals(Strokes.MAX_STROKES, fuller.progress.strokes.size)
+        assertEquals(Crayons.BLUE, fuller.progress.strokes.last().color)
         assertEquals(Strokes.MAX_STROKES - 1, draft.undo().progress.strokes.size)
     }
 

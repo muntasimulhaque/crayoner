@@ -61,10 +61,10 @@ data class Draft(
     /** One mark, whichever end of the box made it. */
     fun add(stroke: Stroke?): Draft {
         if (stroke == null || stroke.isEmpty) return this
+        // The mark always lands, however full the page is: what gives way is
+        // the oldest wax, never the mark the hand has just made. See
+        // `Progress.with`.
         val next = progress.with(stroke)
-        // A full page takes no more marks and remembers no more: the sheet
-        // is what it is, and nothing about it changes under the child.
-        if (next === progress) return this
         // Drawing clears the forward steps: a mark made now is the new truth
         // of the paper, and no press may ever take it away to put back a
         // mark the hand has already drawn over.

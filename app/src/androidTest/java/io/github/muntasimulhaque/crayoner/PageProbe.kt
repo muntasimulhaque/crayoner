@@ -312,11 +312,11 @@ internal class PageProbe(private val page: Page) {
         val r = (pixel shr 16) and 0xFF
         val g = (pixel shr 8) and 0xFF
         val b = pixel and 0xFF
-        // CrayonerColors.Desk is #F6EFE3. The band is narrow: the paper is
+        // CrayonerColors.Desk is #F3E9D8. The band is narrow: the paper is
         // #FFFDF8 and the cardboard is #EFE1C6, and both are outside it.
-        return kotlin.math.abs(r - 0xF6) <= 3 &&
-            kotlin.math.abs(g - 0xEF) <= 3 &&
-            kotlin.math.abs(b - 0xE3) <= 3
+        return kotlin.math.abs(r - 0xF3) <= 3 &&
+            kotlin.math.abs(g - 0xE9) <= 3 &&
+            kotlin.math.abs(b - 0xD8) <= 3
     }
 
     /** True when the pixel is the book's own red wax, not paper and not ink. */

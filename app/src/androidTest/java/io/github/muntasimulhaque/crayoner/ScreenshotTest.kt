@@ -16,12 +16,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.muntasimulhaque.crayoner.core.Crayons
-import io.github.muntasimulhaque.crayoner.core.Draft
-import io.github.muntasimulhaque.crayoner.core.Page
-import io.github.muntasimulhaque.crayoner.core.Pages
-import io.github.muntasimulhaque.crayoner.core.Progress
-import io.github.muntasimulhaque.crayoner.core.Stroke
-import io.github.muntasimulhaque.crayoner.core.Vec2
 import io.github.muntasimulhaque.crayoner.host.Screen
 import io.github.muntasimulhaque.crayoner.host.ShelfState
 import io.github.muntasimulhaque.crayoner.ui.CrayonerTheme
@@ -30,8 +24,8 @@ import io.github.muntasimulhaque.crayoner.ui.PlayScreen
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.math.PI
-import kotlin.math.sin
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -119,7 +113,7 @@ class ScreenshotTest {
     fun captureStoreScreenshots() {
         val outDir = resolveOutDir()
         val scenario = launch()
-        shot(scenario, outDir, "01_home") {
+        shot(scenario, outDir, "01_home", waitForWax = true) {
             HomeScreen(shelf = ShelfState(), onOpen = {})
         }
         shot(scenario, outDir, "02_blank") {
@@ -169,110 +163,6 @@ class ScreenshotTest {
         )
     }
 
-    // -- Fixtures -----------------------------------------------------------
-
-    private fun page(id: String): Page = Pages.byId(id) ?: error("no page $id")
-
-    private fun blankState(id: String) = Screen.Coloring(page = page(id), draft = Draft.Empty)
-
-    /**
-     * A page a child has been working on: real marks, made the way a hand
-     * makes them, in the colors the picture asks for, with the last area
-     * still bare so the sheet reads as unfinished.
-     */
-    private fun coloredState(
-        id: String,
-        crayon: Long,
-        erasing: Boolean = false,
-    ): Screen.Coloring {
-        val page = page(id)
-        val last = page.regionCount - 1
-        val strokes = page.regions.indices
-            .filter { it != last }
-            .flatMap { index -> sweeps(page.regions[index]) }
-        return Screen.Coloring(
-            page = page,
-            draft = Draft.of(Progress(strokes)),
-            crayon = crayon,
-            erasing = erasing,
-        )
-    }
-
-    /** A page the child has taken all the way: every area has been colored. */
-    private fun wholeState(id: String, crayon: Long): Screen.Coloring {
-        val page = page(id)
-        val strokes = page.regions.indices.flatMap { index -> sweeps(page.regions[index]) }
-        return Screen.Coloring(
-            page = page,
-            draft = Draft.of(Progress(strokes)),
-            crayon = crayon,
-        )
-    }
-
-    /**
-     * One area, colored in by hand: a few long sweeps across it, each at a
-     * slightly different angle and slightly different length, the way an arm
-     * covers a shape. Some strokes run a little past the line, because a
-     * three year old's do.
-     */
-    private fun sweeps(region: io.github.muntasimulhaque.crayoner.core.Region): List<Stroke> {
-        val b = region.bounds
-        if (b.w <= 0.0 || b.h <= 0.0) return emptyList()
-        val angle = Math.toRadians(io.github.muntasimulhaque.crayoner.core.Wax.angleDeg(region))
-        val dx = kotlin.math.cos(angle)
-        val dy = kotlin.math.sin(angle)
-        val nx = -dy
-        val ny = dx
-        val reach = kotlin.math.hypot(b.w, b.h) * 0.55
-        val lanes = (minOf(b.w, b.h) / 0.055).toInt().coerceIn(2, 9)
-        val seed = kotlin.math.abs(region.id.hashCode())
-        return (0 until lanes).map { lane ->
-            val t = (lane + 0.5) / lanes - 0.5
-            val offX = b.center.x + nx * t * b.w * 0.9
-            val offY = b.center.y + ny * t * b.h * 0.9
-            val wobble = 0.012 + 0.004 * ((seed + lane) % 3)
-            val points = ArrayList<Vec2>(24)
-            val steps = 18
-            for (i in 0..steps) {
-                val u = i.toDouble() / steps
-                val spread = (u - 0.5) * 2.0 * reach
-                // The wrist wobbles along the sweep, and no two sweeps wobble
-                // the same way.
-                val w = sin(u * 3.0 * PI + lane) * wobble + sin(u * 7.0 * PI + seed) * wobble * 0.4
-                points += Vec2(
-                    offX + dx * spread + nx * w,
-                    offY + dy * spread + ny * w,
-                )
-            }
-            Stroke(region.fillArgb, points)
-        }
-    }
-
-    /**
-     * A page the child has gone over with the rubber: colored in, then rubbed
-     * at, so the capture shows what an eraser mark really leaves behind. The
-     * print comes back; the wax does not.
-     */
-    private fun erasedState(id: String): Screen.Coloring {
-        val page = page(id)
-        val last = page.regionCount - 1
-        val colored = page.regions.indices
-            .filter { it != last }
-            .flatMap { index -> sweeps(page.regions[index]) }
-        val rubbed = listOf(
-            Stroke(Stroke.ERASE_COLOR, (0..24).map { i ->
-                val t = i / 24.0
-                Vec2(0.20 + t * 0.55, 0.42 + kotlin.math.sin(t * 5.0) * 0.05)
-            }, erase = true),
-        )
-        return Screen.Coloring(
-            page = page,
-            draft = Draft.of(Progress(colored + rubbed)),
-            crayon = page.regions.last().fillArgb,
-            erasing = true,
-        )
-    }
-
     /** Render one state, wait for the screen to stop moving, and copy the
      *  window's own pixels out.
      *
@@ -288,6 +178,7 @@ class ScreenshotTest {
         scenario: ActivityScenario<ComponentActivity>,
         outDir: File,
         name: String,
+        waitForWax: Boolean = false,
         block: @Composable () -> Unit,
     ) {
         push(block)
@@ -296,15 +187,111 @@ class ScreenshotTest {
         for (attempt in 0 until SETTLE_ATTEMPTS) {
             Thread.sleep(SETTLE_STEP_MS)
             val shot = captureWindow(scenario)
-            val signature = signatureOf(shot)
             bitmap = shot
+            // A window that has not drawn at all yet is the desk and nothing
+            // else, and two frames of bare desk look as settled as two frames
+            // of anything: a cold emulator warming up its first app can hold
+            // the frame back for as long as it likes, so the wait is for a
+            // frame with something in it before the two-frame rule applies.
+            if (isBareDesk(shot)) {
+                previous = null
+                continue
+            }
+            // The wall is the one scene whose content arrives after its
+            // frame does: sixteen pictures of wax are made in the background
+            // while the cards are already on screen, and a wall of outline
+            // cards is a perfectly still picture. Two matching frames would
+            // therefore call it settled long before it is. Waiting for the
+            // frame to be colored the way a drawn wall is colored is what
+            // makes this capture the wall rather than the first breath of it,
+            // on any speed of machine.
+            if (waitForWax && waxFraction(shot) < ENOUGH_WAX) {
+                previous = null
+                continue
+            }
+            val signature = signatureOf(shot)
             if (signature == previous) break
             previous = signature
         }
         val settled = bitmap ?: return
+        assertFalse("the $name capture is an empty desk", isBareDesk(settled))
+        if (waitForWax) {
+            // A run whose window never drew (a cold emulator, a process still
+            // warming up) would otherwise hand back a perfectly still wall of
+            // empty cards and call it a capture. That is the one failure a
+            // person would have to notice by eye, so it fails here instead.
+            assertTrue(
+                "the wall capture has no pictures in it",
+                waxFraction(settled) >= ENOUGH_WAX,
+            )
+        }
         File(outDir, "$name.png").outputStream().use { out ->
             settled.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
+    }
+
+    /**
+     * True when a frame is nothing but the desk: the window has not drawn its
+     * content yet. Every scene the harness captures has a sheet, a bar, a
+     * tray or a plate in it, so a frame of one flat color is never a scene,
+     * whatever the emulator is busy doing. The desk's own color is the one
+     * the app draws, with a little room for the emulator's color management.
+     */
+    private fun isBareDesk(bitmap: Bitmap): Boolean {
+        var desk = 0
+        var looked = 0
+        val step = 8
+        var y = 0
+        while (y < bitmap.height) {
+            var x = 0
+            while (x < bitmap.width) {
+                val p = bitmap.getPixel(x, y)
+                val r = (p shr 16) and 0xFF
+                val g = (p shr 8) and 0xFF
+                val b = p and 0xFF
+                if (kotlin.math.abs(r - 0xF3) <= 6 &&
+                    kotlin.math.abs(g - 0xE9) <= 6 &&
+                    kotlin.math.abs(b - 0xD8) <= 6
+                ) {
+                    desk++
+                }
+                looked++
+                x += step
+            }
+            y += step
+        }
+        return looked == 0 || desk * 100 >= looked * 99
+    }
+
+    /**
+     * How much of a frame is plainly colored, which on the wall means
+     * pictures rather than the paper and print they start as.
+     *
+     * The desk, the card stock and the ink are all near-neutrals, so a wide
+     * gap between a pixel's brightest and darkest channels is wax and little
+     * else. A frame is read on a grid rather than pixel by pixel, both to
+     * keep the wait cheap and because a card's own edges are not the
+     * question: a wall that is three quarters drawn is not a wall.
+     */
+    private fun waxFraction(bitmap: Bitmap): Double {
+        var colored = 0
+        var looked = 0
+        val step = 4
+        var y = 0
+        while (y < bitmap.height) {
+            var x = 0
+            while (x < bitmap.width) {
+                val p = bitmap.getPixel(x, y)
+                val r = (p shr 16) and 0xFF
+                val g = (p shr 8) and 0xFF
+                val b = p and 0xFF
+                if (maxOf(r, g, b) - minOf(r, g, b) > 45) colored++
+                looked++
+                x += step
+            }
+            y += step
+        }
+        return if (looked == 0) 0.0 else colored.toDouble() / looked
     }
 
     /** A cheap fingerprint of one frame: a grid of its own pixels. */
@@ -386,8 +373,23 @@ class ScreenshotTest {
 
         /** How often a scene is looked at while it is settling, and how
          *  many looks it gets: a wall whose pictures are still being made
-         *  changes for a few seconds after its cards are up. */
+         *  changes for a few seconds after its cards are up. The budget is
+         *  generous on purpose: every scene is a still state, so waiting
+         *  longer can only catch the state more completely, and a software
+         *  emulator under load can take twice the time a quiet one does to
+         *  lay down a page of wax. */
         const val SETTLE_STEP_MS = 300L
-        const val SETTLE_ATTEMPTS = 40
+        const val SETTLE_ATTEMPTS = 160
+
+        /**
+         * The share of a home frame that has to be plainly colored before the
+         * wall counts as drawn. Measured off the store sets themselves: a
+         * drawn wall on any of the three form factors is between 51 and 59
+         * percent colored, and a wall with half its cards still bare is 41,
+         * so the line sits above the half-drawn wall and below every drawn
+         * one. It is a share and not a count because the form factors carry
+         * very different numbers of cards and pixels.
+         */
+        const val ENOUGH_WAX = 0.45
     }
 }

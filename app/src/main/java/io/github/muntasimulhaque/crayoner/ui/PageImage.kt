@@ -1,6 +1,7 @@
 package io.github.muntasimulhaque.crayoner.ui
 
 import android.graphics.Bitmap
+import android.os.Process
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +17,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import io.github.muntasimulhaque.crayoner.core.Page
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -60,9 +64,11 @@ fun rememberPageImage(
     var image by remember(page, sample, widthPx, heightPx, keep) { mutableStateOf(cached) }
     LaunchedEffect(page, sample, widthPx, heightPx, keep) {
         if (image != null) return@LaunchedEffect
+        val job = currentCoroutineContext()[Job]
+        fun wanted(): Boolean = job?.isActive != false
         val rendered = withContext(Dispatchers.Default) {
             renderGate.withLock {
-                store.get(key) ?: renderPageImage(page, fills, widthPx, heightPx)
+                store.get(key) ?: renderPageImage(page, fills, widthPx, heightPx, ::wanted)
                     ?.also { store.put(key, it) }
             }
         }
@@ -85,31 +91,57 @@ fun rememberPageImage(
  * Anything that goes wrong (a device out of memory for one more sheet of
  * pixels) is skipped: the shelf then draws that picture's own print instead,
  * which is slower and still correct.
+ *
+ * The height is a parameter because the caller sometimes already owns it:
+ * the sheet and the sample laid over it are rendered at the frame's own
+ * measured pixel size, and a prewarm one pixel away from that size finds
+ * nothing and leaves the main thread to draw the whole picture again.
  */
 suspend fun prewarmPageImages(
     pages: List<Page>,
     fills: (Page) -> Map<Int, Long>,
     widthPx: Int,
+    heightPx: Int = heightFor(widthPx),
     keep: Boolean = false,
 ) {
-    if (widthPx <= 0) return
+    if (widthPx <= 0 || heightPx <= 0) return
     val store = if (keep) shelfImages else pageImages
     if (keep) store.keepWidth(widthPx)
-    val height = heightFor(widthPx)
-    for (page in pages) {
-        val key = Key(page.id, sample = true, widthPx, height)
-        if (store.get(key) != null) continue
-        renderGate.withLock {
-            if (store.get(key) != null) return@withLock
-            val image = renderPageImage(page, fills(page), widthPx, height) ?: return@withLock
-            store.put(key, image)
+    // A picture nobody is waiting for is made at the back of the queue, on a
+    // thread the frames under a moving finger can always outrank. The whole
+    // point of a prewarm is that it happens where no finger can feel it:
+    // left at the default priority, a wall of sixteen sheets is a background
+    // job that takes the cores the frame under a moving finger is asking
+    // for, and the pictures are ready just in time to have made the scrolling
+    // stutter instead of preventing it. The priority is a step below the
+    // app's own threads and no further: the system's background group, one
+    // step deeper, is throttled so hard that a sheet can take a minute on a
+    // slow device, and a picture that never arrives is worse than one that
+    // arrives while the hand is busy. It is put back because the pool's
+    // threads are reused by everyone else.
+    val previous = Process.getThreadPriority(Process.myTid())
+    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND - 1)
+    try {
+        val scope = currentCoroutineContext()
+        for (page in pages) {
+            val key = Key(page.id, sample = true, widthPx, heightPx)
+            if (store.get(key) != null) continue
+            val wanted = { scope.isActive }
+            renderGate.withLock {
+                if (store.get(key) != null) return@withLock
+                val image = renderPageImage(page, fills(page), widthPx, heightPx, wanted)
+                    ?: return@withLock
+                store.put(key, image)
+            }
+            // Between pictures, let everything else on the default pool have
+            // the thread: a wall of sixteen sheets is real work, and none of
+            // it is more urgent than the frames a finger is already asking
+            // for, which is the whole reason the wall's pictures are made
+            // here rather than in the frame that needed them.
+            yield()
         }
-        // Between pictures, let everything else on the default pool have the
-        // thread: a wall of sixteen sheets is real work, and none of it is
-        // more urgent than the frames a finger is already asking for, which
-        // is the whole reason the wall's pictures are made here rather than
-        // in the frame that needed them.
-        yield()
+    } finally {
+        Process.setThreadPriority(previous)
     }
 }
 
@@ -123,12 +155,18 @@ suspend fun prewarmPageImages(
  * this image back over the wax, so it has to carry the sheet itself and not
  * only the lines printed on it: an image with a transparent ground would put
  * nothing back and the wax would stay.
+ *
+ * [keepGoing] is handed to the page drawing, which asks it before each area:
+ * a picture being made for a screen that has already moved on is abandoned
+ * where it stands and answers null, so nothing half drawn is ever cached and
+ * the whole render is one area of work, not one page.
  */
 private fun renderPageImage(
     page: Page,
     fills: Map<Int, Long>,
     widthPx: Int,
     heightPx: Int,
+    keepGoing: () -> Boolean = { true },
 ): ImageBitmap? = runCatching {
     val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
     val image = bitmap.asImageBitmap()
@@ -143,8 +181,9 @@ private fun renderPageImage(
         // picture being printed and the same picture drawn live share the
         // work: the union of an area's own shapes is arithmetic, and it is
         // not worth doing twice for one page.
-        drawPage(page, liveGeometry(page, widthPx.toFloat()), fills)
+        drawPage(page, liveGeometry(page, widthPx.toFloat()), fills, keepGoing)
     }
+    if (!keepGoing()) return@runCatching null
     image
 }.getOrNull()
 

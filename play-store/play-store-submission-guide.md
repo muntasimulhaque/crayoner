@@ -31,12 +31,14 @@ shown half colored, the app's own mark, and Chewy lettering (the same font
 file the app bundles, so shelf, store and screen are one brand). Regenerate
 with `./gradlew :tools:makeArt`; never edit the PNGs by hand.
 
-- `play-store/feature-graphic-1024x500.png`: the sailboat page, half colored,
-  on a sheet at the left with the soft shadow a sheet wears on the desk in
-  the app, the name given the whole right side with one line under it, and
-  the app's own mark, the crayon at the end of the line it has just drawn,
-  in paper white below the name. The mark is the same geometry as the
-  launcher icon, so the banner and the icon say one sentence.
+- `play-store/feature-graphic-1024x500.png`: the sailboat page shown twice
+  on the brand coral, as the book prints it on the left and finished on the
+  right, both sheets wearing the soft shadow a sheet wears on the desk in
+  the app; the name given the right side with the line under it broken the
+  way a voice would break it, and the app's own mark, the crayon at the end
+  of the line it has just drawn, in paper white below the words. The mark is
+  the same geometry as the launcher icon, so the banner and the icon say one
+  sentence.
 - `play-store/play-icon-512.png`: the launcher tile, full bleed, the same
   design the phone shows.
 - The launcher icons (`mipmap-*/ic_launcher.png`,
@@ -63,7 +65,7 @@ best, sale), so the no-ads and offline facts live in the full description.
 Simple, beautiful coloring pages for ages 3 to 5.
 ```
 
-**Full description** (4000 chars max, measured: 3280). Four facts lead,
+**Full description** (4000 chars max, measured: 3367). Four facts lead,
 because they are the reason a parent installs: what it is, that it is safe,
 that it is open source, and that it asks for nothing. How it plays comes
 after, short enough to scan on a phone. Paragraphs are unwrapped on purpose:
@@ -71,10 +73,10 @@ Play keeps the line breaks, so one line per paragraph pastes as a clean
 block.
 
 ```
-Crayoner is a simple, beautiful coloring book for children aged 3 to 5. A finished picture, the same picture as bare outlines, and a box of crayons. Color the outlines until they match the picture.
+A coloring book for small hands, made for ages 3 to 5: sixteen pictures, a box of crayons, and no score anywhere. Tap a picture, color it with a finger, and it is saved as the hand left it.
 
 How it plays
-Tap a picture on the wall and the page opens as clean black lines on a sheet of paper lying on the desk. The finished picture is in the top bar as one more round button: one tap holds it up large whenever a closer look is wanted. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does. The page is always whole on the screen, and a hand resting on it can never move it.
+Tap a picture on the wall and the page opens as clean black lines on a sheet of paper lying on the desk. The finished picture is in the top bar as one more round button: one tap lays it over the page at the page's own size, so a child can look from one to the other without losing their place, and one tap puts it back down. Pick a crayon and color with your own finger. Nothing is filled in for you: your mark follows your hand, lays down real wax with the grain of paper, and covers the printed lines it is dragged over, the way a crayon really does. The page is always whole on the screen, and a hand resting on it can never move it.
 
 A real box of crayons
 One capsule holds the things a hand reaches for: the crayon in hand, the rubber, and two steps that walk the paper back and forward. It sits under the page on a phone and stands in a column at the desk's left edge on a wide screen. Press the crayon and the box opens: thirty two real crayon colors, the ones in a real box, laid out the way the box lays them out, with the color in hand a little longer and drawn with a heavier line so a child never has to remember which one they picked up. Press the rubber and the crayon becomes an eraser: it takes the wax off the paper and leaves the printed line, exactly as a rubber does. Press undo and the last mark comes off the paper, and press redo beside it to put that mark back, one at a time, so a hand that drew something it did not mean can walk it back without ever losing the work around it. Leaving a picture that has work on it asks one short question, keep it just as it is or start that one fresh, and both answers are safe: keeping it costs nothing and starting over only means the next visit opens on a clean sheet.
@@ -136,7 +138,7 @@ Console slot, in filename order:
 03_box           the box of thirty two colors, opened over the page
 04_coloring      the picture colored by hand, the crayon in the capsule
 05_rubbed        the rubber in hand, wax rubbed away and the printed line kept
-06_peek          the sample held up large, a sheet of paper like the page
+06_peek          the finished picture lying over the page, the page's own size and place
 07_whole         a picture colored all the way, in the child's own colors
 08_keep          leaving a page with work on it, the one question
 ```

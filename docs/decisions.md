@@ -850,3 +850,199 @@ order they were made.
   spent its six hundred strokes drops the marks made after that, and the
   honest answer is to thin the oldest marks rather than refuse the newest
   one.
+
+- D-079 **The sample is the page's own twin.** The sample held up was a plate
+  of paper with the picture and its name on it, floating in the middle of the
+  screen, and on a phone the picture inside it came out at about half the
+  width of the sheet the child was working on: the thing held up to copy was
+  smaller than the thing being copied, and a closer look at a picture's parts
+  meant looking at a smaller picture. The sample is now the finished sheet
+  itself, laid down at the working sheet's own rectangle, over the page, for
+  as long as a tap keeps it there, with the page dimmed but never hidden
+  behind it. One tap holds it over the work and one tap puts it back, and the
+  flip between outlines and colors is the same sheet in the same place, which
+  is what makes part-by-part comparison work without the eye hunting for the
+  shape. There is no plate and no name: the picture is the thing, the wall
+  already taught the name, and a mount around a held-up sheet is one more
+  rectangle between the child and the picture. The rectangle is the sheet's
+  own *measured* bounds, handed up by the layout and used as-is, never
+  computed a second time anywhere, so the sample and the page cannot drift
+  apart by a pixel on any screen in any shape. Its picture is rendered at
+  exactly that pixel size, off the main thread, when the page opens: the same
+  measured size keys the render, so the prewarm can never miss what the peek
+  asks for, which is the class of bug D-076 and D-077 were. And a tap that
+  somehow beats the render draws the sample itself rather than showing a
+  half picture, because a sample half drawn is not a sample.
+
+- D-080 **The box is a full rectangle of the real box's own tray.** Thirty
+  two crayons laid out five or six to a row left two of them alone on a row
+  of their own, and those two were black and white, which is the worst row to
+  leave looking like an accident. The columns are now 4 on a phone and 8 on
+  anything wider, and both divide thirty two exactly, so every row is full
+  and no crayon stands by itself. Eight is also the real thirty two count
+  box's own tray, and the order in `core/Crayons.kt` was written as the
+  box's own rows of eight, so on a tablet the box now lays itself out exactly
+  as the real one does. On a phone four is the widest slice of that tray a
+  child's hand can hit: the crayon on a phone grew from 64 to 85 dp long, and
+  a row is never shorter than the 48 dp a fingertip is owed, even where eight
+  columns squeeze it. Amends the counted columns of D-021 and D-034.
+
+- D-081 **The tools stand beside the sheet, not at the edge of the desk.**
+  On a sideways screen the capsule was pinned to the screen's own left edge
+  while the sheet was centered in whatever was left, and on a ten inch tablet
+  that left a hand's width of bare desk between the capsule and the paper it
+  belongs to: two objects that happened to share a screen, which is exactly
+  the complaint D-058 and D-066 were about in the other direction. The tools
+  and the sheet are now one group, centered on the desk together, with 12 dp
+  of air between them. The sheet is measured from the room left over after
+  the tools and their air, so the group always fits and the page keeps every
+  pixel it can. The stacked phone layout is untouched: there the two rows are
+  already one object under the sheet.
+
+- D-082 **A backdrop is a wall to a screen reader too.** The scrims were
+  honest to the eye (the box of colors, the sample, the keep question each
+  dim the world and swallow the touches aimed at it) but not to TalkBack:
+  the bar, the sheet's own area targets and the capsule were all still
+  reachable behind an overlay, so a child without sight could leave a
+  question they had not answered yet. While any overlay is up, the world
+  behind it is composed with `clearAndSetSemantics`, which puts the whole
+  subtree out of the accessibility tree; the overlay keeps its own voices.
+  The keep question also names itself as a pane, so a reader hears the
+  question as the pane arrives instead of meeting two answers with nothing
+  they answer. No label changed and nothing new is spoken that a sighted
+  child does not see.
+
+- D-083 **A picture nobody is waiting for is made at the back of the
+  queue.** The wall's sixteen cards and the sample are real work (a whole
+  page of wax each), and they were rendered at the same thread priority as
+  everything else, so on a slow device a background job could starve the
+  frame under a moving finger for seconds. It showed up as a store capture
+  with nothing on it: the sample is now rendered at the sheet's own size,
+  four times the pixels it used to be, and the harness's first captured
+  frames of the busy scenes came back as bare desk while the prewarm and the
+  main thread fought for the same cores. Every prewarm now runs one step
+  below the app's own threads for the length of its work, and no deeper: the
+  system's background group, one step further down, is throttled so hard on
+  an emulator that a single sheet did not arrive inside twelve seconds, and a
+  picture that never lands is worse than one that lands while the hand is
+  busy. The priority is put back because the pool's threads are shared. The
+  same run also showed the sample at the back of the queue is the right place
+  for it: a child who never presses the button never waits for it, and a
+  child who does finds it already made.
+
+- D-084 **A press dips, and the wall's pictures give no ink.** The shelf's
+  cards still answered a tap with Material's ink ripple, which spreads from
+  the finger across the picture itself; every round control in the app had
+  already stopped doing that and dips instead, as one object, on one coin
+  (D-066). The cards now dip with the rest: the paper and its name come down
+  1.6 dp and shrink three percent, from the app's one `PressDrop` and the
+  same spring, so a press feels the same on a coin and on a sheet of paper.
+  The picture is the one thing on the wall that is the child's, and a ripple
+  of ink across it was the last place the app drew on top of the art.
+
+- D-085 **A crayon's tooth carries its own shadow, and white can be seen.**
+  The wax was a color and an alpha, and an alpha can never make a white
+  crayon visible on white paper: a white pixel at any coverage is still
+  white paper, so a child could pick up the white crayon, draw, and watch
+  nothing at all happen. The wax now shades *itself* in its troughs, by one
+  factor on all three channels, and the factor is weighted by how light the
+  stick is: a red crayon keeps its own color with a slightly deeper tooth,
+  and a white one comes out as a pale waxy relief that can be seen from
+  across a table. It is the one place in the app where a child's act could
+  look like it did nothing, and it cannot now. `WaxTest` holds the color as
+  one factor on three channels (a shade of the wax, never a gray veil mixed
+  over it) and measures a white tile over the paper the way an eye would:
+  the deepest trough has to be at least twenty four levels off the paper,
+  and the mean has to stay under fifteen, which is the band between a white
+  mark and a gray one. It changed every wax tile in the book, so the tile
+  hash moved with it, and the same relief now rides on every colored area in
+  every capture.
+
+- D-086 **A full page takes the mark, and lets its oldest wax go.** The save
+  was bounded by a count of six hundred strokes, and a page that reached it
+  silently dropped the newest mark: the one thing this app cannot do is not
+  answer a hand. The limits now fall on the oldest marks instead. A page
+  holds up to fifteen hundred marks and thirty thousand points across all of
+  them; over the point budget the oldest marks are thinned a step at a time
+  (`Strokes.thinned`, the same thinning a long mark does under a moving
+  finger), and only a page that has held more marks than a page may hold lets
+  its earliest ones go. The newest mark always lands exactly as the hand drew
+  it, however full the sheet is. `DraftTest` holds that a full page takes the
+  new mark and keeps it, `ProgressTest` holds that a page over its budget
+  keeps every mark with the newest whole and the oldest thinner and still
+  saves and reads back, and the one old test that asserted a full page takes
+  nothing was rewritten to the new rule rather than left as a dead letter.
+  The 600 was also an amount no child could count to; the 1500 is not a
+  promise that a page holds forever, it is where a save's own limits start
+  to be paid by the beginning of the picture instead of the end.
+
+- D-087 **The app composes at the reader's own text size.** The app used to
+  cap the system text scale at 1.3 and compose the whole UI inside that
+  bound, because past it the words stopped fitting the fixed play surfaces.
+  A cap is a trade, and this one was the wrong way round: a parent who has
+  asked the system for large text was told their setting would matter a
+  little and then no further. The cap is gone. The one line that has room to
+  grow (the keep question) grows with the setting and wraps if it must, and
+  the lines that live inside a fixed surface (the sixteen picture names, the
+  wordmark beside its mark) are measured at the reader's own size and set
+  smaller by exactly the ratio they need, through one
+  `rememberFittedFontSize`. That is the largest any fixed surface can
+  honestly draw a line of words, and it is still what the wall asks for. The
+  floor on the picture names went with the cap: it made a long name in a
+  narrow card run off its own edge at a large setting instead of shrinking
+  to fit, which is the opposite of what a floor is for.
+
+- D-088 **The launcher mark's line is a line, and the mark fills its tile.**
+  At the size a launcher really draws this icon, the wax line was a hair and
+  the mark floated in a large field of paper: the sentence read as a crayon
+  beside a scratch, or as a crayon alone. The line is a quarter wider over
+  its whole length (0.105 to 0.145 of the mark's own box, from 0.070 and
+  0.100), and the mark fills more of what Android gives it: 0.88 of the
+  store and legacy tile (was 0.80) and 0.60 of the adaptive canvas (was
+  0.56), which is still a hair inside Android's own 66 of 108 safe circle so
+  no mask can clip it. It is the same mark, the same lean and the same
+  geometry; only the air around it changed, and it was checked at forty eight
+  pixels and at twenty four.
+
+- D-089 **The banner shows the page twice.** The feature graphic was one
+  sheet, half colored, which asked the eye to work out which half was
+  finished. It is now the same page twice, side by side: exactly what the
+  book prints on the left, finished on the right, both wearing the same soft
+  shadow a sheet wears on the desk. The pair says the whole app in one glance
+  and at any crop of the banner, and it cannot be mistaken for a finished
+  picture or a blank one. The generator draws both sheets through one `sheet`
+  call, so the before and the after can never come out as different paper,
+  and `MakeArtTest` now holds that the finished sheet really carries every
+  area of the page in its own color rather than checking a list of region
+  names that a redesign would have to rewrite anyway.
+
+- D-090 **The desk is a step deeper, and the resource says what it is.** The
+  sheet and the desk were four levels apart in value, and a sheet read
+  mostly by the shadow under it. The desk is now #F3E9D8, still the warm
+  paper family and still a step under the card, so paper reads as paper in
+  every capture at every size without an edge being drawn anywhere. It
+  reaches the app's own ground, the window background Android shows before
+  the first frame, and the two review tools' grounds; the cardboard is
+  untouched and is still the one surface that is neither desk nor paper; the
+  desk probe in `PageProbe` moved with it. The color resource is named
+  `desk` now rather than `paper`, which is what it always was.
+
+- D-091 **A background picture is abandonable, and the wall's capture waits
+  for the wall.** Two halves of one lesson the store captures taught, again.
+  First: a picture being made in the background for a screen that has already
+  moved on used to run to its own end, because the renderer had no way to be
+  asked to stop. Every scene the capture harness pushes starts one (the
+  sample held over the page is a whole page of wax), and on a slow emulator
+  they piled up behind the one render at a time the gate allows, taking the
+  cores the next scene's first frame was asking for; the last four captures
+  of a run came back as bare desk. `drawPage` now takes a `keepGoing`
+  question and asks it before each area, and both background paths pass their
+  coroutine's own liveness, so an abandoned picture is abandoned at an area
+  boundary and nothing half drawn is ever cached. Second: the harness waited
+  for two frames in a row to match, and a wall of outline cards waiting for
+  its pictures is a perfectly still picture, so a slow machine could be
+  declared settled while the wall had not drawn anything yet. The home scene
+  now waits until the frame really holds wax, and a home capture with no
+  pictures in it fails the test rather than being quietly copied to the store
+  set. The scenes are still stills; they are now stills of the state they
+  claim to show.

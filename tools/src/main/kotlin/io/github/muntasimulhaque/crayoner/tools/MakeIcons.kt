@@ -96,10 +96,19 @@ object IconDesign {
      * How close a stroke is allowed to come to a canvas's own edge on the
      * layers a launcher masks, as a fraction of the canvas radius. Android's
      * safe zone is 66 of the adaptive icon's 108dp; this leaves the mark a
-     * hair inside it so antialiasing has room to finish.
+     * hair inside it so antialiasing has room to finish. It was 0.56, which
+     * held the mark a further visible step in from the safe circle for no
+     * reason: the mark is the app's whole identity and it can use the room
+     * Android guarantees it.
      */
-    const val ADAPTIVE_INSET = 0.56
-    const val TILE_INSET = 0.80
+    const val ADAPTIVE_INSET = 0.60
+
+    /**
+     * And how much of the store tile and the legacy icon the mark fills. It
+     * was 0.80; on a home screen the tile is seen at forty eight dp and the
+     * mark was a small thing floating in a large square of paper.
+     */
+    const val TILE_INSET = 0.88
 }
 
 internal enum class Layer { TILE, FOREGROUND, MONO }
@@ -151,9 +160,15 @@ private object Mark {
      * crayon; and the one place it can never be as wide as the crayon is
      * under the tip, or the two merge into a single hook at a launcher's
      * smallest size, which is exactly the bug this mark exists to fix.
+     *
+     * It used to be 0.070 and 0.100, and at the size a launcher really draws
+     * this icon the line was a hair: the mark read as a crayon alone and the
+     * line, which is half of the sentence, was invisible. A quarter wider,
+     * over the whole stroke, is still well clear of the stick and reads at
+     * twenty four pixels. See D-088.
      */
-    const val LINE_START = 0.070
-    const val LINE_END = 0.100
+    const val LINE_START = 0.105
+    const val LINE_END = 0.145
 
     /** How the line's edges are finished: samples, and how ragged they are. */
     const val LINE_STEPS = 64

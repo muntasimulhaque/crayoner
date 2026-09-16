@@ -15,11 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.host.ShelfState
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +37,7 @@ internal fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
         val horizontal = 18.dp
         val gap = 14.dp
         val cell = (maxWidth - horizontal * 2 - gap * (columns - 1)) / columns
-        val nameSize = rememberNameFontSize(names, cell - 12.dp)
+        val nameSize = rememberFittedFontSize(names, MaterialTheme.typography.titleLarge, cell - 12.dp)
 
         // The wall's pictures are drawn once each, off the main thread, the
         // moment the shelf knows how wide its cards are: sixteen pages of wax
@@ -85,31 +81,4 @@ internal fun ShelfGrid(shelf: ShelfState, onOpen: (String) -> Unit) {
     }
 }
 
-/** The floor a picture name never steps below, so it stays readable. */
-private val MIN_NAME_SIZE = 14.sp
 
-/**
- * One font size for every picture name, measured from the longest name in
- * the card's real width, so no name can ever clip on a narrow phone.
- */
-@Composable
-private fun rememberNameFontSize(names: List<String>, textWidth: Dp): TextUnit {
-    val measurer = rememberTextMeasurer()
-    val style = MaterialTheme.typography.titleLarge
-    val density = LocalDensity.current
-    return remember(names, textWidth, style, density) {
-        val available = with(density) { textWidth.toPx() } * 0.98f
-        val widest = names.maxOfOrNull { name ->
-            measurer.measure(
-                text = name,
-                style = style,
-                maxLines = 1,
-                softWrap = false,
-            ).size.width.toFloat()
-        } ?: 0f
-        if (widest <= available || widest == 0f) style.fontSize
-        else (style.fontSize.value * (available / widest))
-            .coerceAtLeast(MIN_NAME_SIZE.value)
-            .sp
-    }
-}

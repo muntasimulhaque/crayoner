@@ -33,7 +33,7 @@ import io.github.muntasimulhaque.crayoner.core.Crayons
  */
 object CrayonerColors {
     /** The desk the whole app sits on. Warm, a step under paper. */
-    val Desk = Color(0xFFF6EFE3)
+    val Desk = Color(0xFFF3E9D8)
     /** Paper, cards, plates: the brightest surface in the app. */
     val Card = Color(0xFFFFFDF8)
     /** Words and icons. The same ink the pictures are drawn in. */

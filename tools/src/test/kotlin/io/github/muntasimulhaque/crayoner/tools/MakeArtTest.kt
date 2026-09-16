@@ -21,18 +21,26 @@ import org.junit.Test
 class MakeArtTest {
 
     @Test
-    fun theBannerDrawsThePageItHalfColors() {
-        // The half-finished sailboat is the whole left half of the banner, so
-        // the regions it names have to be real regions of a real page, and
-        // the finished half has to be some of them and not all of them: a
-        // banner showing either a blank sheet or a finished picture is not
-        // showing a child mid-coloring.
+    fun theBannerShowsThePageBeforeAndAfter() {
+        // The banner is the same page twice: as the book prints it, and
+        // finished. The page has to be the real one, and the finished sheet
+        // has to carry every one of its areas in its own color, or the
+        // banner is a blank sheet beside a blank sheet. The as-printed sheet
+        // cannot contribute any of those colors (it is paper and ink only),
+        // so every colored area counted here is one the finished sheet really
+        // drew.
+        val artwork = generated()
         val page = Pages.byId("sail") ?: error("the banner's page is gone")
-        val started = listOf("sky", "cloud", "cloud_low", "sea")
-            .map { id -> page.indexOfRegion(id) }
-        assertTrue("the banner names regions the sail page does not have", started.all { it >= 0 })
-        assertTrue("the banner colors nothing", started.isNotEmpty())
-        assertTrue("the banner colors the whole page", started.size < page.regionCount)
+        assertTrue("the banner's page lost its areas", page.regionCount >= 5)
+        for (region in page.regions) {
+            val fill = region.fillArgb.toInt() and 0xFFFFFF
+            val n = count(artwork) { isWaxFamily(it and 0xFFFFFF, fill) }
+            assertTrue(
+                "the finished sheet is missing ${region.id}, or it is not " +
+                    Integer.toHexString(fill),
+                n > 40,
+            )
+        }
     }
 
     @Test
@@ -83,5 +91,30 @@ class MakeArtTest {
             if (kotlin.math.abs(a - b) > tolerance) return false
         }
         return true
+    }
+
+    /**
+     * True when [pixel] is [fill] as wax rather than as flat color: the same
+     * hue, taken a little deeper on the paper's tooth, never brighter and
+     * never a different color. The wax's own relief shades every pixel by
+     * one factor, so the check is on the ratios rather than the values.
+     */
+    private fun isWaxFamily(pixel: Int, fill: Int): Boolean {
+        var low = 1.0
+        var high = 0.0
+        for (shift in intArrayOf(16, 8, 0)) {
+            val p = (pixel ushr shift) and 0xFF
+            val f = (fill ushr shift) and 0xFF
+            // A channel the fill itself barely has cannot be read as a ratio.
+            if (f < 32) {
+                if (p > f + 10) return false
+                continue
+            }
+            val k = p.toDouble() / f
+            if (k > 1.001 || k < 0.70) return false
+            low = minOf(low, k)
+            high = maxOf(high, k)
+        }
+        return high - low <= 0.12
     }
 }

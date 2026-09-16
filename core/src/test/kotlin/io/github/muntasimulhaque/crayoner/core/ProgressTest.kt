@@ -187,4 +187,30 @@ class ProgressTest {
         assertEquals(Progress.Empty, Progress.parse(null))
         assertNotEquals(Progress.Empty, Progress().with(Stroke(Crayons.RED, listOf(Vec2(0.1, 0.1)))))
     }
+
+    @Test
+    fun aPageThatHasSpentItsBudgetThinsItsOldestMarksAndKeepsItsNewest() {
+        // A save is text, so a page has a point budget. When it is spent the
+        // newest mark lands whole and the page takes the extra points out of
+        // its oldest wax: a picture that gets coarser at its beginning, not
+        // a hand that is told that what it just did did not happen. This is
+        // the last place in the app that could refuse a child, and it does
+        // not.
+        val long = (0 until 60).map { Vec2(0.1 + it * 0.01, 0.5) }
+        var progress = Progress()
+        // Enough marks to spend the budget several times over.
+        val marks = Strokes.MAX_TOTAL_POINTS / long.size + 20
+        for (i in 0 until marks) {
+            progress = progress.with(Stroke(if (i % 2 == 0) Crayons.RED else Crayons.BLUE, long))
+        }
+        val total = progress.strokes.sumOf { it.points.size }
+        assertTrue("a page grew past its budget: $total points", total <= Strokes.MAX_TOTAL_POINTS)
+        assertEquals("the newest mark is not the line the hand drew", long, progress.strokes.last().points)
+        assertTrue(
+            "the oldest mark is as heavy as the newest",
+            progress.strokes.first().points.size < long.size,
+        )
+        // And a page that has done all that still saves and reads back.
+        assertEquals(total, Progress.parse(progress.serialize()).strokes.sumOf { it.points.size })
+    }
 }

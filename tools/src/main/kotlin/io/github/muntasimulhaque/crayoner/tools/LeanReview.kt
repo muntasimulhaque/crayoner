@@ -19,7 +19,7 @@ object LeanReview {
     private val INK = Color(0x38404F)
     private val CARD = Color(0xFFFDF8)
     private val CARDBOARD = Color(0xEFE1C6)
-    private val DESK = Color(0xF6EFE3)
+    private val DESK = Color(0xF3E9D8)
     private const val CORAL = 0xEE204D
 
     @JvmStatic

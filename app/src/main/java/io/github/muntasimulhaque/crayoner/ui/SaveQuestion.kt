@@ -1,5 +1,8 @@
 package io.github.muntasimulhaque.crayoner.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +16,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,9 +63,18 @@ fun SaveQuestion(
     onDismiss: () -> Unit,
 ) {
     val label = stringResource(R.string.keep_coloring)
+    val question = stringResource(R.string.keep_picture)
+    // The question lands rather than appearing: a plate of desk laid down
+    // over the page, which is the same way the box of colors arrives, so
+    // the app has one way of putting a thing in front of the child.
+    val appear = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        appear.animateTo(1f, tween(170, easing = FastOutSlowInEasing))
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .graphicsLayer { alpha = appear.value }
             .background(CrayonerColors.Scrim)
             .pointerInput(Unit) { detectTapGestures { onDismiss() } }
             .semantics { contentDescription = label }
@@ -68,14 +84,23 @@ fun SaveQuestion(
         Column(
             modifier = Modifier
                 .widthIn(max = 340.dp)
+                .graphicsLayer {
+                    val a = appear.value
+                    scaleX = 0.94f + 0.06f * a
+                    scaleY = 0.94f + 0.06f * a
+                }
                 .buttonShadow(RoundedCornerShape(28.dp), elevation = 12.dp)
                 .background(CrayonerColors.Desk, RoundedCornerShape(28.dp))
+                // The question names the pane it is: a screen reader hears
+                // "Keep this picture?" as it arrives, instead of meeting two
+                // answers with nothing they answer.
+                .semantics { paneTitle = question }
                 .padding(horizontal = 28.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
-                text = stringResource(R.string.keep_picture),
+                text = question,
                 style = MaterialTheme.typography.titleMedium,
                 color = CrayonerColors.Ink,
                 textAlign = TextAlign.Center,

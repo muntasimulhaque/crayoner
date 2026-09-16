@@ -123,7 +123,7 @@ class WaxTest {
         assertTrue("the book lost its areas", areas > 90)
         assertEquals(
             "the wax tiles are not the ones the pictures were drawn with",
-            0xb027c0588f287325uL,
+            0x391560a0ec733676uL,
             hash,
         )
     }
@@ -152,10 +152,59 @@ class WaxTest {
             "the wax is flat ink with a texture, not wax: mean alpha $mean, sd $sd",
             sd >= 20.0,
         )
-        // And it is the crayon's own color, never a gray veil over it.
+        // And it is the crayon's own color, taken deeper in the tooth rather
+        // than mixed toward gray: every pixel is the color scaled by one
+        // factor, and the factor is a little under one on the tooth.
+        val red = Crayons.RED and 0xFFFFFF
+        val baseR = ((red shr 16) and 0xFF).toDouble()
+        val baseG = ((red shr 8) and 0xFF).toDouble()
+        val baseB = (red and 0xFF).toDouble()
+        // Whole channels are all the precision a small channel has: the
+        // darkest of this color's channels is five bits, so a factor read off
+        // it is only good to about a thirtieth.
+        val tolerance = 1.0 / minOf(baseR, baseG, baseB) + 0.01
         for (p in pixels) {
-            assertEquals("the wax changed the color", Crayons.RED and 0xFFFFFF, (p and 0xFFFFFF).toLong())
+            val rgb = p and 0xFFFFFF
+            val r = ((rgb shr 16) and 0xFF).toDouble()
+            val g = ((rgb shr 8) and 0xFF).toDouble()
+            val b = (rgb and 0xFF).toDouble()
+            assertTrue("the wax brightened the color", r <= baseR && g <= baseG && b <= baseB)
+            assertTrue("the wax lost its color: $r,$g,$b", r >= baseR * 0.70 && g >= baseG * 0.70 && b >= baseB * 0.70)
+            // One factor on all three channels, which is a shade of the wax
+            // rather than a gray veil mixed over it. Rounding to whole
+            // channels is why this is a tolerance and not an equality.
+            assertEquals("the wax mixed two colors", r / baseR, g / baseG, tolerance)
+            assertEquals("the wax mixed two colors", r / baseR, b / baseB, tolerance)
         }
+    }
+
+    @Test
+    fun aWhiteCrayonIsVisibleOnThePaper() {
+        // White wax on white paper is the one color that can make the app
+        // look broken: a mark that is the same color as the sheet under it,
+        // with no alpha that can help, because a white pixel at any coverage
+        // over white paper is still white paper. The relief in the shade
+        // above is what makes it visible, so it is measured here the way an
+        // eye would: the wax, laid over the paper the app draws on.
+        val paper = (Crayons.PAPER and 0xFFFFFF).toInt()
+        val pixels = Wax.surface(Crayons.WHITE, 64, -24.0, 0, 0x5A17, fine = true)
+        var worst = 0
+        var total = 0L
+        for (p in pixels) {
+            val rgb = p and 0xFFFFFF
+            val a = (p ushr 24) and 0xFF
+            for (shift in intArrayOf(16, 8, 0)) {
+                val wax = (rgb shr shift) and 0xFF
+                val under = (paper shr shift) and 0xFF
+                val seen = (wax * a + under * (255 - a)) / 255
+                val delta = kotlin.math.abs(seen - under)
+                if (delta > worst) worst = delta
+                total += delta
+            }
+        }
+        val mean = total.toDouble() / (pixels.size * 3)
+        assertTrue("a white mark is invisible: worst channel delta $worst", worst >= 24)
+        assertTrue("a white mark is a solid gray band: mean channel delta $mean", mean < 15.0)
     }
 
     @Test

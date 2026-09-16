@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,9 +15,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import io.github.muntasimulhaque.crayoner.core.Crayons
 import io.github.muntasimulhaque.crayoner.core.Stroke
@@ -29,10 +36,11 @@ import kotlinx.coroutines.withContext
  *
  * On a phone the bar sits above the paper and the capsule of tools below it,
  * the two rows on one rail so the screen reads as one object. On anything
- * wide and sideways the capsule stands on the left and the sheet takes the
- * rest: a column of tools costs the paper its own width and the eye nothing,
- * because the hand coloring the page reaches past them once, and the picture
- * it is coloring is what every pixel of the screen is for.
+ * wide and sideways the capsule stands beside the sheet, the two of them
+ * centered on the desk together: a column of tools costs the paper its own
+ * width and the eye nothing, because the hand coloring the page reaches past
+ * them once, and the picture it is coloring is what every pixel of the
+ * screen is for.
  *
  * There is no picture above the page, because the picture lives in the bar as
  * one more round button the same size and shape as the rest: look at it any
@@ -78,117 +86,103 @@ fun PlayScreen(
         if (answers != 0L) haptics.paint()
     }
 
+    // The working sheet's own rectangle on the glass, in root pixels, handed
+    // up by the sheet as it is laid out. The sample held over the page lands
+    // on exactly this rectangle, and its picture is rendered at exactly this
+    // size, off the main thread, the moment the page opens: a prewarm that
+    // missed the size by a pixel would be a whole finished picture drawn on
+    // the main thread under the finger that just asked for it.
+    var sheetBounds by remember { mutableStateOf(Rect.Zero) }
+    // While something stands in front of the page (the box of colors, the
+    // sample held up, the keep question), the world behind it is put out of
+    // a screen reader's reach. A scrim a sighted child cannot see through is
+    // a wall a child without sight should not walk through either.
+    val modal = state.peeking || state.boxOpen || state.asking
+
     Box(modifier = Modifier.fillMaxSize().background(CrayonerColors.Desk)) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            // The sample held up close is the picture the child copies, and it
-            // is one tap away at all times. Its own picture is rendered the
-            // moment the page opens, off the main thread, at exactly the size
-            // the peek will ask for, so the tap finds a picture instead of
-            // making one: a picture of a whole page is real work, and the
-            // main thread is where a tap is felt.
-            val density = LocalDensity.current
-            val page = state.page
-            LaunchedEffect(page.id) {
-                val widthPx = with(density) { peekSide(maxWidth, maxHeight).roundToPx() }
-                withContext(Dispatchers.Default) {
-                    prewarmPageImages(listOf(page), ::sampleFills, widthPx)
-                }
-            }
-            // The tools stand beside the sheet only when there is genuinely
-            // room for both, which needs width AND a screen that is wider
-            // than it is tall. A portrait tablet is wide, but standing the
-            // tools beside the sheet there steals half the page's size; the
-            // same tablet gets the stacked shape and a much bigger sheet.
-            // This is decided from the real measured size, so it is right on
-            // every device rather than on the ones we happened to test.
-            val wide = maxWidth >= WIDE_AT && maxWidth > maxHeight * 1.15f
-            val bar: @Composable (Modifier) -> Unit = { m ->
-                TopBar(
-                    onHome = onHome,
-                    soundOn = soundOn,
-                    onSound = onSound,
-                    onSample = { onPeek(true) },
-                    page = state.page,
-                    announce = state.progress.strokes.isEmpty(),
-                    modifier = m,
-                )
-            }
-            val sheet: @Composable (Modifier) -> Unit = { modifier ->
-                Sheet(
-                    state = state,
-                    live = live,
-                    onStrokeStart = onStrokeStart,
-                    onStrokeMove = onStrokeMove,
-                    onStrokeEnd = onStrokeEnd,
-                    onColorArea = onColorArea,
-                    modifier = modifier,
-                )
-            }
-            val tools: @Composable (Modifier) -> Unit = { modifier ->
-                ToolCapsule(
-                    selected = state.crayon ?: Crayons.RED,
-                    erasing = state.erasing,
-                    boxOpen = state.boxOpen,
-                    canUndo = state.canUndo,
-                    canRedo = state.canRedo,
-                    onOpenBox = onOpenBox,
-                    onErase = onErase,
-                    onUndo = onUndo,
-                    onRedo = onRedo,
-                    modifier = modifier,
-                    vertical = wide,
-                )
-            }
-            if (wide) {
-                // Sideways: the tools stand in a column at the left edge of
-                // the desk and the paper takes everything else. A column of
-                // controls beside a sheet costs the sheet a column's width
-                // and not a row's, and the paper keeps the whole height of
-                // the screen above its tools. The bar still runs across the
-                // top of everything, because the way home should not move
-                // when the phone turns over.
-                Column(Modifier.fillMaxSize()) {
-                    bar(Modifier.fillMaxWidth())
-                    Row(Modifier.fillMaxWidth().weight(1f)) {
-                        Box(
-                            modifier = Modifier.width(TOOLS_COLUMN).fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            tools(Modifier)
-                        }
-                        sheet(Modifier.weight(1f).fillMaxSize())
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (modal) Modifier.clearAndSetSemantics {} else Modifier),
+        ) {
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val page = state.page
+                LaunchedEffect(page.id, sheetBounds) {
+                    val sample = sampleSizeOf(sheetBounds)
+                    if (sample.width <= 0 || sample.height <= 0) return@LaunchedEffect
+                    // The picture for the sample button, made before the
+                    // button is pressed. It is a whole page of wax, so it is
+                    // made off the main thread and at the back of the queue:
+                    // see prewarmPageImages.
+                    withContext(Dispatchers.Default) {
+                        prewarmPageImages(
+                            pages = listOf(page),
+                            fills = ::sampleFills,
+                            widthPx = sample.width,
+                            heightPx = sample.height,
+                        )
                     }
                 }
-            } else {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    // The bar runs the whole width of the screen on a phone:
-                    // Home lands in the top left corner and the sound switch
-                    // in the top right, where a hand already knows to look,
-                    // and the picture sits between them. Nothing is inset
-                    // from the screen's own edge, because a bar inset from
-                    // the edge reads as a panel dropped onto the desk.
-                    bar(Modifier.fillMaxWidth())
-                    // The sheet is given every pixel the capsule does not
-                    // need. It keeps the sheet's own proportion, so a phone
-                    // shows a tall page rather than a square with two bands
-                    // of empty desk above and below it.
-                    sheet(Modifier.fillMaxWidth().weight(1f))
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(TOOLS_HEIGHT),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        tools(Modifier)
-                    }
+                // The tools stand beside the sheet only when there is genuinely
+                // room for both, which needs width AND a screen that is wider
+                // than it is tall. A portrait tablet is wide, but standing the
+                // tools beside the sheet there steals half the page's size; the
+                // same tablet gets the stacked shape and a much bigger sheet.
+                // This is decided from the real measured size, so it is right on
+                // every device rather than on the ones we happened to test.
+                val wide = maxWidth >= WIDE_AT && maxWidth > maxHeight * 1.15f
+                val bar: @Composable (Modifier) -> Unit = { m ->
+                    TopBar(
+                        onHome = onHome,
+                        soundOn = soundOn,
+                        onSound = onSound,
+                        onSample = { onPeek(true) },
+                        page = state.page,
+                        announce = state.progress.strokes.isEmpty(),
+                        modifier = m,
+                    )
+                }
+                val sheet: @Composable (Modifier) -> Unit = { modifier ->
+                    Sheet(
+                        state = state,
+                        live = live,
+                        onStrokeStart = onStrokeStart,
+                        onStrokeMove = onStrokeMove,
+                        onStrokeEnd = onStrokeEnd,
+                        onColorArea = onColorArea,
+                        onBounds = { sheetBounds = it },
+                        modifier = modifier,
+                    )
+                }
+                val tools: @Composable (Modifier) -> Unit = { modifier ->
+                    ToolCapsule(
+                        selected = state.crayon ?: Crayons.RED,
+                        erasing = state.erasing,
+                        boxOpen = state.boxOpen,
+                        canUndo = state.canUndo,
+                        canRedo = state.canRedo,
+                        onOpenBox = onOpenBox,
+                        onErase = onErase,
+                        onUndo = onUndo,
+                        onRedo = onRedo,
+                        modifier = modifier,
+                        vertical = wide,
+                    )
+                }
+                if (wide) {
+                    SidewaysDesk(bar = bar, sheet = sheet, tools = tools)
+                } else {
+                    StackedDesk(bar = bar, sheet = sheet, tools = tools)
                 }
             }
         }
 
         if (state.peeking) {
-            SamplePeek(page = state.page, onDismiss = { onPeek(false) })
+            SamplePeek(
+                page = state.page,
+                bounds = sheetBounds,
+                onDismiss = { onPeek(false) },
+            )
         }
         if (state.boxOpen) {
             CrayonBoxSheet(
@@ -217,6 +211,80 @@ fun PlayScreen(
 }
 
 /**
+ * The phone's desk: the bar across the top, the sheet taking everything the
+ * tools do not need, the capsule under the paper. The bar runs the whole
+ * width of the screen, so Home lands in the top left corner and the sound
+ * switch in the top right, where a hand already knows to look; nothing is
+ * inset from the screen's own edge, because a bar inset from the edge reads
+ * as a panel dropped onto the desk.
+ */
+@Composable
+private fun StackedDesk(
+    bar: @Composable (Modifier) -> Unit,
+    sheet: @Composable (Modifier) -> Unit,
+    tools: @Composable (Modifier) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        bar(Modifier.fillMaxWidth())
+        // The sheet is given every pixel the capsule does not need. It keeps
+        // the sheet's own proportion, so a phone shows a tall page rather
+        // than a square with two bands of empty desk above and below it.
+        sheet(Modifier.fillMaxWidth().weight(1f))
+        Box(
+            modifier = Modifier.fillMaxWidth().height(TOOLS_HEIGHT),
+            contentAlignment = Alignment.Center,
+        ) {
+            tools(Modifier)
+        }
+    }
+}
+
+/**
+ * The sideways desk: the bar across the top of everything, because the way
+ * home should not move when the phone turns over, and under it the tools
+ * beside the sheet as one object.
+ *
+ * The two are centered on the desk together rather than pushed to opposite
+ * edges of it: on a wide screen the sheet is as tall as the desk allows and
+ * therefore narrower than the screen, and a capsule pinned to the screen's
+ * far edge would sit a hand's width off the paper it belongs to. What the
+ * group centers on is the work.
+ */
+@Composable
+private fun SidewaysDesk(
+    bar: @Composable (Modifier) -> Unit,
+    sheet: @Composable (Modifier) -> Unit,
+    tools: @Composable (Modifier) -> Unit,
+) {
+    Column(Modifier.fillMaxSize()) {
+        bar(Modifier.fillMaxWidth())
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+            val sheetWidth = sheetWidthIn(maxWidth - TOOLS_COLUMN - TOOLS_GAP, maxHeight)
+            val group = (TOOLS_COLUMN + TOOLS_GAP + sheetWidth).coerceAtMost(maxWidth)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .width(group)
+                    .fillMaxHeight(),
+            ) {
+                Box(
+                    modifier = Modifier.width(TOOLS_COLUMN).fillMaxHeight(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    tools(Modifier)
+                }
+                Spacer(Modifier.width(TOOLS_GAP))
+                sheet(Modifier.width(sheetWidth).fillMaxHeight())
+            }
+        }
+    }
+}
+
+/**
  * The width, and the landscape-ness, at which there is room to stand the
  * sheet and the tools beside each other. Below it, or in portrait, stacking
  * is the only honest answer: a sheet squeezed into half a screen is smaller
@@ -230,6 +298,13 @@ private val WIDE_AT = 640.dp
  * a panel around it.
  */
 private val TOOLS_COLUMN = 74.dp
+
+/**
+ * The air between the tools and the sheet on a sideways screen: enough that
+ * the capsule lies on the desk beside the paper rather than leaning on its
+ * edge, and no more, because every dp here is a dp off the page.
+ */
+private val TOOLS_GAP = 12.dp
 
 /**
  * How much room the capsule is given under the sheet on a phone. It is the

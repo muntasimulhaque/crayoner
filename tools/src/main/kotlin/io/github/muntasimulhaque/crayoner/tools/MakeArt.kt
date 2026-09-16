@@ -1,6 +1,7 @@
 package io.github.muntasimulhaque.crayoner.tools
 
 import io.github.muntasimulhaque.crayoner.core.Crayons
+import io.github.muntasimulhaque.crayoner.core.Page
 import io.github.muntasimulhaque.crayoner.core.Pages
 import io.github.muntasimulhaque.crayoner.core.Strokes
 import java.awt.Color
@@ -16,15 +17,16 @@ import kotlin.math.ceil
 
 /**
  * The Play Store art, drawn from the same pictures and the same mark as the
- * app: the brand coral ground, one crayon, the name written in the app's own
- * hand, and one line under it.
+ * app: the brand coral ground, the book's first page shown twice, the name
+ * written in the app's own hand, and one line under it.
  *
- * The banner's left side is a real coloring page from the book (the
- * sailboat), half finished: the child's own view of the app, in the app's
- * own colors, with the wax laid down by the same code the app colors with.
- * Under the name stands the app's own mark, the crayon at the end of the
- * line it has just drawn, in paper white: the banner and the launcher icon
- * carry one sentence between them, drawn by one piece of code.
+ * The banner's left side is the sailboat page exactly as the book prints it,
+ * and beside it the same page finished: the pair is the whole app in one
+ * glance, in the app's own colors, with the wax laid down by the same code
+ * the app colors with. Under the name stands the app's own mark, the crayon
+ * at the end of the line it has just drawn, in paper white: the banner and
+ * the launcher icon carry one sentence between them, drawn by one piece of
+ * code.
  *
  * Outputs (never hand-edited; regenerate with :tools:makeArt):
  *   play-store/feature-graphic-1024x500.png
@@ -34,6 +36,9 @@ object MakeArt {
 
     private val BRAND: Int = Crayons.RED.toInt()
     private val CARD: Int = 0xFFFFFDF8.toInt()
+
+    /** The color of the one line under the name: paper, a step back. */
+    private val TAGLINE: Int = 0xFFF7DCD7.toInt()
 
     /** The 1024 x 500 feature graphic: the mark, the name, one line. */
     fun featureGraphic(rootDir: File): BufferedImage {
@@ -46,63 +51,73 @@ object MakeArt {
         g.color = Color(BRAND, true)
         g.fill(Rectangle2D.Double(0.0, 0.0, w.toDouble(), h.toDouble()))
 
-        // The picture plate on the left: the sailboat, the book's first page,
-        // half colored by a child's own hand. Every mark on it is a real
-        // scribble from the same code the app draws with, so the banner shows
-        // the app and not an artist's idea of the app. The plate keeps the
-        // page's own proportion, taller than it is wide, the way a sheet in
-        // the pad is, and it wears the same soft shadow a sheet wears on the
-        // desk in the app, so the banner's sheet and the child's sheet are
-        // visibly the same kind of object.
-        val plateW = 292
-        val plateH = (plateW * 1.2).toInt()
-        val px = 78
-        val py = (h - plateH) / 2
-        sheetShadow(g, px.toDouble(), py.toDouble(), plateW.toDouble(), plateH.toDouble())
-        g.color = Color(CARD, true)
-        g.fill(Rectangle2D.Double(px.toDouble(), py.toDouble(), plateW.toDouble(), plateH.toDouble()))
-        val plateG = g.create(px, py, plateW, plateH) as Graphics2D
+        // Two sheets of the same page, side by side: on the left exactly what
+        // the book prints, and on the right the same page finished. The pair
+        // is the whole app in one glance, and it reads in the order it is
+        // played: here are the lines, and here is what a child makes of them.
+        // Both wear the same soft shadow a sheet wears on the desk in the
+        // app, so the banner's sheets and the child's sheet are visibly the
+        // same kind of object.
         val page = Pages.byId("sail") ?: error("the sail page is gone")
-        // Everything printed, and then the child's own hand: the sky, the
-        // clouds and the sea rubbed in with real wax, the sail and the boat
-        // still bare lines waiting for next time. The wax is the same wax the
-        // app lays down, so the banner shows the app and not an artist's
-        // idea of it.
-        val started = setOf("sky", "cloud", "cloud_low", "sea")
-            .mapNotNull { id -> page.indexOfRegion(id).takeIf { it >= 0 } }
-        val half = page.regions.indices
-            .filter { it in started }
-            .associateWith { page.regions[it].fillArgb }
-        RenderKit.renderPage(plateG, page, plateW.toDouble(), half)
-        plateG.dispose()
-
-        // The wordmark: the name, and one line under it. The name is set to
-        // fill its half of the banner without ever reaching the plate or the
-        // edge, and the line under it is short enough to end well before
-        // either.
-        drawCleanString(g, "Crayoner", "chewy.ttf", 108f, CARD, 448f, 208f, rootDir)
-        drawCleanString(
-            g,
-            "Color the picture, just like the book.",
-            "chewy.ttf",
-            29f,
-            0xFFF7DCD7.toInt(),
-            454f,
-            274f,
-            rootDir,
-        )
-        // The app's own mark, in paper white on the coral: the same crayon at
-        // the same lean, standing at the end of the same line, drawn from the
-        // same geometry as the launcher icon and rendered as one flat white
-        // silhouette, because at this size four shades of white on a coral
-        // ground read as a smudge and the shape alone reads as the app. It
-        // stands under the wordmark, where the eye lands last and finds the
-        // sentence the icon says without any words at all.
-        val mark = g.create(544, 298, 210, 194) as Graphics2D
-        paintMark(mark, 194, inset = 0.94, palette = MarkPalette.MONO)
-        mark.dispose()
+        val sheetW = 180
+        val sheetH = (sheetW * 1.2).toInt()
+        val sheetY = (h - sheetH) / 2
+        val gap = 24
+        val bareX = 60
+        val finishedX = bareX + sheetW + gap
+        // As printed: paper, and the book's own lines, and nothing else.
+        sheet(g, page, bareX, sheetY, sheetW, sheetH, emptyMap())
+        // And finished: every area in its own color.
+        val finished = page.regions.indices.associateWith { page.regions[it].fillArgb }
+        sheet(g, page, finishedX, sheetY, sheetW, sheetH, finished)
+        paintWordmark(g, rootDir)
         g.dispose()
         return image
+    }
+
+    /**
+     * The name, the line under it, and the app's own mark below them: the
+     * whole right side of the banner.
+     *
+     * The name is set to fill its half of the banner without ever reaching
+     * the sheets or the edge, and the line under it is broken where a
+     * reader's voice would break it, so it stays clear of the mark below it.
+     * The mark is paper white on the coral: the same crayon at the same lean,
+     * standing at the end of the same line, drawn from the same geometry as
+     * the launcher icon and rendered as one flat white silhouette, because at
+     * this size four shades of white on a coral ground read as a smudge and
+     * the shape alone reads as the app.
+     */
+    private fun paintWordmark(g: Graphics2D, rootDir: File) {
+        drawCleanString(g, "Crayoner", "chewy.ttf", 100f, CARD, 520f, 224f, rootDir)
+        drawCleanString(g, "Color the picture,", "chewy.ttf", 27f, TAGLINE, 526f, 282f, rootDir)
+        drawCleanString(g, "just like the book.", "chewy.ttf", 27f, TAGLINE, 526f, 318f, rootDir)
+        val mark = g.create(800, 310, 190, 176) as Graphics2D
+        paintMark(mark, 176, inset = 0.94, palette = MarkPalette.MONO)
+        mark.dispose()
+    }
+
+    /**
+     * One sheet on the banner: paper, its shadow, and the page on it, with
+     * only the areas in [fills] colored in. The same call draws the sheet as
+     * printed and the sheet as a child could finish it, so the two can never
+     * come out as different paper.
+     */
+    private fun sheet(
+        g: Graphics2D,
+        page: Page,
+        x: Int,
+        y: Int,
+        w: Int,
+        h: Int,
+        fills: Map<Int, Long>,
+    ) {
+        sheetShadow(g, x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble())
+        g.color = Color(CARD, true)
+        g.fill(Rectangle2D.Double(x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble()))
+        val sheetG = g.create(x, y, w, h) as Graphics2D
+        RenderKit.renderPage(sheetG, page, w.toDouble(), fills)
+        sheetG.dispose()
     }
 
     /**

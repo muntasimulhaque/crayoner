@@ -1,5 +1,6 @@
 package io.github.muntasimulhaque.crayoner.ui
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,29 +39,44 @@ import io.github.muntasimulhaque.crayoner.core.CrayonShape
  * of its wrapper being clipped, and it is drawn a touch shorter than the
  * name's own height rather than a touch taller: a mark set that way reads as
  * part of the word, and one set taller reads as a badge beside it.
+ *
+ * The name is set to fit the room left beside the mark, so a reader who has
+ * asked the system for very large text gets the biggest wordmark the header
+ * can hold rather than a heading that runs off the screen or wraps around
+ * its own crayon.
  */
 @Composable
 internal fun ShelfHeader() {
-    Row(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The brand's mark, at the app's own lean: the same crayon, at the
-        // same angle, drawn by the same code as the launcher icon and the
-        // seat on the capsule.
-        CrayonGlyph(
-            color = CrayonerColors.Coral,
-            leanDeg = CrayonShape.MARK_LEAN,
-            modifier = Modifier.size(width = MarkBox.WIDTH, height = MarkBox.HEIGHT),
-        )
-        Spacer(Modifier.width(MarkBox.GAP))
-        Text(
-            text = stringResource(R.string.app_name),
+        val name = stringResource(R.string.app_name)
+        val nameSize = rememberFittedFontSize(
+            texts = listOf(name),
             style = MaterialTheme.typography.displaySmall,
-            color = CrayonerColors.Ink,
+            width = maxWidth - MarkBox.WIDTH - MarkBox.GAP,
         )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // The brand's mark, at the app's own lean: the same crayon, at the
+            // same angle, drawn by the same code as the launcher icon and the
+            // seat on the capsule.
+            CrayonGlyph(
+                color = CrayonerColors.Coral,
+                leanDeg = CrayonShape.MARK_LEAN,
+                modifier = Modifier.size(width = MarkBox.WIDTH, height = MarkBox.HEIGHT),
+            )
+            Spacer(Modifier.width(MarkBox.GAP))
+            Text(
+                text = name,
+                style = MaterialTheme.typography.displaySmall.copy(fontSize = nameSize),
+                color = CrayonerColors.Ink,
+                maxLines = 1,
+            )
+        }
     }
 }
 

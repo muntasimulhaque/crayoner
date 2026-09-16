@@ -3,27 +3,19 @@ package io.github.muntasimulhaque.crayoner.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import io.github.muntasimulhaque.crayoner.R
 import io.github.muntasimulhaque.crayoner.core.Page
@@ -50,19 +42,18 @@ fun SampleButton(
 ) {
     val label = stringResource(R.string.show_sample)
     val breath = if (announce) rememberBreath(stamp = page.id.hashCode().toLong()) else 0f
-    Box(
-        modifier = modifier
-            .size(size)
-            .graphicsLayer {
-                scaleX = 1f + 0.06f * breath
-                scaleY = 1f + 0.06f * breath
-            }
-            .buttonShadow(CircleShape)
-            .clip(CircleShape)
-            .background(CrayonerColors.Card)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
+    // The coin is every other coin in the app ([CoinPlate]): the same plate,
+    // the same shadow, the same dip under a press. What is different about it
+    // is only what it holds, which is the whole picture.
+    CoinPlate(
+        background = CrayonerColors.Card,
+        modifier = modifier.graphicsLayer {
+            scaleX = 1f + 0.06f * breath
+            scaleY = 1f + 0.06f * breath
+        },
+        size = size,
+        label = label,
+        onClick = onClick,
     ) {
         // The whole picture, mounted in the round button like a picture in a
         // round frame. It is inset well inside the coin, and it is the

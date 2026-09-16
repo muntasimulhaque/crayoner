@@ -1,8 +1,13 @@
 package io.github.muntasimulhaque.crayoner.ui
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +20,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -61,9 +68,28 @@ internal fun HungPicture(
     val density = LocalDensity.current
     val cardWidth = with(density) { widthPx.toDp() }
     val cardHeight = with(density) { heightPx.toDp() }
+    // The card answers a press the way every round control in the app does,
+    // with a dip of the whole object, and not with an ink ripple: a ripple
+    // spreading over a child's own picture is chrome on the one thing on the
+    // wall that is theirs. The whole card dips, name and all, because the
+    // card is one object.
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val press by animateFloatAsState(
+        targetValue = if (pressed) 1f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessHigh, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "card-press",
+    )
 
     Column(
-        modifier = Modifier.rotate(tilt),
+        modifier = Modifier
+            .rotate(tilt)
+            .graphicsLayer {
+                val k = 1f - 0.03f * press
+                scaleX = k
+                scaleY = k
+                translationY = PressDrop.toPx() * press
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -72,7 +98,12 @@ internal fun HungPicture(
                 .buttonShadow(RoundedCornerShape(6.dp), elevation = 5.dp)
                 .clip(RoundedCornerShape(6.dp))
                 .background(CrayonerColors.Card)
-                .clickable(role = Role.Button, onClick = onOpen)
+                .clickable(
+                    interactionSource = source,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onOpen,
+                )
                 .semantics { contentDescription = name }
                 // A plate of paper, even on all four sides: the picture is
                 // the reason the card exists, and the mount around it is the

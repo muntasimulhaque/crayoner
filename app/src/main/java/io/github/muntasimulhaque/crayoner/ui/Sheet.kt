@@ -16,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -60,13 +63,20 @@ internal fun SheetOf(
     onStrokeEnd: () -> Unit,
     onColorArea: (Int) -> Unit,
     width: Dp,
+    onBounds: (Rect) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val height = width * Page.ASPECT.toFloat()
     val widthPx = with(LocalDensity.current) { width.roundToPx() }
     val heightPx = with(LocalDensity.current) { height.roundToPx() }
     Box(
-        modifier = modifier.size(width = width, height = height),
+        modifier = modifier
+            .size(width = width, height = height)
+            // The paper's own rectangle, measured and handed up rather than
+            // computed a second time anywhere else: the sample held over the
+            // page has to land on the page, and two copies of the same
+            // arithmetic are two chances for the copy to be a pixel off.
+            .onGloballyPositioned { onBounds(it.boundsInRoot()) },
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -175,15 +185,10 @@ internal fun Sheet(
     onStrokeMove: (Vec2) -> Unit,
     onStrokeEnd: () -> Unit,
     onColorArea: (Int) -> Unit,
+    onBounds: (Rect) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        // The paper's own proportion, in both directions: a sheet as wide as
-        // the room and as tall as its shape needs, capped so it still fits
-        // when the room is the short side.
-        val byWidth = maxWidth
-        val byHeight = maxHeight / Page.ASPECT.toFloat()
-        val width = minOf(byWidth, byHeight).coerceAtLeast(SHEET_MIN)
         SheetOf(
             state = state,
             live = live,
@@ -191,10 +196,20 @@ internal fun Sheet(
             onStrokeMove = onStrokeMove,
             onStrokeEnd = onStrokeEnd,
             onColorArea = onColorArea,
-            width = width,
+            width = sheetWidthIn(maxWidth, maxHeight),
+            onBounds = onBounds,
         )
     }
 }
+
+/**
+ * The width a sheet comes out at in a room of its own size: as wide as the
+ * room, and as tall as the page's own proportion needs, whichever runs out
+ * first. The one place the page's shape is turned into a measurement, so the
+ * stacked layout and a sideways one cannot end up with two different sheets.
+ */
+internal fun sheetWidthIn(roomW: Dp, roomH: Dp): Dp =
+    minOf(roomW, roomH / Page.ASPECT.toFloat()).coerceAtLeast(SHEET_MIN)
 
 /** The smallest a sheet is ever drawn, so a tiny window still has paper. */
 private val SHEET_MIN = 96.dp

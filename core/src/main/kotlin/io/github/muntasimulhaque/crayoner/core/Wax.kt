@@ -143,9 +143,10 @@ object Wax {
      * repeated across an area as a texture.
      *
      * The tile carries the coverage itself, not a veil over a flat color:
-     * every pixel is the crayon's own color at the alpha the wax actually
-     * laid down there. The paper's tooth is the fine speckle; the drag is
-     * the same noise stretched along the rubbing direction, which is the
+     * every pixel is the crayon's own color, taken a little deeper where the
+     * wax is thin, at the alpha the wax actually laid down there. The paper's
+     * tooth is the fine speckle; the drag is the
+     * same noise stretched along the rubbing direction, which is the
      * streak a hand leaves; and the broad mottle is where the hand pressed
      * harder and where it lifted. The result is a surface that reads as wax
      * on paper at arm's length and as paper's tooth up close.
@@ -188,6 +189,13 @@ object Wax {
         val toothWeight = if (fine) MARK_TOOTH_WEIGHT else COVERAGE_TOOTH_WEIGHT
         val broadWeight = if (fine) MARK_BROAD_WEIGHT else COVERAGE_BROAD_WEIGHT
         val rgb = (argb and 0xFFFFFF).toInt()
+        // How light the stick is, from nothing (black) to one (white), for
+        // the relief's own weight below.
+        val lightness = (
+            0.299 * ((rgb ushr 16) and 0xFF) +
+                0.587 * ((rgb ushr 8) and 0xFF) +
+                0.114 * (rgb and 0xFF)
+            ) / 255.0
         val out = IntArray(size * size)
         // [phase] slides the tile so two areas of one picture do not share a
         // texture; it is a rotation of the finished pixels and nothing else.
@@ -201,11 +209,48 @@ object Wax {
             // wax is mostly down, with places it skipped and places it piled.
             val c = coverageCurve((cover + s * swing).coerceIn(0.0, 1.0))
             val alpha = (c * 255.0).toInt().coerceIn(0, 255)
+            // Where the wax is thin, the paper's own shadow shows in the
+            // trough: every pixel is the crayon's color, a little deeper on
+            // the tooth that stands bare. This is what makes a crayon a
+            // material rather than a printed color, and it is the one thing
+            // that can make a white crayon visible on white paper: alpha
+            // alone cannot, because a white pixel at any coverage is still
+            // white paper. The lighter the stick, the more this relief has
+            // to carry it, so a pale wax is shaded deeper than a dark one.
+            // See D-085.
+            val shade = 1.0 - (WAX_SHADE + WAX_SHADE_LIGHT * lightness) * (1.0 - c)
+            val r = (((rgb ushr 16) and 0xFF) * shade).toInt().coerceIn(0, 255)
+            val g = (((rgb ushr 8) and 0xFF) * shade).toInt().coerceIn(0, 255)
+            val b = ((rgb and 0xFF) * shade).toInt().coerceIn(0, 255)
             val j = i + turn
-            out[if (j >= out.size) j - out.size else j] = (alpha shl 24) or rgb
+            out[if (j >= out.size) j - out.size else j] = (alpha shl 24) or (r shl 16) or (g shl 8) or b
         }
         return out
     }
+
+    /**
+     * How deep the wax's own troughs are shaded, as a share of the color.
+     *
+     * It is small on purpose: a colored crayon keeps its own color and the
+     * shade rides in the tooth, while a white one, whose color cannot show
+     * against paper at all, comes out as a pale waxy relief. Any deeper and
+     * every colored area starts to look dirty.
+     */
+    private const val WAX_SHADE = 0.12
+
+    /**
+     * And how much deeper it goes for a pale stick, at full lightness.
+     *
+     * A dark wax is its own mark; a pale one has nothing but its relief to
+     * show against paper, and the paper is the same color it is. Weighting
+     * the shade by how light the color is means a red crayon's tooth stays
+     * as subtle as it was while a white crayon's tooth can be seen from
+     * across a table, which is the difference between a child seeing their
+     * own mark and pressing a crayon onto paper for nothing. The two numbers
+     * together are the whole difference between a white mark that reads as
+     * wax and one that reads as a gray band, which is why they are small.
+     */
+    private const val WAX_SHADE_LIGHT = 0.28
 
     /**
      * The coverage curve, read off a table rather than a `pow` per pixel.
