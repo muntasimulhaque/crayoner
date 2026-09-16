@@ -182,16 +182,15 @@ external links reachable by a child, no ads.
 
 ## Status
 
-**Version 1.4 (versionCode 14) was built by CI and is awaiting
-submission.** It was built by CI from commit eace123, signed with the
-Crayoner upload key, and reads versionCode 14, versionName 1.4, package
+**Version 1.4 (versionCode 14) was submitted for Play review on 16 Sep
+2026.** It was built by CI from commit eace123, signed with the Crayoner
+upload key, and reads versionCode 14, versionName 1.4, package
 io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
 androidx core private receiver (checked against the built APK's own manifest
-with `aapt2 dump permissions`). The AAB was sha256 ae2de068 and sits in
-`play-store/aab/` as the build to upload; it must be emptied (deleted) the
-moment it is submitted for review, so a stale build can never be uploaded
-twice. The release notes are in chat and in Release notes below, and the
-next build to upload will be 1.5.
+with `aapt2 dump permissions`). The AAB was sha256 ae2de068 and has been
+DELETED from `play-store/aab/` now that it is submitted, so a stale build can
+never be uploaded twice. The release notes are in chat and in Release notes
+below, and the next build to upload will be 1.5.
 
 1.4 is the round where the sample lies over the page: the finished picture is
 held at the working sheet's own measured rectangle instead of a plate with a
