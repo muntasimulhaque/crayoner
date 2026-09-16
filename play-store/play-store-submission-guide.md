@@ -182,6 +182,32 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 1.4 (versionCode 14) was built by CI and is awaiting
+submission.** It was built by CI from commit eace123, signed with the
+Crayoner upload key, and reads versionCode 14, versionName 1.4, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked against the built APK's own manifest
+with `aapt2 dump permissions`). The AAB was sha256 ae2de068 and sits in
+`play-store/aab/` as the build to upload; it must be emptied (deleted) the
+moment it is submitted for review, so a stale build can never be uploaded
+twice. The release notes are in chat and in Release notes below, and the
+next build to upload will be 1.5.
+
+1.4 is the round where the sample lies over the page: the finished picture is
+held at the working sheet's own measured rectangle instead of a plate with a
+name on it. The box lays out four columns on a phone and the real box's own
+eight on a tablet, with every row full; the tools and the sheet are one
+group on a sideways screen; the sample coin presses like every other coin; a
+backdrop is a wall to a screen reader, and a background picture is made at
+the back of the queue and may be abandoned when the screen moves on. The
+wall's cards dip when pressed, the wax carries its own shadow so a white
+crayon can always be seen, a full page takes the newest mark and thins its
+oldest wax, and the app composes at the reader's own text size. The launcher
+mark fills its tile and the banner shows the page before and after it, and
+the desk is a step deeper. The 24 CI captures in these folders are the new
+set from this build, with the new desk, the new wax, the new box, the new
+sample and the new banner.
+
 **Version 1.3 (versionCode 13) was submitted for Play review on 15 Sep
 2026.** It was built by CI from commit c63b8a0, signed with the Crayoner
 upload key, and reads versionCode 13, versionName 1.3, package
@@ -485,16 +511,21 @@ submitted, and 0.2 superseded it.
 
 - The review email from Play (usually a few days for a paid app in the
   Families program).
-- 1.3 lands on top of 1.2 on the same closed track. Anyone already testing
+- 1.4 lands on top of 1.3 on the same closed track. Anyone already testing
   gets the update; no new invitations are needed.
 - If Play asks anything, the answers are all in this file: category, the
   questionnaire, the data safety declaration, and the target audience.
 - Nothing in the app needs to change for review; it is complete and tested.
-- The check for 1.3 is that nothing changed: it is the same app rebuilt from
-  smaller files inside, so the wall, a page, the box, the sample, the rubber
-  and the one rustle should be exactly what 1.2 showed. If anything looks or
-  sounds different at all, that is a bug in the rebuild, not a feature.
-  Then, as always, open the app and scroll straight away, while the pictures
+- The check for 1.4 is the redrawn screens. The sample lies over the page
+  the child is coloring, at the page's own size and in the page's own place,
+  with one tap up and one tap down, and the page is dimmed but never hidden
+  behind it. The box of crayons is a full rectangle of bigger crayons and
+  nothing is left alone on a row: four across on a phone, eight across on a
+  tablet. On a tablet held sideways the tools stand in a column beside the
+  sheet as one group, and the bar runs the full width of the screen, with
+  Home in the top left corner and the sound switch in the top right. Cards on
+  the wall dip like the rest of the app's buttons when pressed. Then, as
+  always, open the app and scroll straight away, while the pictures
   are still being made, and again after they are all there.
   Nothing should hitch, no card should ever be seen drawing itself, and a
   card that is still waiting shows the page's own outlines for that moment
@@ -506,21 +537,11 @@ submitted, and 0.2 superseded it.
   it or start that one fresh. Nothing is lost by either answer, Back on the
   phone puts the question away and leaves every mark where it was, and a
   page with nothing on it never asks.
-- On a tablet held sideways the tools stand in a column at the left and the
-  bar runs the full width of the screen, with Home in the top left corner
-  and the sound switch in the top right. That is the other half of the row
-  change, and it is the one to check on the largest device at hand.
-- A picture already colored still reads back whole: every mark is a line of
-  page coordinates and the marks themselves did not change. What changed is
-  what is left to color: the sprinkles on the two sweets are gone (there is
-  no such thing as a sprinkle a fingertip can hit), and the stars, apples,
-  cherries, windows, stripes, raindrops, track and pole all grew.
-- The launcher icon changed again: the crayon now stands at the far end of
-  the line it has drawn and leans 26 degrees. A home screen still showing
-  the old icon is a cached launcher icon, not a stale build.
-- The wall's pictures have no tape on them any more. The shelf still hangs
-  them at a small angle of their own; what is gone is the strip across the
-  top of each one.
+- The launcher icon changed again: the line the crayon has drawn is wider
+  and the mark fills more of its tile. A home screen still showing the old
+  icon is a cached launcher icon, not a stale build.
+- The white crayon can be seen: a mark in white lands as a pale waxy relief
+  on the paper instead of nothing at all.
 
 ## Version walk (the law)
 
@@ -537,6 +558,12 @@ The notes for 0.6, 0.7 and 0.8 were handed over in their own sessions and
 are not recorded here; what each of those builds changed is in the Status
 section above, and the version walk below is what keeps the numbering
 right. The 0.9 notes are the ones submitted on 14 Sep 2026.
+
+### Version 1.4 (versionCode 14)
+
+```
+The picture to copy now lies right over the page, the same size and in the same place, so a child can look from one to the other without losing their spot. The white crayon really shows now. The box of crayons is a full rectangle, with bigger crayons and none left alone on a row, and the tools sit beside the paper on a tablet. Large text settings are respected, the wall's pictures dip when pressed, and the launcher icon is easier to read.
+```
 
 ### Version 1.3 (versionCode 13)
 
