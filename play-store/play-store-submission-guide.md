@@ -185,6 +185,31 @@ external links reachable by a child, no ads.
 
 ## Status
 
+**Version 1.5 (versionCode 15) was submitted for Play review on 3 Oct
+2026.** It was built by CI from commit 5a635d1, signed with the Crayoner
+upload key, and reads versionCode 15, versionName 1.5, package
+io.github.muntasimulhaque.crayoner, target 37, with no permission beyond the
+androidx core private receiver (checked against the built APK's own manifest
+with `aapt2 dump permissions`). The AAB was sha256 b0285a8d and has been
+DELETED from `play-store/aab/` now that it is submitted, so a stale build can
+never be uploaded twice. The release notes are in chat and in Release notes
+below, and the next build to upload will be 1.6.
+
+1.5 is the round where the store banner stopped losing its ends. Play shows
+a feature graphic in a listing card, and that card is sixteen by nine, so a
+1024 by 500 banner is centered in it and about 68 pixels at each end are cut
+away: the live listing showed the left sheet with its edge gone and the mark
+with the tip of the crayon gone. The banner is now composed inside the
+window that crop leaves, with air still held inside it, and the sheets, the
+words and the mark are all placed from that window rather than from the
+edge, so nothing can drift over the crop when one of them changes. A test
+holds the ink, the sheets' own shadow included, inside the window. Nothing
+in the app changed: the same sixteen pictures, the same thirty two crayons,
+the same one rustle, the same state saved and restored. The 24 CI captures
+came back within rasterizer noise (the 7 inch set byte for byte, the phone
+and 10 inch sets differing in at most 132 pixels of 4.6 million, at most two
+units of 255), so the captures in these folders stand.
+
 **Version 1.4 (versionCode 14) was submitted for Play review on 16 Sep
 2026.** It was built by CI from commit eace123, signed with the Crayoner
 upload key, and reads versionCode 14, versionName 1.4, package
@@ -513,12 +538,16 @@ submitted, and 0.2 superseded it.
 
 - The review email from Play (usually a few days for a paid app in the
   Families program).
-- 1.4 lands on top of 1.3 on the same closed track. Anyone already testing
+- 1.5 lands on top of 1.4 on the same closed track. Anyone already testing
   gets the update; no new invitations are needed.
 - If Play asks anything, the answers are all in this file: category, the
   questionnaire, the data safety declaration, and the target audience.
 - Nothing in the app needs to change for review; it is complete and tested.
-- The check for 1.4 is the redrawn screens. The sample lies over the page
+- What is new in 1.5 is one picture, and it is not on the screen: the store
+  banner. In the listing it should show the left sheet whole, the finished
+  sheet whole and the white crayon whole, with coral to spare at every edge.
+  A banner with a cut edge or a sliced crayon tip is the old file.
+- The screens to check are the ones 1.4 redrew. The sample lies over the page
   the child is coloring, at the page's own size and in the page's own place,
   with one tap up and one tap down, and the page is dimmed but never hidden
   behind it. The box of crayons is a full rectangle of bigger crayons and
@@ -560,6 +589,12 @@ The notes for 0.6, 0.7 and 0.8 were handed over in their own sessions and
 are not recorded here; what each of those builds changed is in the Status
 section above, and the version walk below is what keeps the numbering
 right. The 0.9 notes are the ones submitted on 14 Sep 2026.
+
+### Version 1.5 (versionCode 15)
+
+```
+The store picture is whole now. The two pages and the crayon at the end of the line used to be cut off at the edges of the banner, so a parent could not see all of it. Nothing in the app has changed: the same sixteen pictures, the same thirty two crayons, the same one quiet rustle, and the same work for a small hand to do.
+```
 
 ### Version 1.4 (versionCode 14)
 
