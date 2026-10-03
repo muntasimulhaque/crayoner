@@ -1046,3 +1046,21 @@ order they were made.
   pictures in it fails the test rather than being quietly copied to the store
   set. The scenes are still stills; they are now stills of the state they
   claim to show.
+
+- D-092 **The banner is composed inside the window the store shows.** A
+  feature graphic is never shown whole. The listing card is a sixteen by nine
+  box, so a 1024 by 500 banner is centered in it and about 68 pixels at each
+  end are cut away, and the live listing did exactly that: the left sheet
+  lost its edge and the mark lost the tip of the crayon. Nothing about the
+  file was wrong; the file was simply drawn for its own size instead of for
+  the size it is looked at. So the banner is composed inside `SAFE`, the
+  window the crop leaves with another 20 pixels of air still held inside it
+  and the same air above and below for a surface that cuts there instead,
+  and `MakeArtTest` now holds the ink, shadow included, inside it. The
+  sheets are placed by the shadow's own reach rather than by eye, the words
+  are measured from the sheets rather than from the edge, and the mark's
+  canvas is fitted into the far corner by the same geometry the launcher icon
+  uses, so nothing can drift over the crop when any one of them changes. The
+  mark's clip is the banner, not its own canvas: a clip drawn to the canvas
+  would cut an overflow away quietly and the test would never see it, which
+  is how the first version of this hid a mark standing on the edge.

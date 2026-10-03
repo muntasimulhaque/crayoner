@@ -67,7 +67,48 @@ class MakeArtTest {
         assertTrue("the banner has no brand ground", nearCoral > 100_000)
     }
 
+    @Test
+    fun everyMarkOnTheBannerSurvivesTheCrop() {
+        // The store shows this file in a card, and the card is a smaller box
+        // than the file: the listing is sixteen by nine, so about 68 pixels
+        // at each end of a 1024 by 500 banner are cut away. The left sheet
+        // and the tip of the crayon used to stand in that band and came out
+        // truncated on the live listing. Nothing drawn may hang over the crop
+        // now, and the shadow counts: it is ink too, and it used to be what
+        // reached the edge first.
+        val artwork = generated()
+        val ink = inkBox(artwork)
+        assertTrue(
+            "the banner's ink runs to $ink and ${MakeArt.SAFE} does not hold it",
+            MakeArt.SAFE.encloses(ink),
+        )
+    }
+
     private fun generated(): BufferedImage = MakeArt.featureGraphic(rootDir())
+
+    /**
+     * The box the banner's ink really takes up: every pixel that is not the
+     * brand ground the file fills first. The ground is one flat fill on
+     * whole pixels, so anything else in the image is something this file
+     * drew, down to the last faint step of a sheet's shadow.
+     */
+    private fun inkBox(image: BufferedImage): Window {
+        val ground = image.getRGB(0, 0)
+        var left = image.width
+        var right = -1
+        var top = image.height
+        var bottom = -1
+        for (y in 0 until image.height) {
+            for (x in 0 until image.width) {
+                if (image.getRGB(x, y) == ground) continue
+                if (x < left) left = x
+                if (x > right) right = x
+                if (y < top) top = y
+                if (y > bottom) bottom = y
+            }
+        }
+        return Window(left, top, right - left + 1, bottom - top + 1)
+    }
 
     /** The repository root, found from the working directory Gradle runs in. */
     private fun rootDir(): java.io.File {

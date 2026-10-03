@@ -38,7 +38,10 @@ with `./gradlew :tools:makeArt`; never edit the PNGs by hand.
   way a voice would break it, and the app's own mark, the crayon at the end
   of the line it has just drawn, in paper white below the words. The mark is
   the same geometry as the launcher icon, so the banner and the icon say one
-  sentence.
+  sentence. Everything on it is composed inside the window the store shows,
+  because the listing card is sixteen by nine and cuts about 68 pixels off
+  each end of a 1024 by 500 file (D-092): nothing may hang over that crop,
+  and `MakeArtTest` fails the build if it does.
 - `play-store/play-icon-512.png`: the launcher tile, full bleed, the same
   design the phone shows.
 - The launcher icons (`mipmap-*/ic_launcher.png`,

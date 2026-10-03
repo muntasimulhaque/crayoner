@@ -28,6 +28,11 @@ import kotlin.math.ceil
  * the launcher icon carry one sentence between them, drawn by one piece of
  * code.
  *
+ * Nothing the banner draws may stand outside [SAFE]: the store shows the
+ * picture in a card, and the card is a smaller box than the file, so the
+ * store cuts what hangs over the edge (see [SAFE] for the numbers, and D-092
+ * for what that cost us once).
+ *
  * Outputs (never hand-edited; regenerate with :tools:makeArt):
  *   play-store/feature-graphic-1024x500.png
  *   play-store/play-icon-512.png
@@ -40,16 +45,63 @@ object MakeArt {
     /** The color of the one line under the name: paper, a step back. */
     private val TAGLINE: Int = 0xFFF7DCD7.toInt()
 
+    /** The size Play asks for: 1024 by 500, exactly, always. */
+    private const val BANNER_W = 1024
+    private const val BANNER_H = 500
+
+    /**
+     * The window every surface shows, and the reason this file composes
+     * inside it.
+     *
+     * A feature graphic is never shown whole. The listing card is a sixteen
+     * by nine box, so the banner is centered in it and
+     * (BANNER_W - BANNER_H * 16 / 9) / 2, about 68 pixels, is cut away at
+     * each end: the left sheet and the tip of the crayon were standing in
+     * that band on the live listing and came out cut. SAFE is the window
+     * that crop leaves, with another 20 pixels of air still held inside it
+     * and the same air above and below for a surface that cuts there
+     * instead, so no crop Play can put on this file can truncate anything
+     * drawn here. `MakeArtTest` refuses a banner that breaks it.
+     */
+    internal val SAFE = Window(88, 56, 848, 388)
+
+    /** One sheet on the banner: the page at its own [Page.ASPECT] of height. */
+    private const val SHEET_W = 170
+    private const val SHEET_GAP = 22
+
+    /** A sheet's shadow, in [SHADOW_STEPS] steps of [SHADOW_STEP] pixels. */
+    private const val SHADOW_STEPS = 5
+    private const val SHADOW_STEP = 5.0
+
+    /**
+     * Where the widest step of a sheet's shadow reaches past the paper at a
+     * side: a third of its spread, because the light sits above and to the
+     * left and the shadow falls away from it. The sheets are placed by this
+     * number, so the shadow rides inside [SAFE] with the paper instead of
+     * over the crop. The shadow's foot reaches further than its side, twice
+     * as far, and it hangs in the coral well above the bottom of the safe
+     * window, so it is left to the test that measures the real ink.
+     */
+    private val SHADOW_SIDE = SHADOW_STEP * SHADOW_STEPS * 0.35
+
+    /** The coral between the sheets and the name. */
+    private const val WORDS_GAP = 46
+
+    /** Where the name sits, measured from the sheets rather than guessed. */
+    private val WORDS_X =
+        (SAFE.x + SHADOW_SIDE + SHEET_W * 2 + SHEET_GAP + SHADOW_SIDE + WORDS_GAP).toFloat()
+
+    /** The mark's own canvas, which the mark is fitted inside by geometry. */
+    private const val MARK_SIZE = 176
+
     /** The 1024 x 500 feature graphic: the mark, the name, one line. */
     fun featureGraphic(rootDir: File): BufferedImage {
-        val w = 1024
-        val h = 500
-        val image = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+        val image = BufferedImage(BANNER_W, BANNER_H, BufferedImage.TYPE_INT_ARGB)
         val g = image.createGraphics()
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
         g.color = Color(BRAND, true)
-        g.fill(Rectangle2D.Double(0.0, 0.0, w.toDouble(), h.toDouble()))
+        g.fill(Rectangle2D.Double(0.0, 0.0, BANNER_W.toDouble(), BANNER_H.toDouble()))
 
         // Two sheets of the same page, side by side: on the left exactly what
         // the book prints, and on the right the same page finished. The pair
@@ -57,19 +109,16 @@ object MakeArt {
         // played: here are the lines, and here is what a child makes of them.
         // Both wear the same soft shadow a sheet wears on the desk in the
         // app, so the banner's sheets and the child's sheet are visibly the
-        // same kind of object.
+        // same kind of object. The pair is laid out in [SAFE], shadow and all.
         val page = Pages.byId("sail") ?: error("the sail page is gone")
-        val sheetW = 180
-        val sheetH = (sheetW * 1.2).toInt()
-        val sheetY = (h - sheetH) / 2
-        val gap = 24
-        val bareX = 60
-        val finishedX = bareX + sheetW + gap
+        val sheetH = (SHEET_W * Page.ASPECT).toInt()
+        val sheetX = SAFE.x + ceil(SHADOW_SIDE).toInt()
+        val sheetY = SAFE.y + (SAFE.h - sheetH) / 2
         // As printed: paper, and the book's own lines, and nothing else.
-        sheet(g, page, bareX, sheetY, sheetW, sheetH, emptyMap())
+        sheet(g, page, sheetX, sheetY, SHEET_W, sheetH, emptyMap())
         // And finished: every area in its own color.
         val finished = page.regions.indices.associateWith { page.regions[it].fillArgb }
-        sheet(g, page, finishedX, sheetY, sheetW, sheetH, finished)
+        sheet(g, page, sheetX + SHEET_W + SHEET_GAP, sheetY, SHEET_W, sheetH, finished)
         paintWordmark(g, rootDir)
         g.dispose()
         return image
@@ -87,13 +136,21 @@ object MakeArt {
      * the launcher icon and rendered as one flat white silhouette, because at
      * this size four shades of white on a coral ground read as a smudge and
      * the shape alone reads as the app.
+     *
+     * The mark's canvas is fitted into the far corner of [SAFE], and it is
+     * fitted by its own geometry, so the crayon stands inside the safe
+     * window with room to spare however the store crops this file. Nothing
+     * clips it but the banner itself: a clip drawn to its own canvas would
+     * hide an overflow from the test that holds the banner inside [SAFE].
      */
     private fun paintWordmark(g: Graphics2D, rootDir: File) {
-        drawCleanString(g, "Crayoner", "chewy.ttf", 100f, CARD, 520f, 224f, rootDir)
-        drawCleanString(g, "Color the picture,", "chewy.ttf", 27f, TAGLINE, 526f, 282f, rootDir)
-        drawCleanString(g, "just like the book.", "chewy.ttf", 27f, TAGLINE, 526f, 318f, rootDir)
-        val mark = g.create(800, 310, 190, 176) as Graphics2D
-        paintMark(mark, 176, inset = 0.94, palette = MarkPalette.MONO)
+        drawCleanString(g, "Crayoner", "chewy.ttf", 100f, CARD, WORDS_X, 224f, rootDir)
+        drawCleanString(g, "Color the picture,", "chewy.ttf", 27f, TAGLINE, WORDS_X + 6f, 282f, rootDir)
+        drawCleanString(g, "just like the book.", "chewy.ttf", 27f, TAGLINE, WORDS_X + 6f, 318f, rootDir)
+        val x = SAFE.right - MARK_SIZE
+        val y = SAFE.bottom - MARK_SIZE
+        val mark = g.create(x, y, BANNER_W - x, BANNER_H - y) as Graphics2D
+        paintMark(mark, MARK_SIZE, inset = 0.94, palette = MarkPalette.MONO)
         mark.dispose()
     }
 
@@ -126,9 +183,9 @@ object MakeArt {
      * rectangle pasted on the banner.
      */
     private fun sheetShadow(g: Graphics2D, x: Double, y: Double, w: Double, h: Double) {
-        for (step in 1..5) {
-            val spread = step * 5.0
-            val alpha = (0.05 * (6 - step)).coerceAtLeast(0.02)
+        for (step in 1..SHADOW_STEPS) {
+            val spread = step * SHADOW_STEP
+            val alpha = (0.05 * (SHADOW_STEPS + 1 - step)).coerceAtLeast(0.02)
             g.color = Color(0, 0, 0, (alpha * 255).toInt())
             g.fill(
                 RoundRectangle2D.Double(
@@ -210,6 +267,26 @@ internal fun drawCleanString(
     g2.drawImage(small, 0, 0, bigW, bigH, null)
     g2.dispose()
     g.drawImage(big, (x - sx * k).toInt(), (y - sy * k).toInt(), null)
+}
+
+/**
+ * A rectangle in the banner's own pixels, used for the window the store
+ * always shows and for the box a banner's ink really takes up.
+ */
+internal data class Window(val x: Int, val y: Int, val w: Int, val h: Int) {
+
+    val right: Int get() = x + w
+
+    val bottom: Int get() = y + h
+
+    /** True when the pixel at ([px], [py]) is inside this window. */
+    fun holds(px: Int, py: Int): Boolean = px >= x && px < right && py >= y && py < bottom
+
+    /** True when every pixel of [other] is inside this window. */
+    fun encloses(other: Window): Boolean = other.x >= x && other.right <= right &&
+        other.y >= y && other.bottom <= bottom
+
+    override fun toString(): String = "x $x..$right, y $y..$bottom"
 }
 
 /** Kept so callers that want raw bytes (the icon pin) share one encoder. */
